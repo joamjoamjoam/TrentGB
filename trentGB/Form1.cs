@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
 using System.Drawing;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -15,6 +16,26 @@ namespace trentGB
         public Form1()
         {
             InitializeComponent();
+        }
+
+        private void loadRomToolStripMenuItem_Click(object sender, EventArgs e)
+        {
+            OpenFileDialog dlg = new OpenFileDialog();
+            dlg.ValidateNames = true;
+            dlg.Multiselect = false;
+            dlg.ShowDialog();
+
+            if (dlg.FileName != null && dlg.FileName != "")
+            {
+                try
+                {
+                    Gameboy gb = new Gameboy(new ROM(dlg.FileName));
+                }
+                catch
+                {
+                    MessageBox.Show($"Error Reading ROM File {dlg.FileName}");
+                }
+            }
         }
     }
 }
