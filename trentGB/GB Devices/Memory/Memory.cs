@@ -44,13 +44,6 @@ namespace trentGB
         public Memory(ROM romFile)
         {
             Array.Clear(bytes, 0, bytes.Length);
-
-            // Load Validated ROM into Memory
-
-            for (int i = 0; i < romFile.getBytes().Length; i++)
-            {
-                //bytes[i] = romFile.getByte(i);
-            }
         }
     }
 }

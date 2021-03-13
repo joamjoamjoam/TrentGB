@@ -10,12 +10,14 @@ namespace trentGB
     {
         private Memory memory = null;
         private ROM rom = null;
+        private CPU cpu = null;
         private byte PC = 0;
 
         public Gameboy(ROM romToPlay)
         {
             rom = romToPlay;
             memory = new Memory(rom);
+            cpu = new CPU(memory);
             Start();
         }
 
