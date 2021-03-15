@@ -27,13 +27,23 @@ namespace trentGB
 
             if (dlg.FileName != null && dlg.FileName != "")
             {
+                Gameboy gb = null;
                 try
                 {
-                    Gameboy gb = new Gameboy(new ROM(dlg.FileName));
+                    gb = new Gameboy(new ROM(dlg.FileName));
                 }
                 catch
                 {
                     MessageBox.Show($"Error Reading ROM File {dlg.FileName}");
+                }
+
+                try
+                {
+                    gb.Start();
+                }
+                catch(Exception ex)
+                {
+                    MessageBox.Show($"Crash Report {ex.GetType().ToString()} -> {ex.Message}");
                 }
             }
         }

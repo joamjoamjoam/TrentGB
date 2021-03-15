@@ -8,17 +8,15 @@ namespace trentGB
 {
     class Gameboy
     {
-        private Memory memory = null;
+        private AddressSpace memory = null;
         private ROM rom = null;
         private CPU cpu = null;
-        private byte PC = 0;
 
         public Gameboy(ROM romToPlay)
         {
             rom = romToPlay;
-            memory = new Memory(rom);
-            cpu = new CPU(memory);
-            Start();
+            memory = new AddressSpace();
+            cpu = new CPU(memory, romToPlay);
         }
 
 
@@ -26,6 +24,15 @@ namespace trentGB
         {
             // Perform Runtime Validations by Executing OPs from Address 0x0000 to 0x00FF
             rom.printRomHeader();
+
+            // Start CPU
+            cpu.reset();
+
+            while (!cpu.done)
+            {
+                cpu.decodeAndExecute(cpu.fetch());
+            }
+
         }
     }
 }

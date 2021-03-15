@@ -122,8 +122,11 @@ namespace trentGB
             validBootLogo = new Byte[48] { 0xCE, 0xED, 0x66, 0x66, 0xCC, 0x0D, 0x00, 0x0B, 0x03, 0x73, 0x00, 0x83, 0x00, 0x0C, 0x00, 0x0D, 0x00, 0x08, 0x11, 0x1F, 0x88, 0x89, 0x00, 0x0E, 0xDC, 0xCC, 0x6E, 0xE6, 0xDD, 0xDD, 0xD9, 0x99, 0xBB, 0xBB, 0x67, 0x63, 0x6E, 0x0E, 0xEC, 0xCC, 0xDD, 0xDC, 0x99, 0x9F, 0xBB, 0xB9, 0x33, 0x3E };
 
             // Validate File is a GB Rom (Check for GB Header at 0x100)
-            bytes = File.ReadAllBytes(filePath);
-            size = bytes.Length;
+
+            byte[] tmpBytes = File.ReadAllBytes(filePath);
+            bytes = new byte[tmpBytes.Length + 1];
+            Array.Copy(tmpBytes, bytes, tmpBytes.Length);
+            size = tmpBytes.Length;
 
             if (!validateROMFile(bytes))
             {
@@ -141,9 +144,23 @@ namespace trentGB
         {
             return bytes;
         }
-        public byte getByte(int address)
+        public byte getByte(ushort address)
         {
             return bytes[address];
+        }
+        public byte[] getBytes(ushort address, ushort count)
+        {
+            byte[] rv = new Byte[count];
+            if (((UInt32)address + (UInt32)count) <= 0xFFFF)
+            {
+                Array.ConstrainedCopy(bytes, address, rv, 0, (int)count);
+            }
+            else
+            {
+                rv = null;
+            }
+
+            return rv;
         }
 
         private bool validateROMFile(byte[] fileBytes)
