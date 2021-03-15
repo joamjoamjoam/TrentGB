@@ -90,68 +90,68 @@ namespace trentGB
 
         public void loadOpCodeMap()
         {
-            opCodeTranslationDict.Add(0x00, new Action(opNOP));  // NOP
-            opCodeTranslationDict.Add(0x01, implementOpCode01);  // NOP
-            opCodeTranslationDict.Add(0x02, implementOpCode02);  // NOP
-            opCodeTranslationDict.Add(0x03, implementOpCode03);  // NOP
-            opCodeTranslationDict.Add(0x04, implementOpCode04);  // NOP
-            opCodeTranslationDict.Add(0x05, implementOpCode05);  // NOP
-            opCodeTranslationDict.Add(0x06, implementOpCode06);  // NOP
-            opCodeTranslationDict.Add(0x07, implementOpCode07);  // NOP
+            opCodeTranslationDict.Add(0x00, opNOP);  // NOP
+            opCodeTranslationDict.Add(0x01, ldBC16);  // NOP
+            opCodeTranslationDict.Add(0x02, ldAToMemBC);  // NOP
+            opCodeTranslationDict.Add(0x03, incBC);  // NOP
+            opCodeTranslationDict.Add(0x04, incB);  // NOP
+            opCodeTranslationDict.Add(0x05, decB);  // NOP
+            opCodeTranslationDict.Add(0x06, ldB);  // NOP
+            opCodeTranslationDict.Add(0x07, rotateLCA);  // NOP
             opCodeTranslationDict.Add(0x08, implementOpCode08);  // NOP
             opCodeTranslationDict.Add(0x09, implementOpCode09);  // NOP
             opCodeTranslationDict.Add(0x0A, implementOpCode0A);  // NOP
-            opCodeTranslationDict.Add(0x0B, implementOpCode0B);  // NOP
-            opCodeTranslationDict.Add(0x0C, implementOpCode0C);  // NOP
-            opCodeTranslationDict.Add(0x0D, implementOpCode0D);  // NOP
+            opCodeTranslationDict.Add(0x0B, decBC);  // NOP
+            opCodeTranslationDict.Add(0x0C, incC);  // NOP
+            opCodeTranslationDict.Add(0x0D, decC);  // NOP
             opCodeTranslationDict.Add(0x0E, implementOpCode0E);  // NOP
             opCodeTranslationDict.Add(0x0F, implementOpCode0F);  // NOP
             opCodeTranslationDict.Add(0x10, implementOpCode10);  // NOP
             opCodeTranslationDict.Add(0x11, implementOpCode11);  // NOP
             opCodeTranslationDict.Add(0x12, implementOpCode12);  // NOP
-            opCodeTranslationDict.Add(0x13, implementOpCode13);  // NOP
-            opCodeTranslationDict.Add(0x14, implementOpCode14);  // NOP
-            opCodeTranslationDict.Add(0x15, implementOpCode15);  // NOP
+            opCodeTranslationDict.Add(0x13, incDE);  // NOP
+            opCodeTranslationDict.Add(0x14, incD);  // NOP
+            opCodeTranslationDict.Add(0x15, decD);  // NOP
             opCodeTranslationDict.Add(0x16, implementOpCode16);  // NOP
             opCodeTranslationDict.Add(0x17, implementOpCode17);  // NOP
             opCodeTranslationDict.Add(0x18, implementOpCode18);  // NOP
             opCodeTranslationDict.Add(0x19, implementOpCode19);  // NOP
             opCodeTranslationDict.Add(0x1A, implementOpCode1A);  // NOP
-            opCodeTranslationDict.Add(0x1B, implementOpCode1B);  // NOP
-            opCodeTranslationDict.Add(0x1C, implementOpCode1C);  // NOP
-            opCodeTranslationDict.Add(0x1D, implementOpCode1D);  // NOP
+            opCodeTranslationDict.Add(0x1B, decDE);  // NOP
+            opCodeTranslationDict.Add(0x1C, incE);  // NOP
+            opCodeTranslationDict.Add(0x1D, decE);  // NOP
             opCodeTranslationDict.Add(0x1E, implementOpCode1E);  // NOP
             opCodeTranslationDict.Add(0x1F, implementOpCode1F);  // NOP
             opCodeTranslationDict.Add(0x20, implementOpCode20);  // NOP
             opCodeTranslationDict.Add(0x21, implementOpCode21);  // NOP
             opCodeTranslationDict.Add(0x22, implementOpCode22);  // NOP
-            opCodeTranslationDict.Add(0x23, implementOpCode23);  // NOP
-            opCodeTranslationDict.Add(0x24, implementOpCode24);  // NOP
-            opCodeTranslationDict.Add(0x25, implementOpCode25);  // NOP
+            opCodeTranslationDict.Add(0x23, incHL);  // NOP
+            opCodeTranslationDict.Add(0x24, incH);  // NOP
+            opCodeTranslationDict.Add(0x25, decH);  // NOP
             opCodeTranslationDict.Add(0x26, implementOpCode26);  // NOP
             opCodeTranslationDict.Add(0x27, implementOpCode27);  // NOP
             opCodeTranslationDict.Add(0x28, implementOpCode28);  // NOP
             opCodeTranslationDict.Add(0x29, implementOpCode29);  // NOP
             opCodeTranslationDict.Add(0x2A, implementOpCode2A);  // NOP
-            opCodeTranslationDict.Add(0x2B, implementOpCode2B);  // NOP
-            opCodeTranslationDict.Add(0x2C, implementOpCode2C);  // NOP
-            opCodeTranslationDict.Add(0x2D, implementOpCode2D);  // NOP
+            opCodeTranslationDict.Add(0x2B, decHL);  // NOP
+            opCodeTranslationDict.Add(0x2C, incL);  // NOP
+            opCodeTranslationDict.Add(0x2D, decL);  // NOP
             opCodeTranslationDict.Add(0x2E, implementOpCode2E);  // NOP
             opCodeTranslationDict.Add(0x2F, implementOpCode2F);  // NOP
             opCodeTranslationDict.Add(0x30, implementOpCode30);  // NOP
             opCodeTranslationDict.Add(0x31, implementOpCode31);  // NOP
             opCodeTranslationDict.Add(0x32, implementOpCode32);  // NOP
-            opCodeTranslationDict.Add(0x33, implementOpCode33);  // NOP
-            opCodeTranslationDict.Add(0x34, implementOpCode34);  // NOP
-            opCodeTranslationDict.Add(0x35, implementOpCode35);  // NOP
+            opCodeTranslationDict.Add(0x33, incSP);  // NOP
+            opCodeTranslationDict.Add(0x34, incHLMem);  // NOP
+            opCodeTranslationDict.Add(0x35, decHLMem);  // NOP
             opCodeTranslationDict.Add(0x36, implementOpCode36);  // NOP
             opCodeTranslationDict.Add(0x37, implementOpCode37);  // NOP
             opCodeTranslationDict.Add(0x38, implementOpCode38);  // NOP
             opCodeTranslationDict.Add(0x39, implementOpCode39);  // NOP
             opCodeTranslationDict.Add(0x3A, implementOpCode3A);  // NOP
-            opCodeTranslationDict.Add(0x3B, implementOpCode3B);  // NOP
-            opCodeTranslationDict.Add(0x3C, implementOpCode3C);  // NOP
-            opCodeTranslationDict.Add(0x3D, implementOpCode3D);  // NOP
+            opCodeTranslationDict.Add(0x3B, decSP);  // NOP
+            opCodeTranslationDict.Add(0x3C, incA);  // NOP
+            opCodeTranslationDict.Add(0x3D, decA);  // NOP
             opCodeTranslationDict.Add(0x3E, implementOpCode3E);  // NOP
             opCodeTranslationDict.Add(0x3F, implementOpCode3F);  // NOP
             opCodeTranslationDict.Add(0x40, implementOpCode40);  // NOP
@@ -598,38 +598,54 @@ namespace trentGB
         #endregion
 
         #region CPU Instructions
-        private void opNOP()
+        private void opNOP() // OP Code 0x00
         {
             return;
         }
 
-        private void implementOpCode00()
+        private void ldBC16() // 0x01
         {
-            throw new NotImplementedException("Implement Op Code 0x00");
+            int value = fetch();
+            int value2 = fetch();
+            ushort rv = (ushort)((value2 << 8) + value);
+
+            setBC(rv);
         }
-        private void implementOpCode01()
+        private void ldAToMemBC() //0x02
         {
-            throw new NotImplementedException("Implement Op Code 0x01");
+            ushort addr = getBC();
+            byte value = getA();
+
+            mem.setByte(addr, value);
         }
-        private void implementOpCode02()
+        private void incBC() //0x03
         {
-            throw new NotImplementedException("Implement Op Code 0x02");
+            ushort value = getBC();
+
+            value = increment16(value);
+
+            setBC(value);
         }
-        private void implementOpCode03()
+        private void incB() // 0x04
         {
-            throw new NotImplementedException("Implement Op Code 0x03");
+            Byte value = getB();
+
+            value = increment(value);
+
+            setB(value);
         }
-        private void implementOpCode04()
+        private void decB() // 0x05
         {
-            throw new NotImplementedException("Implement Op Code 0x04");
+            Byte value = getB();
+
+            value = decrement(value);
+
+            setB(value);
         }
-        private void implementOpCode05()
+        private void ldB() // 0x06
         {
-            throw new NotImplementedException("Implement Op Code 0x05");
-        }
-        private void implementOpCode06()
-        {
-            throw new NotImplementedException("Implement Op Code 0x06");
+            Byte value = fetch();
+            setB(value);
         }
         private void implementOpCode07()
         {
@@ -647,17 +663,29 @@ namespace trentGB
         {
             throw new NotImplementedException("Implement Op Code 0x0A");
         }
-        private void implementOpCode0B()
+        private void decBC() //0x0B
         {
-            throw new NotImplementedException("Implement Op Code 0x0B");
+            ushort value = getBC();
+
+            value = decrement16(value);
+
+            setBC(value);
         }
-        private void implementOpCode0C()
+        private void incC() // 0x0C
         {
-            throw new NotImplementedException("Implement Op Code 0x0C");
+            Byte value = getC();
+
+            value = increment(value);
+
+            setC(value);
         }
-        private void implementOpCode0D()
+        private void decC() // 0x0D
         {
-            throw new NotImplementedException("Implement Op Code 0x0D");
+            Byte value = getC();
+
+            value = decrement(value);
+
+            setC(value);
         }
         private void implementOpCode0E()
         {
@@ -679,17 +707,29 @@ namespace trentGB
         {
             throw new NotImplementedException("Implement Op Code 0x12");
         }
-        private void implementOpCode13()
+        private void incDE() //0x03
         {
-            throw new NotImplementedException("Implement Op Code 0x13");
+            ushort value = getDE();
+
+            value = increment16(value);
+
+            setDE(value);
         }
-        private void implementOpCode14()
+        private void incD() // 0x14
         {
-            throw new NotImplementedException("Implement Op Code 0x14");
+            Byte value = getD();
+
+            value = increment(value);
+
+            setD(value);
         }
-        private void implementOpCode15()
+        private void decD() // 0x15
         {
-            throw new NotImplementedException("Implement Op Code 0x15");
+            Byte value = getD();
+
+            value = decrement(value);
+
+            setD(value);
         }
         private void implementOpCode16()
         {
@@ -711,17 +751,29 @@ namespace trentGB
         {
             throw new NotImplementedException("Implement Op Code 0x1A");
         }
-        private void implementOpCode1B()
+        private void decDE() //0x1B
         {
-            throw new NotImplementedException("Implement Op Code 0x1B");
+            ushort value = getDE();
+
+            value = decrement16(value);
+
+            setDE(value);
         }
-        private void implementOpCode1C()
+        private void incE() // 0x1C
         {
-            throw new NotImplementedException("Implement Op Code 0x1C");
+            Byte value = getE();
+
+            value = increment(value);
+
+            setE(value);
         }
-        private void implementOpCode1D()
+        private void decE() // 0x1D
         {
-            throw new NotImplementedException("Implement Op Code 0x1D");
+            Byte value = getE();
+
+            value = decrement(value);
+
+            setE(value);
         }
         private void implementOpCode1E()
         {
@@ -743,17 +795,29 @@ namespace trentGB
         {
             throw new NotImplementedException("Implement Op Code 0x22");
         }
-        private void implementOpCode23()
+        private void incHL() //0x23
         {
-            throw new NotImplementedException("Implement Op Code 0x23");
+            ushort value = getHL();
+
+            value = increment16(value);
+
+            setHL(value);
         }
-        private void implementOpCode24()
+        private void incH() // 0x24
         {
-            throw new NotImplementedException("Implement Op Code 0x24");
+            Byte value = getH();
+
+            value = increment(value);
+
+            setH(value);
         }
-        private void implementOpCode25()
+        private void decH() // 0x25
         {
-            throw new NotImplementedException("Implement Op Code 0x25");
+            Byte value = getH();
+
+            value = decrement(value);
+
+            setH(value);
         }
         private void implementOpCode26()
         {
@@ -775,17 +839,29 @@ namespace trentGB
         {
             throw new NotImplementedException("Implement Op Code 0x2A");
         }
-        private void implementOpCode2B()
+        private void decHL() //0x2B
         {
-            throw new NotImplementedException("Implement Op Code 0x2B");
+            ushort value = getHL();
+
+            value = decrement16(value);
+
+            setHL(value);
         }
-        private void implementOpCode2C()
+        private void incL() // 0x2C
         {
-            throw new NotImplementedException("Implement Op Code 0x2C");
+            Byte value = getL();
+
+            value = increment(value);
+
+            setL(value);
         }
-        private void implementOpCode2D()
+        private void decL() // 0x2D
         {
-            throw new NotImplementedException("Implement Op Code 0x2D");
+            Byte value = getL();
+
+            value = decrement(value);
+
+            setL(value);
         }
         private void implementOpCode2E()
         {
@@ -807,17 +883,29 @@ namespace trentGB
         {
             throw new NotImplementedException("Implement Op Code 0x32");
         }
-        private void implementOpCode33()
+        private void incSP() //0x03
         {
-            throw new NotImplementedException("Implement Op Code 0x33");
+            ushort value = getSP();
+
+            value = increment16(value);
+
+            setSP(value);
         }
-        private void implementOpCode34()
+        private void incHLMem() // 0x34
         {
-            throw new NotImplementedException("Implement Op Code 0x34");
+            Byte value = mem.getByte(getHL());
+
+            value = increment(value);
+
+            mem.setByte(getHL(), value);
         }
-        private void implementOpCode35()
+        private void decHLMem() // 0x35
         {
-            throw new NotImplementedException("Implement Op Code 0x35");
+            Byte value = mem.getByte(getHL());
+
+            value = decrement(value);
+
+            mem.setByte(getHL(), value);
         }
         private void implementOpCode36()
         {
@@ -839,17 +927,29 @@ namespace trentGB
         {
             throw new NotImplementedException("Implement Op Code 0x3A");
         }
-        private void implementOpCode3B()
+        private void decSP() //0x3B
         {
-            throw new NotImplementedException("Implement Op Code 0x3B");
+            ushort value = getSP();
+
+            value = decrement16(value);
+
+            setSP(value);
         }
-        private void implementOpCode3C()
+        private void incA() // 0x04
         {
-            throw new NotImplementedException("Implement Op Code 0x3C");
+            Byte value = getA();
+
+            value = increment(value);
+
+            setA(value);
         }
-        private void implementOpCode3D()
+        private void decA() // 0x3D
         {
-            throw new NotImplementedException("Implement Op Code 0x3D");
+            Byte value = getA();
+
+            value = decrement(value);
+
+            setA(value);
         }
         private void implementOpCode3E()
         {
@@ -1630,6 +1730,94 @@ namespace trentGB
 
 
 
+
+
+        #endregion
+
+        #region Instruction Helper Functions
+        private Byte increment(Byte value)
+        {
+            setZeroFlag(false);
+            setHalfCarryFlag(false);
+            setSubtractFlag(false);
+            // Ignore Carry Flag
+            if (value == 0xFF)
+            {
+                // Rollover
+                value = 0;
+                setZeroFlag(true);
+            }
+            else if (value == 0x0F)
+            {
+                value++;
+                setHalfCarryFlag(true);
+            }
+            else
+            {
+                value++;
+            }
+
+            return value;
+        }
+
+        private ushort increment16(ushort value)
+        {
+            // Ignore Carry Flag
+            if (value == 0xFFFF)
+            {
+                // Rollover
+                value = 0;
+            }
+            else
+            {
+                value++;
+            }
+
+            return value;
+        }
+
+        private Byte decrement(Byte value)
+        {
+            setZeroFlag(false);
+            setHalfCarryFlag(false);
+            setSubtractFlag(true);
+            // Ignore Carry Flag
+            if (value == 0)
+            {
+                value = 255;
+            }
+            else if (value == 1)
+            {
+                setZeroFlag(true);
+                value--;
+            }
+            else
+            {
+                value--;
+            }
+
+            if ((value & 0x0F) == 0x0)
+            {
+                setHalfCarryFlag(true);
+            }
+
+            return value;
+        }
+
+        private ushort decrement16(ushort value)
+        {
+            // Ignore Carry Flag
+            if (value == 0)
+            {
+                value = 0xFFFF;
+            }
+            else
+            {
+                value--;
+            }
+
+            return value;
+        }
         #endregion
 
         #region OP Code Translation Map
