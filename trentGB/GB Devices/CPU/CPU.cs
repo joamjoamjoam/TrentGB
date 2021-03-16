@@ -100,7 +100,7 @@ namespace trentGB
             opCodeTranslationDict.Add(0x07, implementOpCode07);
             opCodeTranslationDict.Add(0x08, implementOpCode08);
             opCodeTranslationDict.Add(0x09, implementOpCode09);
-            opCodeTranslationDict.Add(0x0A, implementOpCode0A);
+            opCodeTranslationDict.Add(0x0A, ldAMemBC);
             opCodeTranslationDict.Add(0x0B, decBC);
             opCodeTranslationDict.Add(0x0C, incC);
             opCodeTranslationDict.Add(0x0D, decC);
@@ -116,7 +116,7 @@ namespace trentGB
             opCodeTranslationDict.Add(0x17, implementOpCode17);
             opCodeTranslationDict.Add(0x18, implementOpCode18);
             opCodeTranslationDict.Add(0x19, implementOpCode19);
-            opCodeTranslationDict.Add(0x1A, implementOpCode1A);
+            opCodeTranslationDict.Add(0x1A, ldAMemDE);
             opCodeTranslationDict.Add(0x1B, decDE);
             opCodeTranslationDict.Add(0x1C, incE);
             opCodeTranslationDict.Add(0x1D, decE);
@@ -152,7 +152,7 @@ namespace trentGB
             opCodeTranslationDict.Add(0x3B, decSP);
             opCodeTranslationDict.Add(0x3C, incA);
             opCodeTranslationDict.Add(0x3D, decA);
-            opCodeTranslationDict.Add(0x3E, implementOpCode3E);
+            opCodeTranslationDict.Add(0x3E, ldA);
             opCodeTranslationDict.Add(0x3F, implementOpCode3F);
             opCodeTranslationDict.Add(0x40, ldrBB);
             opCodeTranslationDict.Add(0x41, ldrBC);
@@ -340,7 +340,7 @@ namespace trentGB
             opCodeTranslationDict.Add(0xF7, implementOpCodeF7);
             opCodeTranslationDict.Add(0xF8, implementOpCodeF8);
             opCodeTranslationDict.Add(0xF9, implementOpCodeF9);
-            opCodeTranslationDict.Add(0xFA, implementOpCodeFA);
+            opCodeTranslationDict.Add(0xFA, ld16A);
             opCodeTranslationDict.Add(0xFB, implementOpCodeFB);
             //opCodeTranslationDict.Add(0xFC, implementOpCodeFC);  OpCode Not Used
             //opCodeTranslationDict.Add(0xFD, implementOpCodeFD);  OpCode Not Used
@@ -659,9 +659,10 @@ namespace trentGB
         {
             throw new NotImplementedException("Implement Op Code 0x09");
         }
-        private void implementOpCode0A()
+        private void ldAMemBC() // 0x0A
         {
-            throw new NotImplementedException("Implement Op Code 0x0A");
+            Byte value = mem.getByte(getBC());
+            setA(value);
         }
         private void decBC() //0x0B
         {
@@ -749,9 +750,10 @@ namespace trentGB
         {
             throw new NotImplementedException("Implement Op Code 0x19");
         }
-        private void implementOpCode1A()
+        private void ldAMemDE() // 0x1A
         {
-            throw new NotImplementedException("Implement Op Code 0x1A");
+            Byte value = mem.getByte(getDE());
+            setA(value);
         }
         private void decDE() //0x1B
         {
@@ -957,9 +959,10 @@ namespace trentGB
 
             setA(value);
         }
-        private void implementOpCode3E()
+        private void ldA() //0x3E
         {
-            throw new NotImplementedException("Implement Op Code 0x3E");
+            Byte value = fetch();
+            setA(value);
         }
         private void implementOpCode3F()
         {
@@ -1725,9 +1728,13 @@ namespace trentGB
         {
             throw new NotImplementedException("Implement Op Code 0xF9");
         }
-        private void implementOpCodeFA()
+        private void ld16A() // 0xFA
         {
-            throw new NotImplementedException("Implement Op Code 0xFA");
+            int value1 = fetch();
+            int value2 = fetch();
+            ushort value = (ushort)((value2 << 8) + value1);
+            setAF(value);
+            // HACK this May Not Work??
         }
         private void implementOpCodeFB()
         {
