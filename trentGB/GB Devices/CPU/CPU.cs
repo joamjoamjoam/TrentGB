@@ -293,7 +293,7 @@ namespace trentGB
             opCodeTranslationDict.Add(0xC8, implementOpCodeC8);  // NOP
             opCodeTranslationDict.Add(0xC9, implementOpCodeC9);  // NOP
             opCodeTranslationDict.Add(0xCA, implementOpCodeCA);  // NOP
-            opCodeTranslationDict.Add(0xCB, implementOpCodeCB);  // NOP
+            //opCodeTranslationDict.Add(0xCB, implementOpCodeCB);  OpCode Not Used
             opCodeTranslationDict.Add(0xCC, implementOpCodeCC);  // NOP
             opCodeTranslationDict.Add(0xCD, implementOpCodeCD);  // NOP
             opCodeTranslationDict.Add(0xCE, implementOpCodeCE);  // NOP
@@ -301,7 +301,7 @@ namespace trentGB
             opCodeTranslationDict.Add(0xD0, implementOpCodeD0);  // NOP
             opCodeTranslationDict.Add(0xD1, implementOpCodeD1);  // NOP
             opCodeTranslationDict.Add(0xD2, implementOpCodeD2);  // NOP
-            opCodeTranslationDict.Add(0xD3, implementOpCodeD3);  // NOP
+            //opCodeTranslationDict.Add(0xD3, implementOpCodeD3);  OpCode Not Used
             opCodeTranslationDict.Add(0xD4, implementOpCodeD4);  // NOP
             opCodeTranslationDict.Add(0xD5, implementOpCodeD5);  // NOP
             opCodeTranslationDict.Add(0xD6, implementOpCodeD6);  // NOP
@@ -309,32 +309,32 @@ namespace trentGB
             opCodeTranslationDict.Add(0xD8, implementOpCodeD8);  // NOP
             opCodeTranslationDict.Add(0xD9, implementOpCodeD9);  // NOP
             opCodeTranslationDict.Add(0xDA, implementOpCodeDA);  // NOP
-            opCodeTranslationDict.Add(0xDB, implementOpCodeDB);  // NOP
+            //opCodeTranslationDict.Add(0xDB, implementOpCodeDB);  OpCode Not Used
             opCodeTranslationDict.Add(0xDC, implementOpCodeDC);  // NOP
-            opCodeTranslationDict.Add(0xDD, implementOpCodeDD);  // NOP
+            //opCodeTranslationDict.Add(0xDD, implementOpCodeDD);  OpCode Not Used
             opCodeTranslationDict.Add(0xDE, implementOpCodeDE);  // NOP
             opCodeTranslationDict.Add(0xDF, implementOpCodeDF);  // NOP
             opCodeTranslationDict.Add(0xE0, implementOpCodeE0);  // NOP
             opCodeTranslationDict.Add(0xE1, implementOpCodeE1);  // NOP
             opCodeTranslationDict.Add(0xE2, implementOpCodeE2);  // NOP
-            opCodeTranslationDict.Add(0xE3, implementOpCodeE3);  // NOP
-            opCodeTranslationDict.Add(0xE4, implementOpCodeE4);  // NOP
+            //opCodeTranslationDict.Add(0xE3, implementOpCodeE3);  OpCode Not Used
+            //opCodeTranslationDict.Add(0xE4, implementOpCodeE4);  OpCode Not Used
             opCodeTranslationDict.Add(0xE5, implementOpCodeE5);  // NOP
             opCodeTranslationDict.Add(0xE6, implementOpCodeE6);  // NOP
             opCodeTranslationDict.Add(0xE7, implementOpCodeE7);  // NOP
             opCodeTranslationDict.Add(0xE8, implementOpCodeE8);  // NOP
             opCodeTranslationDict.Add(0xE9, implementOpCodeE9);  // NOP
             opCodeTranslationDict.Add(0xEA, implementOpCodeEA);  // NOP
-            opCodeTranslationDict.Add(0xEB, implementOpCodeEB);  // NOP
-            opCodeTranslationDict.Add(0xEC, implementOpCodeEC);  // NOP
-            opCodeTranslationDict.Add(0xED, implementOpCodeED);  // NOP
+            //opCodeTranslationDict.Add(0xEB, implementOpCodeEB);  OpCode Not Used
+            //opCodeTranslationDict.Add(0xEC, implementOpCodeEC);  OpCode Not Used
+            //opCodeTranslationDict.Add(0xED, implementOpCodeED);  OpCode Not Used
             opCodeTranslationDict.Add(0xEE, implementOpCodeEE);  // NOP
             opCodeTranslationDict.Add(0xEF, implementOpCodeEF);  // NOP
             opCodeTranslationDict.Add(0xF0, implementOpCodeF0);  // NOP
             opCodeTranslationDict.Add(0xF1, implementOpCodeF1);  // NOP
             opCodeTranslationDict.Add(0xF2, implementOpCodeF2);  // NOP
             opCodeTranslationDict.Add(0xF3, implementOpCodeF3);  // NOP
-            opCodeTranslationDict.Add(0xF4, implementOpCodeF4);  // NOP
+            //opCodeTranslationDict.Add(0xF4, implementOpCodeF4);  OpCode Not Used
             opCodeTranslationDict.Add(0xF5, implementOpCodeF5);  // NOP
             opCodeTranslationDict.Add(0xF6, implementOpCodeF6);  // NOP
             opCodeTranslationDict.Add(0xF7, implementOpCodeF7);  // NOP
@@ -342,8 +342,8 @@ namespace trentGB
             opCodeTranslationDict.Add(0xF9, implementOpCodeF9);  // NOP
             opCodeTranslationDict.Add(0xFA, implementOpCodeFA);  // NOP
             opCodeTranslationDict.Add(0xFB, implementOpCodeFB);  // NOP
-            opCodeTranslationDict.Add(0xFC, implementOpCodeFC);  // NOP
-            opCodeTranslationDict.Add(0xFD, implementOpCodeFD);  // NOP
+            //opCodeTranslationDict.Add(0xFC, implementOpCodeFC);  OpCode Not Used
+            //opCodeTranslationDict.Add(0xFD, implementOpCodeFD);  OpCode Not Used
             opCodeTranslationDict.Add(0xFE, implementOpCodeFE);  // NOP
             opCodeTranslationDict.Add(0xFF, implementOpCodeFF);  // NOP
         }
@@ -1515,10 +1515,6 @@ namespace trentGB
         {
             throw new NotImplementedException("Implement Op Code 0xCA");
         }
-        private void implementOpCodeCB()
-        {
-            throw new NotImplementedException("Implement Op Code 0xCB");
-        }
         private void implementOpCodeCC()
         {
             throw new NotImplementedException("Implement Op Code 0xCC");
@@ -1546,10 +1542,6 @@ namespace trentGB
         private void implementOpCodeD2()
         {
             throw new NotImplementedException("Implement Op Code 0xD2");
-        }
-        private void implementOpCodeD3()
-        {
-            throw new NotImplementedException("Implement Op Code 0xD3");
         }
         private void implementOpCodeD4()
         {
@@ -1579,17 +1571,9 @@ namespace trentGB
         {
             throw new NotImplementedException("Implement Op Code 0xDA");
         }
-        private void implementOpCodeDB()
-        {
-            throw new NotImplementedException("Implement Op Code 0xDB");
-        }
         private void implementOpCodeDC()
         {
             throw new NotImplementedException("Implement Op Code 0xDC");
-        }
-        private void implementOpCodeDD()
-        {
-            throw new NotImplementedException("Implement Op Code 0xDD");
         }
         private void implementOpCodeDE()
         {
@@ -1610,14 +1594,6 @@ namespace trentGB
         private void implementOpCodeE2()
         {
             throw new NotImplementedException("Implement Op Code 0xE2");
-        }
-        private void implementOpCodeE3()
-        {
-            throw new NotImplementedException("Implement Op Code 0xE3");
-        }
-        private void implementOpCodeE4()
-        {
-            throw new NotImplementedException("Implement Op Code 0xE4");
         }
         private void implementOpCodeE5()
         {
@@ -1643,18 +1619,6 @@ namespace trentGB
         {
             throw new NotImplementedException("Implement Op Code 0xEA");
         }
-        private void implementOpCodeEB()
-        {
-            throw new NotImplementedException("Implement Op Code 0xEB");
-        }
-        private void implementOpCodeEC()
-        {
-            throw new NotImplementedException("Implement Op Code 0xEC");
-        }
-        private void implementOpCodeED()
-        {
-            throw new NotImplementedException("Implement Op Code 0xED");
-        }
         private void implementOpCodeEE()
         {
             throw new NotImplementedException("Implement Op Code 0xEE");
@@ -1678,10 +1642,6 @@ namespace trentGB
         private void implementOpCodeF3()
         {
             throw new NotImplementedException("Implement Op Code 0xF3");
-        }
-        private void implementOpCodeF4()
-        {
-            throw new NotImplementedException("Implement Op Code 0xF4");
         }
         private void implementOpCodeF5()
         {
@@ -1710,14 +1670,6 @@ namespace trentGB
         private void implementOpCodeFB()
         {
             throw new NotImplementedException("Implement Op Code 0xFB");
-        }
-        private void implementOpCodeFC()
-        {
-            throw new NotImplementedException("Implement Op Code 0xFC");
-        }
-        private void implementOpCodeFD()
-        {
-            throw new NotImplementedException("Implement Op Code 0xFD");
         }
         private void implementOpCodeFE()
         {
