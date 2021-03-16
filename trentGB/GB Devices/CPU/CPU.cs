@@ -88,7 +88,7 @@ namespace trentGB
             opCodeTranslationDict[opCode].Invoke();
         }
 
-        public void loadOpCodeMap()
+        private void loadOpCodeMap()
         {
             opCodeTranslationDict.Add(0x00, opNOP);
             opCodeTranslationDict.Add(0x01, ldBC16);
@@ -316,7 +316,7 @@ namespace trentGB
             opCodeTranslationDict.Add(0xDF, implementOpCodeDF);
             opCodeTranslationDict.Add(0xE0, implementOpCodeE0);
             opCodeTranslationDict.Add(0xE1, implementOpCodeE1);
-            opCodeTranslationDict.Add(0xE2, implementOpCodeE2);
+            opCodeTranslationDict.Add(0xE2, ldAIntoIOPlusC);
             //opCodeTranslationDict.Add(0xE3, implementOpCodeE3);  OpCode Not Used
             //opCodeTranslationDict.Add(0xE4, implementOpCodeE4);  OpCode Not Used
             opCodeTranslationDict.Add(0xE5, implementOpCodeE5);
@@ -332,7 +332,7 @@ namespace trentGB
             opCodeTranslationDict.Add(0xEF, implementOpCodeEF);
             opCodeTranslationDict.Add(0xF0, implementOpCodeF0);
             opCodeTranslationDict.Add(0xF1, implementOpCodeF1);
-            opCodeTranslationDict.Add(0xF2, implementOpCodeF2);
+            opCodeTranslationDict.Add(0xF2, ldIOPlusCToA);
             opCodeTranslationDict.Add(0xF3, implementOpCodeF3);
             //opCodeTranslationDict.Add(0xF4, implementOpCodeF4);  OpCode Not Used
             opCodeTranslationDict.Add(0xF5, implementOpCodeF5);
@@ -360,7 +360,7 @@ namespace trentGB
         {
             return A;
         }
-        public void setA(Byte value)
+        private void setA(Byte value)
         {
             A = value;
         }
@@ -369,7 +369,7 @@ namespace trentGB
         {
             return B;
         }
-        public void setB(Byte value)
+        private void setB(Byte value)
         {
             B = value;
         }
@@ -378,7 +378,7 @@ namespace trentGB
         {
             return C;
         }
-        public void setC(Byte value)
+        private void setC(Byte value)
         {
             C = value;
         }
@@ -387,7 +387,7 @@ namespace trentGB
         {
             return D;
         }
-        public void setD(Byte value)
+        private void setD(Byte value)
         {
             D = value;
         }
@@ -396,7 +396,7 @@ namespace trentGB
         {
             return E;
         }
-        public void setE(Byte value)
+        private void setE(Byte value)
         {
             E = value;
         }
@@ -405,7 +405,7 @@ namespace trentGB
         {
             return H;
         }
-        public void setH(Byte value)
+        private void setH(Byte value)
         {
             H = value;
         }
@@ -414,7 +414,7 @@ namespace trentGB
         {
             return L;
         }
-        public void setL(Byte value)
+        private void setL(Byte value)
         {
             L = value;
         }
@@ -423,7 +423,7 @@ namespace trentGB
         {
             return F;
         }
-        public void setF(Byte value)
+        private void setF(Byte value)
         {
             F = value;
         }
@@ -432,15 +432,15 @@ namespace trentGB
         {
             return SP;
         }
-        public void setSP(ushort value)
+        private void setSP(ushort value)
         {
             SP = value;
         }
-        public void incrementSP()
+        private void incrementSP()
         {
             SP += 1;
         }
-        public void decrementSP()
+        private void decrementSP()
         {
             SP -= 1;
         }
@@ -449,15 +449,15 @@ namespace trentGB
         {
             return PC;
         }
-        public void setPC(ushort value)
+        private void setPC(ushort value)
         {
             PC = value;
         }
-        public void incrementPC()
+        private void incrementPC()
         {
             PC += 1;
         }
-        public void decrementPC()
+        private void decrementPC()
         {
             PC -= 1;
         }
@@ -472,7 +472,7 @@ namespace trentGB
             return rv;
         }
 
-        public void setAF(ushort value)
+        private void setAF(ushort value)
         {
             A = (Byte)((value & 0xFF00) >> 8);
             F = (Byte)(value & 0x00FF);
@@ -485,7 +485,7 @@ namespace trentGB
             return rv;
         }
 
-        public void setBC(ushort value)
+        private void setBC(ushort value)
         {
             B = (Byte)((value & 0xFF00) >> 8);
             C = (Byte)(value & 0x00FF);
@@ -498,7 +498,7 @@ namespace trentGB
             return rv;
         }
 
-        public void setDE(ushort value)
+        private void setDE(ushort value)
         {
             D = (Byte)((value & 0xFF00) >> 8);
             E = (Byte)(value & 0x00FF);
@@ -511,7 +511,7 @@ namespace trentGB
             return rv;
         }
 
-        public void setHL(ushort value)
+        private void setHL(ushort value)
         {
             H = (Byte)((value & 0xFF00) >> 8);
             L = (Byte)(value & 0x00FF);
@@ -523,7 +523,7 @@ namespace trentGB
             return ((F & 0x10) > 0);
         }
 
-        public void setCarryFlag(bool on)
+        private void setCarryFlag(bool on)
         {
             if (on)
             {
@@ -542,7 +542,7 @@ namespace trentGB
             return ((F & 0x20) > 0);
         }
 
-        public void setHalfCarryFlag(bool on)
+        private void setHalfCarryFlag(bool on)
         {
             if (on)
             {
@@ -560,7 +560,7 @@ namespace trentGB
             return ((F & 0x40) > 0);
         }
 
-        public void setSubtractFlag(bool on)
+        private void setSubtractFlag(bool on)
         {
             if (on)
             {
@@ -578,7 +578,7 @@ namespace trentGB
             return ((F & 0x80) > 0);
         }
 
-        public void setZeroFlag(bool on)
+        private void setZeroFlag(bool on)
         {
             if (on)
             {
@@ -590,7 +590,7 @@ namespace trentGB
             }
         }
 
-        public void resetFlagsNibble()
+        private void resetFlagsNibble()
         {
             F = (Byte)(F & 0x0F);
         }
@@ -1662,9 +1662,10 @@ namespace trentGB
         {
             throw new NotImplementedException("Implement Op Code 0xE1");
         }
-        private void implementOpCodeE2()
+        private void ldAIntoIOPlusC()
         {
-            throw new NotImplementedException("Implement Op Code 0xE2");
+            Byte value = getA();
+            mem.setByte((ushort)(0xFF00 + getC()), value);
         }
         private void implementOpCodeE5()
         {
@@ -1706,9 +1707,10 @@ namespace trentGB
         {
             throw new NotImplementedException("Implement Op Code 0xF1");
         }
-        private void implementOpCodeF2()
+        private void ldIOPlusCToA() // 0xF2
         {
-            throw new NotImplementedException("Implement Op Code 0xF2");
+            Byte value = mem.getByte((ushort)(0xFF00 + getC()));
+            setA(value);
         }
         private void implementOpCodeF3()
         {
