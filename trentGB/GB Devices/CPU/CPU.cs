@@ -23,6 +23,8 @@ namespace trentGB
         private ushort PC = 0;
         private ushort SP = 0;
         private AddressSpace mem = null;
+        private Dictionary<Byte, Action> opCodeTranslationDict = new Dictionary<byte, Action>();
+
         public bool done = false;
         public ROM rom;
 
@@ -124,7 +126,7 @@ namespace trentGB
             opCodeTranslationDict.Add(0x1F, implementOpCode1F);
             opCodeTranslationDict.Add(0x20, implementOpCode20);
             opCodeTranslationDict.Add(0x21, implementOpCode21);
-            opCodeTranslationDict.Add(0x22, implementOpCode22);
+            opCodeTranslationDict.Add(0x22, ldiMemHLWithA);
             opCodeTranslationDict.Add(0x23, incHL);
             opCodeTranslationDict.Add(0x24, incH);
             opCodeTranslationDict.Add(0x25, decH);
@@ -132,7 +134,7 @@ namespace trentGB
             opCodeTranslationDict.Add(0x27, implementOpCode27);
             opCodeTranslationDict.Add(0x28, implementOpCode28);
             opCodeTranslationDict.Add(0x29, implementOpCode29);
-            opCodeTranslationDict.Add(0x2A, implementOpCode2A);
+            opCodeTranslationDict.Add(0x2A, ldiAMemHL);
             opCodeTranslationDict.Add(0x2B, decHL);
             opCodeTranslationDict.Add(0x2C, incL);
             opCodeTranslationDict.Add(0x2D, decL);
@@ -140,7 +142,7 @@ namespace trentGB
             opCodeTranslationDict.Add(0x2F, implementOpCode2F);
             opCodeTranslationDict.Add(0x30, implementOpCode30);
             opCodeTranslationDict.Add(0x31, implementOpCode31);
-            opCodeTranslationDict.Add(0x32, implementOpCode32);
+            opCodeTranslationDict.Add(0x32, lddMemHLWithA);
             opCodeTranslationDict.Add(0x33, incSP);
             opCodeTranslationDict.Add(0x34, incHLMem);
             opCodeTranslationDict.Add(0x35, decHLMem);
@@ -148,7 +150,7 @@ namespace trentGB
             opCodeTranslationDict.Add(0x37, implementOpCode37);
             opCodeTranslationDict.Add(0x38, implementOpCode38);
             opCodeTranslationDict.Add(0x39, implementOpCode39);
-            opCodeTranslationDict.Add(0x3A, implementOpCode3A);
+            opCodeTranslationDict.Add(0x3A, lddAMemHL);
             opCodeTranslationDict.Add(0x3B, decSP);
             opCodeTranslationDict.Add(0x3C, incA);
             opCodeTranslationDict.Add(0x3D, decA);
@@ -796,9 +798,12 @@ namespace trentGB
         {
             throw new NotImplementedException("Implement Op Code 0x21");
         }
-        private void implementOpCode22()
+        private void ldiMemHLWithA() // 0x22
         {
-            throw new NotImplementedException("Implement Op Code 0x22");
+            Byte value = getA();
+            mem.setByte(getHL(), value);
+
+            incrementHL();
         }
         private void incHL() //0x23
         {
@@ -841,9 +846,12 @@ namespace trentGB
         {
             throw new NotImplementedException("Implement Op Code 0x29");
         }
-        private void implementOpCode2A()
+        private void ldiAMemHL() // 0x2A
         {
-            throw new NotImplementedException("Implement Op Code 0x2A");
+            Byte value = mem.getByte(getHL());
+            setA(value);
+
+            incrementHL();
         }
         private void decHL() //0x2B
         {
@@ -886,9 +894,12 @@ namespace trentGB
         {
             throw new NotImplementedException("Implement Op Code 0x31");
         }
-        private void implementOpCode32()
+        private void lddMemHLWithA() // 0x32
         {
-            throw new NotImplementedException("Implement Op Code 0x32");
+            Byte value = getA();
+            mem.setByte(getHL(), value);
+
+            decrementHL();
         }
         private void incSP() //0x03
         {
@@ -931,9 +942,12 @@ namespace trentGB
         {
             throw new NotImplementedException("Implement Op Code 0x39");
         }
-        private void implementOpCode3A()
+        private void lddAMemHL() // 0x3A
         {
-            throw new NotImplementedException("Implement Op Code 0x3A");
+            Byte value = mem.getByte(getHL());
+            setA(value);
+
+            decrementHL();
         }
         private void decSP() //0x3B
         {
@@ -1847,16 +1861,20 @@ namespace trentGB
 
             return value;
         }
-        #endregion
 
-        #region OP Code Translation Map
-
-        private Dictionary<Byte, Action> opCodeTranslationDict = new Dictionary<byte, Action>()
+        private void decrementHL()
         {
-            
-        };
+            ushort valueToDecrement = getHL();
+            valueToDecrement = decrement16(valueToDecrement);
+            setHL(valueToDecrement);
+        }
 
+        private void incrementHL()
+        {
+            ushort valueToIncrement = getHL();
+            valueToIncrement = increment16(valueToIncrement);
+            setHL(valueToIncrement);
+        }
         #endregion
-
     }
 }
