@@ -90,262 +90,262 @@ namespace trentGB
 
         public void loadOpCodeMap()
         {
-            opCodeTranslationDict.Add(0x00, opNOP);  // NOP
-            opCodeTranslationDict.Add(0x01, ldBC16);  // NOP
-            opCodeTranslationDict.Add(0x02, ldAToMemBC);  // NOP
-            opCodeTranslationDict.Add(0x03, incBC);  // NOP
-            opCodeTranslationDict.Add(0x04, incB);  // NOP
-            opCodeTranslationDict.Add(0x05, decB);  // NOP
-            opCodeTranslationDict.Add(0x06, ldB);  // NOP
-            opCodeTranslationDict.Add(0x07, rotateLCA);  // NOP
-            opCodeTranslationDict.Add(0x08, implementOpCode08);  // NOP
-            opCodeTranslationDict.Add(0x09, implementOpCode09);  // NOP
-            opCodeTranslationDict.Add(0x0A, implementOpCode0A);  // NOP
-            opCodeTranslationDict.Add(0x0B, decBC);  // NOP
-            opCodeTranslationDict.Add(0x0C, incC);  // NOP
-            opCodeTranslationDict.Add(0x0D, decC);  // NOP
-            opCodeTranslationDict.Add(0x0E, implementOpCode0E);  // NOP
-            opCodeTranslationDict.Add(0x0F, implementOpCode0F);  // NOP
-            opCodeTranslationDict.Add(0x10, implementOpCode10);  // NOP
-            opCodeTranslationDict.Add(0x11, implementOpCode11);  // NOP
-            opCodeTranslationDict.Add(0x12, implementOpCode12);  // NOP
-            opCodeTranslationDict.Add(0x13, incDE);  // NOP
-            opCodeTranslationDict.Add(0x14, incD);  // NOP
-            opCodeTranslationDict.Add(0x15, decD);  // NOP
-            opCodeTranslationDict.Add(0x16, implementOpCode16);  // NOP
-            opCodeTranslationDict.Add(0x17, implementOpCode17);  // NOP
-            opCodeTranslationDict.Add(0x18, implementOpCode18);  // NOP
-            opCodeTranslationDict.Add(0x19, implementOpCode19);  // NOP
-            opCodeTranslationDict.Add(0x1A, implementOpCode1A);  // NOP
-            opCodeTranslationDict.Add(0x1B, decDE);  // NOP
-            opCodeTranslationDict.Add(0x1C, incE);  // NOP
-            opCodeTranslationDict.Add(0x1D, decE);  // NOP
-            opCodeTranslationDict.Add(0x1E, implementOpCode1E);  // NOP
-            opCodeTranslationDict.Add(0x1F, implementOpCode1F);  // NOP
-            opCodeTranslationDict.Add(0x20, implementOpCode20);  // NOP
-            opCodeTranslationDict.Add(0x21, implementOpCode21);  // NOP
-            opCodeTranslationDict.Add(0x22, implementOpCode22);  // NOP
-            opCodeTranslationDict.Add(0x23, incHL);  // NOP
-            opCodeTranslationDict.Add(0x24, incH);  // NOP
-            opCodeTranslationDict.Add(0x25, decH);  // NOP
-            opCodeTranslationDict.Add(0x26, implementOpCode26);  // NOP
-            opCodeTranslationDict.Add(0x27, implementOpCode27);  // NOP
-            opCodeTranslationDict.Add(0x28, implementOpCode28);  // NOP
-            opCodeTranslationDict.Add(0x29, implementOpCode29);  // NOP
-            opCodeTranslationDict.Add(0x2A, implementOpCode2A);  // NOP
-            opCodeTranslationDict.Add(0x2B, decHL);  // NOP
-            opCodeTranslationDict.Add(0x2C, incL);  // NOP
-            opCodeTranslationDict.Add(0x2D, decL);  // NOP
-            opCodeTranslationDict.Add(0x2E, implementOpCode2E);  // NOP
-            opCodeTranslationDict.Add(0x2F, implementOpCode2F);  // NOP
-            opCodeTranslationDict.Add(0x30, implementOpCode30);  // NOP
-            opCodeTranslationDict.Add(0x31, implementOpCode31);  // NOP
-            opCodeTranslationDict.Add(0x32, implementOpCode32);  // NOP
-            opCodeTranslationDict.Add(0x33, incSP);  // NOP
-            opCodeTranslationDict.Add(0x34, incHLMem);  // NOP
-            opCodeTranslationDict.Add(0x35, decHLMem);  // NOP
-            opCodeTranslationDict.Add(0x36, implementOpCode36);  // NOP
-            opCodeTranslationDict.Add(0x37, implementOpCode37);  // NOP
-            opCodeTranslationDict.Add(0x38, implementOpCode38);  // NOP
-            opCodeTranslationDict.Add(0x39, implementOpCode39);  // NOP
-            opCodeTranslationDict.Add(0x3A, implementOpCode3A);  // NOP
-            opCodeTranslationDict.Add(0x3B, decSP);  // NOP
-            opCodeTranslationDict.Add(0x3C, incA);  // NOP
-            opCodeTranslationDict.Add(0x3D, decA);  // NOP
-            opCodeTranslationDict.Add(0x3E, implementOpCode3E);  // NOP
-            opCodeTranslationDict.Add(0x3F, implementOpCode3F);  // NOP
-            opCodeTranslationDict.Add(0x40, implementOpCode40);  // NOP
-            opCodeTranslationDict.Add(0x41, implementOpCode41);  // NOP
-            opCodeTranslationDict.Add(0x42, implementOpCode42);  // NOP
-            opCodeTranslationDict.Add(0x43, implementOpCode43);  // NOP
-            opCodeTranslationDict.Add(0x44, implementOpCode44);  // NOP
-            opCodeTranslationDict.Add(0x45, implementOpCode45);  // NOP
-            opCodeTranslationDict.Add(0x46, implementOpCode46);  // NOP
-            opCodeTranslationDict.Add(0x47, implementOpCode47);  // NOP
-            opCodeTranslationDict.Add(0x48, implementOpCode48);  // NOP
-            opCodeTranslationDict.Add(0x49, implementOpCode49);  // NOP
-            opCodeTranslationDict.Add(0x4A, implementOpCode4A);  // NOP
-            opCodeTranslationDict.Add(0x4B, implementOpCode4B);  // NOP
-            opCodeTranslationDict.Add(0x4C, implementOpCode4C);  // NOP
-            opCodeTranslationDict.Add(0x4D, implementOpCode4D);  // NOP
-            opCodeTranslationDict.Add(0x4E, implementOpCode4E);  // NOP
-            opCodeTranslationDict.Add(0x4F, implementOpCode4F);  // NOP
-            opCodeTranslationDict.Add(0x50, implementOpCode50);  // NOP
-            opCodeTranslationDict.Add(0x51, implementOpCode51);  // NOP
-            opCodeTranslationDict.Add(0x52, implementOpCode52);  // NOP
-            opCodeTranslationDict.Add(0x53, implementOpCode53);  // NOP
-            opCodeTranslationDict.Add(0x54, implementOpCode54);  // NOP
-            opCodeTranslationDict.Add(0x55, implementOpCode55);  // NOP
-            opCodeTranslationDict.Add(0x56, implementOpCode56);  // NOP
-            opCodeTranslationDict.Add(0x57, implementOpCode57);  // NOP
-            opCodeTranslationDict.Add(0x58, implementOpCode58);  // NOP
-            opCodeTranslationDict.Add(0x59, implementOpCode59);  // NOP
-            opCodeTranslationDict.Add(0x5A, implementOpCode5A);  // NOP
-            opCodeTranslationDict.Add(0x5B, implementOpCode5B);  // NOP
-            opCodeTranslationDict.Add(0x5C, implementOpCode5C);  // NOP
-            opCodeTranslationDict.Add(0x5D, implementOpCode5D);  // NOP
-            opCodeTranslationDict.Add(0x5E, implementOpCode5E);  // NOP
-            opCodeTranslationDict.Add(0x5F, implementOpCode5F);  // NOP
-            opCodeTranslationDict.Add(0x60, implementOpCode60);  // NOP
-            opCodeTranslationDict.Add(0x61, implementOpCode61);  // NOP
-            opCodeTranslationDict.Add(0x62, implementOpCode62);  // NOP
-            opCodeTranslationDict.Add(0x63, implementOpCode63);  // NOP
-            opCodeTranslationDict.Add(0x64, implementOpCode64);  // NOP
-            opCodeTranslationDict.Add(0x65, implementOpCode65);  // NOP
-            opCodeTranslationDict.Add(0x66, implementOpCode66);  // NOP
-            opCodeTranslationDict.Add(0x67, implementOpCode67);  // NOP
-            opCodeTranslationDict.Add(0x68, implementOpCode68);  // NOP
-            opCodeTranslationDict.Add(0x69, implementOpCode69);  // NOP
-            opCodeTranslationDict.Add(0x6A, implementOpCode6A);  // NOP
-            opCodeTranslationDict.Add(0x6B, implementOpCode6B);  // NOP
-            opCodeTranslationDict.Add(0x6C, implementOpCode6C);  // NOP
-            opCodeTranslationDict.Add(0x6D, implementOpCode6D);  // NOP
-            opCodeTranslationDict.Add(0x6E, implementOpCode6E);  // NOP
-            opCodeTranslationDict.Add(0x6F, implementOpCode6F);  // NOP
-            opCodeTranslationDict.Add(0x70, implementOpCode70);  // NOP
-            opCodeTranslationDict.Add(0x71, implementOpCode71);  // NOP
-            opCodeTranslationDict.Add(0x72, implementOpCode72);  // NOP
-            opCodeTranslationDict.Add(0x73, implementOpCode73);  // NOP
-            opCodeTranslationDict.Add(0x74, implementOpCode74);  // NOP
-            opCodeTranslationDict.Add(0x75, implementOpCode75);  // NOP
-            opCodeTranslationDict.Add(0x76, implementOpCode76);  // NOP
-            opCodeTranslationDict.Add(0x77, implementOpCode77);  // NOP
-            opCodeTranslationDict.Add(0x78, implementOpCode78);  // NOP
-            opCodeTranslationDict.Add(0x79, implementOpCode79);  // NOP
-            opCodeTranslationDict.Add(0x7A, implementOpCode7A);  // NOP
-            opCodeTranslationDict.Add(0x7B, implementOpCode7B);  // NOP
-            opCodeTranslationDict.Add(0x7C, implementOpCode7C);  // NOP
-            opCodeTranslationDict.Add(0x7D, implementOpCode7D);  // NOP
-            opCodeTranslationDict.Add(0x7E, implementOpCode7E);  // NOP
-            opCodeTranslationDict.Add(0x7F, implementOpCode7F);  // NOP
-            opCodeTranslationDict.Add(0x80, implementOpCode80);  // NOP
-            opCodeTranslationDict.Add(0x81, implementOpCode81);  // NOP
-            opCodeTranslationDict.Add(0x82, implementOpCode82);  // NOP
-            opCodeTranslationDict.Add(0x83, implementOpCode83);  // NOP
-            opCodeTranslationDict.Add(0x84, implementOpCode84);  // NOP
-            opCodeTranslationDict.Add(0x85, implementOpCode85);  // NOP
-            opCodeTranslationDict.Add(0x86, implementOpCode86);  // NOP
-            opCodeTranslationDict.Add(0x87, implementOpCode87);  // NOP
-            opCodeTranslationDict.Add(0x88, implementOpCode88);  // NOP
-            opCodeTranslationDict.Add(0x89, implementOpCode89);  // NOP
-            opCodeTranslationDict.Add(0x8A, implementOpCode8A);  // NOP
-            opCodeTranslationDict.Add(0x8B, implementOpCode8B);  // NOP
-            opCodeTranslationDict.Add(0x8C, implementOpCode8C);  // NOP
-            opCodeTranslationDict.Add(0x8D, implementOpCode8D);  // NOP
-            opCodeTranslationDict.Add(0x8E, implementOpCode8E);  // NOP
-            opCodeTranslationDict.Add(0x8F, implementOpCode8F);  // NOP
-            opCodeTranslationDict.Add(0x90, implementOpCode90);  // NOP
-            opCodeTranslationDict.Add(0x91, implementOpCode91);  // NOP
-            opCodeTranslationDict.Add(0x92, implementOpCode92);  // NOP
-            opCodeTranslationDict.Add(0x93, implementOpCode93);  // NOP
-            opCodeTranslationDict.Add(0x94, implementOpCode94);  // NOP
-            opCodeTranslationDict.Add(0x95, implementOpCode95);  // NOP
-            opCodeTranslationDict.Add(0x96, implementOpCode96);  // NOP
-            opCodeTranslationDict.Add(0x97, implementOpCode97);  // NOP
-            opCodeTranslationDict.Add(0x98, implementOpCode98);  // NOP
-            opCodeTranslationDict.Add(0x99, implementOpCode99);  // NOP
-            opCodeTranslationDict.Add(0x9A, implementOpCode9A);  // NOP
-            opCodeTranslationDict.Add(0x9B, implementOpCode9B);  // NOP
-            opCodeTranslationDict.Add(0x9C, implementOpCode9C);  // NOP
-            opCodeTranslationDict.Add(0x9D, implementOpCode9D);  // NOP
-            opCodeTranslationDict.Add(0x9E, implementOpCode9E);  // NOP
-            opCodeTranslationDict.Add(0x9F, implementOpCode9F);  // NOP
-            opCodeTranslationDict.Add(0xA0, implementOpCodeA0);  // NOP
-            opCodeTranslationDict.Add(0xA1, implementOpCodeA1);  // NOP
-            opCodeTranslationDict.Add(0xA2, implementOpCodeA2);  // NOP
-            opCodeTranslationDict.Add(0xA3, implementOpCodeA3);  // NOP
-            opCodeTranslationDict.Add(0xA4, implementOpCodeA4);  // NOP
-            opCodeTranslationDict.Add(0xA5, implementOpCodeA5);  // NOP
-            opCodeTranslationDict.Add(0xA6, implementOpCodeA6);  // NOP
-            opCodeTranslationDict.Add(0xA7, implementOpCodeA7);  // NOP
-            opCodeTranslationDict.Add(0xA8, implementOpCodeA8);  // NOP
-            opCodeTranslationDict.Add(0xA9, implementOpCodeA9);  // NOP
-            opCodeTranslationDict.Add(0xAA, implementOpCodeAA);  // NOP
-            opCodeTranslationDict.Add(0xAB, implementOpCodeAB);  // NOP
-            opCodeTranslationDict.Add(0xAC, implementOpCodeAC);  // NOP
-            opCodeTranslationDict.Add(0xAD, implementOpCodeAD);  // NOP
-            opCodeTranslationDict.Add(0xAE, implementOpCodeAE);  // NOP
-            opCodeTranslationDict.Add(0xAF, implementOpCodeAF);  // NOP
-            opCodeTranslationDict.Add(0xB0, implementOpCodeB0);  // NOP
-            opCodeTranslationDict.Add(0xB1, implementOpCodeB1);  // NOP
-            opCodeTranslationDict.Add(0xB2, implementOpCodeB2);  // NOP
-            opCodeTranslationDict.Add(0xB3, implementOpCodeB3);  // NOP
-            opCodeTranslationDict.Add(0xB4, implementOpCodeB4);  // NOP
-            opCodeTranslationDict.Add(0xB5, implementOpCodeB5);  // NOP
-            opCodeTranslationDict.Add(0xB6, implementOpCodeB6);  // NOP
-            opCodeTranslationDict.Add(0xB7, implementOpCodeB7);  // NOP
-            opCodeTranslationDict.Add(0xB8, implementOpCodeB8);  // NOP
-            opCodeTranslationDict.Add(0xB9, implementOpCodeB9);  // NOP
-            opCodeTranslationDict.Add(0xBA, implementOpCodeBA);  // NOP
-            opCodeTranslationDict.Add(0xBB, implementOpCodeBB);  // NOP
-            opCodeTranslationDict.Add(0xBC, implementOpCodeBC);  // NOP
-            opCodeTranslationDict.Add(0xBD, implementOpCodeBD);  // NOP
-            opCodeTranslationDict.Add(0xBE, implementOpCodeBE);  // NOP
-            opCodeTranslationDict.Add(0xBF, implementOpCodeBF);  // NOP
-            opCodeTranslationDict.Add(0xC0, implementOpCodeC0);  // NOP
-            opCodeTranslationDict.Add(0xC1, implementOpCodeC1);  // NOP
-            opCodeTranslationDict.Add(0xC2, implementOpCodeC2);  // NOP
-            opCodeTranslationDict.Add(0xC3, implementOpCodeC3);  // NOP
-            opCodeTranslationDict.Add(0xC4, implementOpCodeC4);  // NOP
-            opCodeTranslationDict.Add(0xC5, implementOpCodeC5);  // NOP
-            opCodeTranslationDict.Add(0xC6, implementOpCodeC6);  // NOP
-            opCodeTranslationDict.Add(0xC7, implementOpCodeC7);  // NOP
-            opCodeTranslationDict.Add(0xC8, implementOpCodeC8);  // NOP
-            opCodeTranslationDict.Add(0xC9, implementOpCodeC9);  // NOP
-            opCodeTranslationDict.Add(0xCA, implementOpCodeCA);  // NOP
+            opCodeTranslationDict.Add(0x00, opNOP);
+            opCodeTranslationDict.Add(0x01, ldBC16);
+            opCodeTranslationDict.Add(0x02, ldAToMemBC);
+            opCodeTranslationDict.Add(0x03, incBC);
+            opCodeTranslationDict.Add(0x04, incB);
+            opCodeTranslationDict.Add(0x05, decB);
+            opCodeTranslationDict.Add(0x06, ldB);
+            opCodeTranslationDict.Add(0x07, implementOpCode07);
+            opCodeTranslationDict.Add(0x08, implementOpCode08);
+            opCodeTranslationDict.Add(0x09, implementOpCode09);
+            opCodeTranslationDict.Add(0x0A, implementOpCode0A);
+            opCodeTranslationDict.Add(0x0B, decBC);
+            opCodeTranslationDict.Add(0x0C, incC);
+            opCodeTranslationDict.Add(0x0D, decC);
+            opCodeTranslationDict.Add(0x0E, ldC);
+            opCodeTranslationDict.Add(0x0F, implementOpCode0F);
+            opCodeTranslationDict.Add(0x10, implementOpCode10);
+            opCodeTranslationDict.Add(0x11, implementOpCode11);
+            opCodeTranslationDict.Add(0x12, implementOpCode12);
+            opCodeTranslationDict.Add(0x13, incDE);
+            opCodeTranslationDict.Add(0x14, incD);
+            opCodeTranslationDict.Add(0x15, decD);
+            opCodeTranslationDict.Add(0x16, ldD);
+            opCodeTranslationDict.Add(0x17, implementOpCode17);
+            opCodeTranslationDict.Add(0x18, implementOpCode18);
+            opCodeTranslationDict.Add(0x19, implementOpCode19);
+            opCodeTranslationDict.Add(0x1A, implementOpCode1A);
+            opCodeTranslationDict.Add(0x1B, decDE);
+            opCodeTranslationDict.Add(0x1C, incE);
+            opCodeTranslationDict.Add(0x1D, decE);
+            opCodeTranslationDict.Add(0x1E, ldE);
+            opCodeTranslationDict.Add(0x1F, implementOpCode1F);
+            opCodeTranslationDict.Add(0x20, implementOpCode20);
+            opCodeTranslationDict.Add(0x21, implementOpCode21);
+            opCodeTranslationDict.Add(0x22, implementOpCode22);
+            opCodeTranslationDict.Add(0x23, incHL);
+            opCodeTranslationDict.Add(0x24, incH);
+            opCodeTranslationDict.Add(0x25, decH);
+            opCodeTranslationDict.Add(0x26, ldH);
+            opCodeTranslationDict.Add(0x27, implementOpCode27);
+            opCodeTranslationDict.Add(0x28, implementOpCode28);
+            opCodeTranslationDict.Add(0x29, implementOpCode29);
+            opCodeTranslationDict.Add(0x2A, implementOpCode2A);
+            opCodeTranslationDict.Add(0x2B, decHL);
+            opCodeTranslationDict.Add(0x2C, incL);
+            opCodeTranslationDict.Add(0x2D, decL);
+            opCodeTranslationDict.Add(0x2E, ldL);
+            opCodeTranslationDict.Add(0x2F, implementOpCode2F);
+            opCodeTranslationDict.Add(0x30, implementOpCode30);
+            opCodeTranslationDict.Add(0x31, implementOpCode31);
+            opCodeTranslationDict.Add(0x32, implementOpCode32);
+            opCodeTranslationDict.Add(0x33, incSP);
+            opCodeTranslationDict.Add(0x34, incHLMem);
+            opCodeTranslationDict.Add(0x35, decHLMem);
+            opCodeTranslationDict.Add(0x36, implementOpCode36);
+            opCodeTranslationDict.Add(0x37, implementOpCode37);
+            opCodeTranslationDict.Add(0x38, implementOpCode38);
+            opCodeTranslationDict.Add(0x39, implementOpCode39);
+            opCodeTranslationDict.Add(0x3A, implementOpCode3A);
+            opCodeTranslationDict.Add(0x3B, decSP);
+            opCodeTranslationDict.Add(0x3C, incA);
+            opCodeTranslationDict.Add(0x3D, decA);
+            opCodeTranslationDict.Add(0x3E, implementOpCode3E);
+            opCodeTranslationDict.Add(0x3F, implementOpCode3F);
+            opCodeTranslationDict.Add(0x40, ldrBB);
+            opCodeTranslationDict.Add(0x41, ldrBC);
+            opCodeTranslationDict.Add(0x42, ldrBD);
+            opCodeTranslationDict.Add(0x43, ldrBE);
+            opCodeTranslationDict.Add(0x44, ldrBH);
+            opCodeTranslationDict.Add(0x45, ldrBL);
+            opCodeTranslationDict.Add(0x46, ldrBFromMemHL);
+            opCodeTranslationDict.Add(0x47, implementOpCode47);
+            opCodeTranslationDict.Add(0x48, ldrCB);
+            opCodeTranslationDict.Add(0x49, ldrCC);
+            opCodeTranslationDict.Add(0x4A, ldrCD);
+            opCodeTranslationDict.Add(0x4B, ldrCE);
+            opCodeTranslationDict.Add(0x4C, ldrCH);
+            opCodeTranslationDict.Add(0x4D, ldrCL);
+            opCodeTranslationDict.Add(0x4E, ldrCFromMemHL);
+            opCodeTranslationDict.Add(0x4F, implementOpCode4F);
+            opCodeTranslationDict.Add(0x50, ldrDB);
+            opCodeTranslationDict.Add(0x51, ldrDC);
+            opCodeTranslationDict.Add(0x52, ldrDD);
+            opCodeTranslationDict.Add(0x53, ldrDE);
+            opCodeTranslationDict.Add(0x54, ldrDH);
+            opCodeTranslationDict.Add(0x55, ldrDL);
+            opCodeTranslationDict.Add(0x56, ldrDFromMemHL);
+            opCodeTranslationDict.Add(0x57, implementOpCode57);
+            opCodeTranslationDict.Add(0x58, ldrEB);
+            opCodeTranslationDict.Add(0x59, ldrEC);
+            opCodeTranslationDict.Add(0x5A, ldrED);
+            opCodeTranslationDict.Add(0x5B, ldrEE);
+            opCodeTranslationDict.Add(0x5C, ldrEH);
+            opCodeTranslationDict.Add(0x5D, ldrEL);
+            opCodeTranslationDict.Add(0x5E, ldrEFromMemHL);
+            opCodeTranslationDict.Add(0x5F, implementOpCode5F);
+            opCodeTranslationDict.Add(0x60, ldrHB);
+            opCodeTranslationDict.Add(0x61, ldrHC);
+            opCodeTranslationDict.Add(0x62, ldrHD);
+            opCodeTranslationDict.Add(0x63, ldrHE);
+            opCodeTranslationDict.Add(0x64, ldrHH);
+            opCodeTranslationDict.Add(0x65, ldrHL);
+            opCodeTranslationDict.Add(0x66, ldrHFromMemHL);
+            opCodeTranslationDict.Add(0x67, implementOpCode67);
+            opCodeTranslationDict.Add(0x68, ldrLB);
+            opCodeTranslationDict.Add(0x69, ldrLC);
+            opCodeTranslationDict.Add(0x6A, ldrLD);
+            opCodeTranslationDict.Add(0x6B, ldrLE);
+            opCodeTranslationDict.Add(0x6C, ldrLH);
+            opCodeTranslationDict.Add(0x6D, ldrLL);
+            opCodeTranslationDict.Add(0x6E, ldrLFromMemHL);
+            opCodeTranslationDict.Add(0x6F, implementOpCode6F);
+            opCodeTranslationDict.Add(0x70, implementOpCode70);
+            opCodeTranslationDict.Add(0x71, implementOpCode71);
+            opCodeTranslationDict.Add(0x72, implementOpCode72);
+            opCodeTranslationDict.Add(0x73, implementOpCode73);
+            opCodeTranslationDict.Add(0x74, implementOpCode74);
+            opCodeTranslationDict.Add(0x75, implementOpCode75);
+            opCodeTranslationDict.Add(0x76, implementOpCode76);
+            opCodeTranslationDict.Add(0x77, implementOpCode77);
+            opCodeTranslationDict.Add(0x78, implementOpCode78);
+            opCodeTranslationDict.Add(0x79, implementOpCode79);
+            opCodeTranslationDict.Add(0x7A, implementOpCode7A);
+            opCodeTranslationDict.Add(0x7B, implementOpCode7B);
+            opCodeTranslationDict.Add(0x7C, implementOpCode7C);
+            opCodeTranslationDict.Add(0x7D, implementOpCode7D);
+            opCodeTranslationDict.Add(0x7E, implementOpCode7E);
+            opCodeTranslationDict.Add(0x7F, implementOpCode7F);
+            opCodeTranslationDict.Add(0x80, implementOpCode80);
+            opCodeTranslationDict.Add(0x81, implementOpCode81);
+            opCodeTranslationDict.Add(0x82, implementOpCode82);
+            opCodeTranslationDict.Add(0x83, implementOpCode83);
+            opCodeTranslationDict.Add(0x84, implementOpCode84);
+            opCodeTranslationDict.Add(0x85, implementOpCode85);
+            opCodeTranslationDict.Add(0x86, implementOpCode86);
+            opCodeTranslationDict.Add(0x87, implementOpCode87);
+            opCodeTranslationDict.Add(0x88, implementOpCode88);
+            opCodeTranslationDict.Add(0x89, implementOpCode89);
+            opCodeTranslationDict.Add(0x8A, implementOpCode8A);
+            opCodeTranslationDict.Add(0x8B, implementOpCode8B);
+            opCodeTranslationDict.Add(0x8C, implementOpCode8C);
+            opCodeTranslationDict.Add(0x8D, implementOpCode8D);
+            opCodeTranslationDict.Add(0x8E, implementOpCode8E);
+            opCodeTranslationDict.Add(0x8F, implementOpCode8F);
+            opCodeTranslationDict.Add(0x90, implementOpCode90);
+            opCodeTranslationDict.Add(0x91, implementOpCode91);
+            opCodeTranslationDict.Add(0x92, implementOpCode92);
+            opCodeTranslationDict.Add(0x93, implementOpCode93);
+            opCodeTranslationDict.Add(0x94, implementOpCode94);
+            opCodeTranslationDict.Add(0x95, implementOpCode95);
+            opCodeTranslationDict.Add(0x96, implementOpCode96);
+            opCodeTranslationDict.Add(0x97, implementOpCode97);
+            opCodeTranslationDict.Add(0x98, implementOpCode98);
+            opCodeTranslationDict.Add(0x99, implementOpCode99);
+            opCodeTranslationDict.Add(0x9A, implementOpCode9A);
+            opCodeTranslationDict.Add(0x9B, implementOpCode9B);
+            opCodeTranslationDict.Add(0x9C, implementOpCode9C);
+            opCodeTranslationDict.Add(0x9D, implementOpCode9D);
+            opCodeTranslationDict.Add(0x9E, implementOpCode9E);
+            opCodeTranslationDict.Add(0x9F, implementOpCode9F);
+            opCodeTranslationDict.Add(0xA0, implementOpCodeA0);
+            opCodeTranslationDict.Add(0xA1, implementOpCodeA1);
+            opCodeTranslationDict.Add(0xA2, implementOpCodeA2);
+            opCodeTranslationDict.Add(0xA3, implementOpCodeA3);
+            opCodeTranslationDict.Add(0xA4, implementOpCodeA4);
+            opCodeTranslationDict.Add(0xA5, implementOpCodeA5);
+            opCodeTranslationDict.Add(0xA6, implementOpCodeA6);
+            opCodeTranslationDict.Add(0xA7, implementOpCodeA7);
+            opCodeTranslationDict.Add(0xA8, implementOpCodeA8);
+            opCodeTranslationDict.Add(0xA9, implementOpCodeA9);
+            opCodeTranslationDict.Add(0xAA, implementOpCodeAA);
+            opCodeTranslationDict.Add(0xAB, implementOpCodeAB);
+            opCodeTranslationDict.Add(0xAC, implementOpCodeAC);
+            opCodeTranslationDict.Add(0xAD, implementOpCodeAD);
+            opCodeTranslationDict.Add(0xAE, implementOpCodeAE);
+            opCodeTranslationDict.Add(0xAF, implementOpCodeAF);
+            opCodeTranslationDict.Add(0xB0, implementOpCodeB0);
+            opCodeTranslationDict.Add(0xB1, implementOpCodeB1);
+            opCodeTranslationDict.Add(0xB2, implementOpCodeB2);
+            opCodeTranslationDict.Add(0xB3, implementOpCodeB3);
+            opCodeTranslationDict.Add(0xB4, implementOpCodeB4);
+            opCodeTranslationDict.Add(0xB5, implementOpCodeB5);
+            opCodeTranslationDict.Add(0xB6, implementOpCodeB6);
+            opCodeTranslationDict.Add(0xB7, implementOpCodeB7);
+            opCodeTranslationDict.Add(0xB8, implementOpCodeB8);
+            opCodeTranslationDict.Add(0xB9, implementOpCodeB9);
+            opCodeTranslationDict.Add(0xBA, implementOpCodeBA);
+            opCodeTranslationDict.Add(0xBB, implementOpCodeBB);
+            opCodeTranslationDict.Add(0xBC, implementOpCodeBC);
+            opCodeTranslationDict.Add(0xBD, implementOpCodeBD);
+            opCodeTranslationDict.Add(0xBE, implementOpCodeBE);
+            opCodeTranslationDict.Add(0xBF, implementOpCodeBF);
+            opCodeTranslationDict.Add(0xC0, implementOpCodeC0);
+            opCodeTranslationDict.Add(0xC1, implementOpCodeC1);
+            opCodeTranslationDict.Add(0xC2, implementOpCodeC2);
+            opCodeTranslationDict.Add(0xC3, implementOpCodeC3);
+            opCodeTranslationDict.Add(0xC4, implementOpCodeC4);
+            opCodeTranslationDict.Add(0xC5, implementOpCodeC5);
+            opCodeTranslationDict.Add(0xC6, implementOpCodeC6);
+            opCodeTranslationDict.Add(0xC7, implementOpCodeC7);
+            opCodeTranslationDict.Add(0xC8, implementOpCodeC8);
+            opCodeTranslationDict.Add(0xC9, implementOpCodeC9);
+            opCodeTranslationDict.Add(0xCA, implementOpCodeCA);
             //opCodeTranslationDict.Add(0xCB, implementOpCodeCB);  OpCode Not Used
-            opCodeTranslationDict.Add(0xCC, implementOpCodeCC);  // NOP
-            opCodeTranslationDict.Add(0xCD, implementOpCodeCD);  // NOP
-            opCodeTranslationDict.Add(0xCE, implementOpCodeCE);  // NOP
-            opCodeTranslationDict.Add(0xCF, implementOpCodeCF);  // NOP
-            opCodeTranslationDict.Add(0xD0, implementOpCodeD0);  // NOP
-            opCodeTranslationDict.Add(0xD1, implementOpCodeD1);  // NOP
-            opCodeTranslationDict.Add(0xD2, implementOpCodeD2);  // NOP
+            opCodeTranslationDict.Add(0xCC, implementOpCodeCC);
+            opCodeTranslationDict.Add(0xCD, implementOpCodeCD);
+            opCodeTranslationDict.Add(0xCE, implementOpCodeCE);
+            opCodeTranslationDict.Add(0xCF, implementOpCodeCF);
+            opCodeTranslationDict.Add(0xD0, implementOpCodeD0);
+            opCodeTranslationDict.Add(0xD1, implementOpCodeD1);
+            opCodeTranslationDict.Add(0xD2, implementOpCodeD2);
             //opCodeTranslationDict.Add(0xD3, implementOpCodeD3);  OpCode Not Used
-            opCodeTranslationDict.Add(0xD4, implementOpCodeD4);  // NOP
-            opCodeTranslationDict.Add(0xD5, implementOpCodeD5);  // NOP
-            opCodeTranslationDict.Add(0xD6, implementOpCodeD6);  // NOP
-            opCodeTranslationDict.Add(0xD7, implementOpCodeD7);  // NOP
-            opCodeTranslationDict.Add(0xD8, implementOpCodeD8);  // NOP
-            opCodeTranslationDict.Add(0xD9, implementOpCodeD9);  // NOP
-            opCodeTranslationDict.Add(0xDA, implementOpCodeDA);  // NOP
+            opCodeTranslationDict.Add(0xD4, implementOpCodeD4);
+            opCodeTranslationDict.Add(0xD5, implementOpCodeD5);
+            opCodeTranslationDict.Add(0xD6, implementOpCodeD6);
+            opCodeTranslationDict.Add(0xD7, implementOpCodeD7);
+            opCodeTranslationDict.Add(0xD8, implementOpCodeD8);
+            opCodeTranslationDict.Add(0xD9, implementOpCodeD9);
+            opCodeTranslationDict.Add(0xDA, implementOpCodeDA);
             //opCodeTranslationDict.Add(0xDB, implementOpCodeDB);  OpCode Not Used
-            opCodeTranslationDict.Add(0xDC, implementOpCodeDC);  // NOP
+            opCodeTranslationDict.Add(0xDC, implementOpCodeDC);
             //opCodeTranslationDict.Add(0xDD, implementOpCodeDD);  OpCode Not Used
-            opCodeTranslationDict.Add(0xDE, implementOpCodeDE);  // NOP
-            opCodeTranslationDict.Add(0xDF, implementOpCodeDF);  // NOP
-            opCodeTranslationDict.Add(0xE0, implementOpCodeE0);  // NOP
-            opCodeTranslationDict.Add(0xE1, implementOpCodeE1);  // NOP
-            opCodeTranslationDict.Add(0xE2, implementOpCodeE2);  // NOP
+            opCodeTranslationDict.Add(0xDE, implementOpCodeDE);
+            opCodeTranslationDict.Add(0xDF, implementOpCodeDF);
+            opCodeTranslationDict.Add(0xE0, implementOpCodeE0);
+            opCodeTranslationDict.Add(0xE1, implementOpCodeE1);
+            opCodeTranslationDict.Add(0xE2, implementOpCodeE2);
             //opCodeTranslationDict.Add(0xE3, implementOpCodeE3);  OpCode Not Used
             //opCodeTranslationDict.Add(0xE4, implementOpCodeE4);  OpCode Not Used
-            opCodeTranslationDict.Add(0xE5, implementOpCodeE5);  // NOP
-            opCodeTranslationDict.Add(0xE6, implementOpCodeE6);  // NOP
-            opCodeTranslationDict.Add(0xE7, implementOpCodeE7);  // NOP
-            opCodeTranslationDict.Add(0xE8, implementOpCodeE8);  // NOP
-            opCodeTranslationDict.Add(0xE9, implementOpCodeE9);  // NOP
-            opCodeTranslationDict.Add(0xEA, implementOpCodeEA);  // NOP
+            opCodeTranslationDict.Add(0xE5, implementOpCodeE5);
+            opCodeTranslationDict.Add(0xE6, implementOpCodeE6);
+            opCodeTranslationDict.Add(0xE7, implementOpCodeE7);
+            opCodeTranslationDict.Add(0xE8, implementOpCodeE8);
+            opCodeTranslationDict.Add(0xE9, implementOpCodeE9);
+            opCodeTranslationDict.Add(0xEA, implementOpCodeEA);
             //opCodeTranslationDict.Add(0xEB, implementOpCodeEB);  OpCode Not Used
             //opCodeTranslationDict.Add(0xEC, implementOpCodeEC);  OpCode Not Used
             //opCodeTranslationDict.Add(0xED, implementOpCodeED);  OpCode Not Used
-            opCodeTranslationDict.Add(0xEE, implementOpCodeEE);  // NOP
-            opCodeTranslationDict.Add(0xEF, implementOpCodeEF);  // NOP
-            opCodeTranslationDict.Add(0xF0, implementOpCodeF0);  // NOP
-            opCodeTranslationDict.Add(0xF1, implementOpCodeF1);  // NOP
-            opCodeTranslationDict.Add(0xF2, implementOpCodeF2);  // NOP
-            opCodeTranslationDict.Add(0xF3, implementOpCodeF3);  // NOP
+            opCodeTranslationDict.Add(0xEE, implementOpCodeEE);
+            opCodeTranslationDict.Add(0xEF, implementOpCodeEF);
+            opCodeTranslationDict.Add(0xF0, implementOpCodeF0);
+            opCodeTranslationDict.Add(0xF1, implementOpCodeF1);
+            opCodeTranslationDict.Add(0xF2, implementOpCodeF2);
+            opCodeTranslationDict.Add(0xF3, implementOpCodeF3);
             //opCodeTranslationDict.Add(0xF4, implementOpCodeF4);  OpCode Not Used
-            opCodeTranslationDict.Add(0xF5, implementOpCodeF5);  // NOP
-            opCodeTranslationDict.Add(0xF6, implementOpCodeF6);  // NOP
-            opCodeTranslationDict.Add(0xF7, implementOpCodeF7);  // NOP
-            opCodeTranslationDict.Add(0xF8, implementOpCodeF8);  // NOP
-            opCodeTranslationDict.Add(0xF9, implementOpCodeF9);  // NOP
-            opCodeTranslationDict.Add(0xFA, implementOpCodeFA);  // NOP
-            opCodeTranslationDict.Add(0xFB, implementOpCodeFB);  // NOP
+            opCodeTranslationDict.Add(0xF5, implementOpCodeF5);
+            opCodeTranslationDict.Add(0xF6, implementOpCodeF6);
+            opCodeTranslationDict.Add(0xF7, implementOpCodeF7);
+            opCodeTranslationDict.Add(0xF8, implementOpCodeF8);
+            opCodeTranslationDict.Add(0xF9, implementOpCodeF9);
+            opCodeTranslationDict.Add(0xFA, implementOpCodeFA);
+            opCodeTranslationDict.Add(0xFB, implementOpCodeFB);
             //opCodeTranslationDict.Add(0xFC, implementOpCodeFC);  OpCode Not Used
             //opCodeTranslationDict.Add(0xFD, implementOpCodeFD);  OpCode Not Used
-            opCodeTranslationDict.Add(0xFE, implementOpCodeFE);  // NOP
-            opCodeTranslationDict.Add(0xFF, implementOpCodeFF);  // NOP
+            opCodeTranslationDict.Add(0xFE, implementOpCodeFE);
+            opCodeTranslationDict.Add(0xFF, implementOpCodeFF);
         }
 
 
@@ -687,9 +687,10 @@ namespace trentGB
 
             setC(value);
         }
-        private void implementOpCode0E()
+        private void ldC() // 0x0E
         {
-            throw new NotImplementedException("Implement Op Code 0x0E");
+            Byte value = fetch();
+            setC(value);
         }
         private void implementOpCode0F()
         {
@@ -731,9 +732,10 @@ namespace trentGB
 
             setD(value);
         }
-        private void implementOpCode16()
+        private void ldD() // 0x16
         {
-            throw new NotImplementedException("Implement Op Code 0x16");
+            Byte value = fetch();
+            setD(value);
         }
         private void implementOpCode17()
         {
@@ -775,9 +777,10 @@ namespace trentGB
 
             setE(value);
         }
-        private void implementOpCode1E()
+        private void ldE() // 0x06
         {
-            throw new NotImplementedException("Implement Op Code 0x1E");
+            Byte value = fetch();
+            setE(value);
         }
         private void implementOpCode1F()
         {
@@ -819,9 +822,10 @@ namespace trentGB
 
             setH(value);
         }
-        private void implementOpCode26()
+        private void ldH() // 0x26
         {
-            throw new NotImplementedException("Implement Op Code 0x26");
+            Byte value = fetch();
+            setH(value);
         }
         private void implementOpCode27()
         {
@@ -863,9 +867,10 @@ namespace trentGB
 
             setL(value);
         }
-        private void implementOpCode2E()
+        private void ldL() // 0x2E
         {
-            throw new NotImplementedException("Implement Op Code 0x2E");
+            Byte value = fetch();
+            setL(value);
         }
         private void implementOpCode2F()
         {
@@ -959,193 +964,235 @@ namespace trentGB
         {
             throw new NotImplementedException("Implement Op Code 0x3F");
         }
-        private void implementOpCode40()
+        private void ldrBB() // 0x40
         {
-            throw new NotImplementedException("Implement Op Code 0x40");
+            Byte value = getB();
+            setB(value);
         }
-        private void implementOpCode41()
+        private void ldrBC() // 0x41
         {
-            throw new NotImplementedException("Implement Op Code 0x41");
+            Byte value = getC();
+            setB(value);
         }
-        private void implementOpCode42()
+        private void ldrBD() // 0x42
         {
-            throw new NotImplementedException("Implement Op Code 0x42");
+            Byte value = getD();
+            setB(value);
         }
-        private void implementOpCode43()
+        private void ldrBE() // 0x43
         {
-            throw new NotImplementedException("Implement Op Code 0x43");
+            Byte value = getE();
+            setB(value);
         }
-        private void implementOpCode44()
+        private void ldrBH() // 0x44
         {
-            throw new NotImplementedException("Implement Op Code 0x44");
+            Byte value = getH();
+            setB(value);
         }
-        private void implementOpCode45()
+        private void ldrBL() // 0x45
         {
-            throw new NotImplementedException("Implement Op Code 0x45");
+            Byte value = getL();
+            setB(value);
         }
-        private void implementOpCode46()
+        private void ldrBFromMemHL() // 0x46
         {
-            throw new NotImplementedException("Implement Op Code 0x46");
+            Byte value = mem.getByte(getHL());
+            setB(value);
         }
-        private void implementOpCode47()
+        private void implementOpCode47() // 0x47
         {
             throw new NotImplementedException("Implement Op Code 0x47");
         }
-        private void implementOpCode48()
+        private void ldrCB() // 0x48
         {
-            throw new NotImplementedException("Implement Op Code 0x48");
+            Byte value = getB();
+            setC(value);
         }
-        private void implementOpCode49()
+        private void ldrCC() // 0x49
         {
-            throw new NotImplementedException("Implement Op Code 0x49");
+            Byte value = getC();
+            setC(value);
         }
-        private void implementOpCode4A()
+        private void ldrCD() // 0x4A
         {
-            throw new NotImplementedException("Implement Op Code 0x4A");
+            Byte value = getD();
+            setC(value);
         }
-        private void implementOpCode4B()
+        private void ldrCE() // 0x4B
         {
-            throw new NotImplementedException("Implement Op Code 0x4B");
+            Byte value = getE();
+            setC(value);
         }
-        private void implementOpCode4C()
+        private void ldrCH() // 0x4C
         {
-            throw new NotImplementedException("Implement Op Code 0x4C");
+            Byte value = getH();
+            setC(value);
         }
-        private void implementOpCode4D()
+        private void ldrCL() // 0x4D
         {
-            throw new NotImplementedException("Implement Op Code 0x4D");
+            Byte value = getL();
+            setC(value);
         }
-        private void implementOpCode4E()
+        private void ldrCFromMemHL() // 0x4E
         {
-            throw new NotImplementedException("Implement Op Code 0x4E");
+            Byte value = mem.getByte(getHL());
+            setC(value);
         }
         private void implementOpCode4F()
         {
             throw new NotImplementedException("Implement Op Code 0x4F");
         }
-        private void implementOpCode50()
+        private void ldrDB() // 0x50
         {
-            throw new NotImplementedException("Implement Op Code 0x50");
+            Byte value = getB();
+            setD(value);
         }
-        private void implementOpCode51()
+        private void ldrDC() // 0x51
         {
-            throw new NotImplementedException("Implement Op Code 0x51");
+            Byte value = getC();
+            setD(value);
         }
-        private void implementOpCode52()
+        private void ldrDD() // 0x52
         {
-            throw new NotImplementedException("Implement Op Code 0x52");
+            Byte value = getD();
+            setD(value);
         }
-        private void implementOpCode53()
+        private void ldrDE() // 0x53
         {
-            throw new NotImplementedException("Implement Op Code 0x53");
+            Byte value = getE();
+            setD(value);
         }
-        private void implementOpCode54()
+        private void ldrDH() // 0x54
         {
-            throw new NotImplementedException("Implement Op Code 0x54");
+            Byte value = getH();
+            setD(value);
         }
-        private void implementOpCode55()
+        private void ldrDL() // 0x55
         {
-            throw new NotImplementedException("Implement Op Code 0x55");
+            Byte value = getL();
+            setD(value);
         }
-        private void implementOpCode56()
+        private void ldrDFromMemHL() // 0x56
         {
-            throw new NotImplementedException("Implement Op Code 0x56");
+            Byte value = mem.getByte(getHL());
+            setD(value);
         }
         private void implementOpCode57()
         {
             throw new NotImplementedException("Implement Op Code 0x57");
         }
-        private void implementOpCode58()
+        private void ldrEB() // 0x58
         {
-            throw new NotImplementedException("Implement Op Code 0x58");
+            Byte value = getB();
+            setE(value);
         }
-        private void implementOpCode59()
+        private void ldrEC() // 0x59
         {
-            throw new NotImplementedException("Implement Op Code 0x59");
+            Byte value = getC();
+            setE(value);
         }
-        private void implementOpCode5A()
+        private void ldrED() // 0x5A
         {
-            throw new NotImplementedException("Implement Op Code 0x5A");
+            Byte value = getD();
+            setE(value);
         }
-        private void implementOpCode5B()
+        private void ldrEE() // 0x5B
         {
-            throw new NotImplementedException("Implement Op Code 0x5B");
+            Byte value = getE();
+            setE(value);
         }
-        private void implementOpCode5C()
+        private void ldrEH() // 0x5C
         {
-            throw new NotImplementedException("Implement Op Code 0x5C");
+            Byte value = getH();
+            setE(value);
         }
-        private void implementOpCode5D()
+        private void ldrEL() // 0x5D
         {
-            throw new NotImplementedException("Implement Op Code 0x5D");
+            Byte value = getL();
+            setE(value);
         }
-        private void implementOpCode5E()
+        private void ldrEFromMemHL() // 0x5E
         {
-            throw new NotImplementedException("Implement Op Code 0x5E");
+            Byte value = mem.getByte(getHL());
+            setE(value);
         }
         private void implementOpCode5F()
         {
             throw new NotImplementedException("Implement Op Code 0x5F");
         }
-        private void implementOpCode60()
+        private void ldrHB() // 0x60
         {
-            throw new NotImplementedException("Implement Op Code 0x60");
+            Byte value = getB();
+            setH(value);
         }
-        private void implementOpCode61()
+        private void ldrHC() // 0x61
         {
-            throw new NotImplementedException("Implement Op Code 0x61");
+            Byte value = getC();
+            setH(value);
         }
-        private void implementOpCode62()
+        private void ldrHD() // 0x62
         {
-            throw new NotImplementedException("Implement Op Code 0x62");
+            Byte value = getD();
+            setH(value);
         }
-        private void implementOpCode63()
+        private void ldrHE() // 0x63
         {
-            throw new NotImplementedException("Implement Op Code 0x63");
+            Byte value = getE();
+            setH(value);
         }
-        private void implementOpCode64()
+        private void ldrHH() // 0x64
         {
-            throw new NotImplementedException("Implement Op Code 0x64");
+            Byte value = getH();
+            setH(value);
         }
-        private void implementOpCode65()
+        private void ldrHL() // 0x65
         {
-            throw new NotImplementedException("Implement Op Code 0x65");
+            Byte value = getL();
+            setH(value);
         }
-        private void implementOpCode66()
+        private void ldrHFromMemHL() // 0x66
         {
-            throw new NotImplementedException("Implement Op Code 0x66");
+            Byte value = mem.getByte(getHL());
+            setH(value);
         }
         private void implementOpCode67()
         {
             throw new NotImplementedException("Implement Op Code 0x67");
         }
-        private void implementOpCode68()
+        private void ldrLB() // 0x68
         {
-            throw new NotImplementedException("Implement Op Code 0x68");
+            Byte value = getB();
+            setL(value);
         }
-        private void implementOpCode69()
+        private void ldrLC() // 0x69
         {
-            throw new NotImplementedException("Implement Op Code 0x69");
+            Byte value = getC();
+            setL(value);
         }
-        private void implementOpCode6A()
+        private void ldrLD() // 0x6A
         {
-            throw new NotImplementedException("Implement Op Code 0x6A");
+            Byte value = getD();
+            setL(value);
         }
-        private void implementOpCode6B()
+        private void ldrLE() // 0x6B
         {
-            throw new NotImplementedException("Implement Op Code 0x6B");
+            Byte value = getE();
+            setL(value);
         }
-        private void implementOpCode6C()
+        private void ldrLH() // 0x6C
         {
-            throw new NotImplementedException("Implement Op Code 0x6C");
+            Byte value = getH();
+            setL(value);
         }
-        private void implementOpCode6D()
+        private void ldrLL() // 0x6D
         {
-            throw new NotImplementedException("Implement Op Code 0x6D");
+            Byte value = getL();
+            setL(value);
         }
-        private void implementOpCode6E()
+        private void ldrLFromMemHL() // 0x6E
         {
-            throw new NotImplementedException("Implement Op Code 0x6E");
+            Byte value = mem.getByte(getHL());
+            setL(value);
         }
         private void implementOpCode6F()
         {
@@ -1183,37 +1230,45 @@ namespace trentGB
         {
             throw new NotImplementedException("Implement Op Code 0x77");
         }
-        private void implementOpCode78()
+        private void ldrAB() // 0x78
         {
-            throw new NotImplementedException("Implement Op Code 0x78");
+            Byte value = getB();
+            setA(value);
         }
-        private void implementOpCode79()
+        private void ldrAC() // 0x79
         {
-            throw new NotImplementedException("Implement Op Code 0x79");
+            Byte value = getC();
+            setA(value);
         }
-        private void implementOpCode7A()
+        private void ldrAD() // 0x7A
         {
-            throw new NotImplementedException("Implement Op Code 0x7A");
+            Byte value = getD();
+            setA(value);
         }
-        private void implementOpCode7B()
+        private void ldrAE() // 0x7B
         {
-            throw new NotImplementedException("Implement Op Code 0x7B");
+            Byte value = getE();
+            setA(value);
         }
-        private void implementOpCode7C()
+        private void ldrAH() // 0x7C
         {
-            throw new NotImplementedException("Implement Op Code 0x7C");
+            Byte value = getH();
+            setA(value);
         }
-        private void implementOpCode7D()
+        private void ldrAL() // 0x7D
         {
-            throw new NotImplementedException("Implement Op Code 0x7D");
+            Byte value = getL();
+            setA(value);
         }
-        private void implementOpCode7E()
+        private void ldrAFromMemHL() // 0x7E
         {
-            throw new NotImplementedException("Implement Op Code 0x7E");
+            Byte value = mem.getByte(getHL());
+            setA(value);
         }
-        private void implementOpCode7F()
+        private void ldrAA() // 0x7F
         {
-            throw new NotImplementedException("Implement Op Code 0x7F");
+            Byte value = getA();
+            setA(value);
         }
         private void implementOpCode80()
         {
