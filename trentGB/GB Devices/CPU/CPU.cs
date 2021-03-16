@@ -144,7 +144,7 @@ namespace trentGB
             opCodeTranslationDict.Add(0x33, incSP);
             opCodeTranslationDict.Add(0x34, incHLMem);
             opCodeTranslationDict.Add(0x35, decHLMem);
-            opCodeTranslationDict.Add(0x36, implementOpCode36);
+            opCodeTranslationDict.Add(0x36, ldHLMem);
             opCodeTranslationDict.Add(0x37, implementOpCode37);
             opCodeTranslationDict.Add(0x38, implementOpCode38);
             opCodeTranslationDict.Add(0x39, implementOpCode39);
@@ -202,12 +202,12 @@ namespace trentGB
             opCodeTranslationDict.Add(0x6D, ldrLL);
             opCodeTranslationDict.Add(0x6E, ldrLFromMemHL);
             opCodeTranslationDict.Add(0x6F, implementOpCode6F);
-            opCodeTranslationDict.Add(0x70, implementOpCode70);
-            opCodeTranslationDict.Add(0x71, implementOpCode71);
-            opCodeTranslationDict.Add(0x72, implementOpCode72);
-            opCodeTranslationDict.Add(0x73, implementOpCode73);
-            opCodeTranslationDict.Add(0x74, implementOpCode74);
-            opCodeTranslationDict.Add(0x75, implementOpCode75);
+            opCodeTranslationDict.Add(0x70, ldHLMemFromB);
+            opCodeTranslationDict.Add(0x71, ldHLMemFromC);
+            opCodeTranslationDict.Add(0x72, ldHLMemFromD);
+            opCodeTranslationDict.Add(0x73, ldHLMemFromE);
+            opCodeTranslationDict.Add(0x74, ldHLMemFromH);
+            opCodeTranslationDict.Add(0x75, ldHLMemFromL);
             opCodeTranslationDict.Add(0x76, implementOpCode76);
             opCodeTranslationDict.Add(0x77, implementOpCode77);
             opCodeTranslationDict.Add(0x78, ldrAB);
@@ -912,9 +912,10 @@ namespace trentGB
 
             mem.setByte(getHL(), value);
         }
-        private void implementOpCode36()
+        private void ldHLMem() // 0x36
         {
-            throw new NotImplementedException("Implement Op Code 0x36");
+            Byte value = fetch();
+            mem.setByte(getHL(), value);
         }
         private void implementOpCode37()
         {
@@ -1198,29 +1199,35 @@ namespace trentGB
         {
             throw new NotImplementedException("Implement Op Code 0x6F");
         }
-        private void implementOpCode70()
+        private void ldHLMemFromB() // 0x70
         {
-            throw new NotImplementedException("Implement Op Code 0x70");
+            Byte value = getB();
+            mem.setByte(getHL(), value);
         }
-        private void implementOpCode71()
+        private void ldHLMemFromC() // 0x71
         {
-            throw new NotImplementedException("Implement Op Code 0x71");
+            Byte value = getC();
+            mem.setByte(getHL(), value);
         }
-        private void implementOpCode72()
+        private void ldHLMemFromD() // 0x72
         {
-            throw new NotImplementedException("Implement Op Code 0x72");
+            Byte value = getD();
+            mem.setByte(getHL(), value);
         }
-        private void implementOpCode73()
+        private void ldHLMemFromE() // 0x73
         {
-            throw new NotImplementedException("Implement Op Code 0x73");
+            Byte value = getE();
+            mem.setByte(getHL(), value);
         }
-        private void implementOpCode74()
+        private void ldHLMemFromH() // 0x74
         {
-            throw new NotImplementedException("Implement Op Code 0x74");
+            Byte value = getH();
+            mem.setByte(getHL(), value);
         }
-        private void implementOpCode75()
+        private void ldHLMemFromL() // 0x75
         {
-            throw new NotImplementedException("Implement Op Code 0x75");
+            Byte value = getL();
+            mem.setByte(getHL(), value);
         }
         private void implementOpCode76()
         {
