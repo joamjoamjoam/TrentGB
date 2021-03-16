@@ -316,7 +316,7 @@ namespace trentGB
             //opCodeTranslationDict.Add(0xDD, implementOpCodeDD);  OpCode Not Used
             opCodeTranslationDict.Add(0xDE, implementOpCodeDE);
             opCodeTranslationDict.Add(0xDF, implementOpCodeDF);
-            opCodeTranslationDict.Add(0xE0, implementOpCodeE0);
+            opCodeTranslationDict.Add(0xE0, putAIntoIOPlusMem);
             opCodeTranslationDict.Add(0xE1, implementOpCodeE1);
             opCodeTranslationDict.Add(0xE2, ldAIntoIOPlusC);
             //opCodeTranslationDict.Add(0xE3, implementOpCodeE3);  OpCode Not Used
@@ -332,7 +332,7 @@ namespace trentGB
             //opCodeTranslationDict.Add(0xED, implementOpCodeED);  OpCode Not Used
             opCodeTranslationDict.Add(0xEE, implementOpCodeEE);
             opCodeTranslationDict.Add(0xEF, implementOpCodeEF);
-            opCodeTranslationDict.Add(0xF0, implementOpCodeF0);
+            opCodeTranslationDict.Add(0xF0, putIOPlusMemIntoA);
             opCodeTranslationDict.Add(0xF1, implementOpCodeF1);
             opCodeTranslationDict.Add(0xF2, ldIOPlusCToA);
             opCodeTranslationDict.Add(0xF3, implementOpCodeF3);
@@ -1668,9 +1668,11 @@ namespace trentGB
         {
             throw new NotImplementedException("Implement Op Code 0xDF");
         }
-        private void implementOpCodeE0()
+        private void putAIntoIOPlusMem() // 0xE0
         {
-            throw new NotImplementedException("Implement Op Code 0xE0");
+            Byte value = getA();
+            Byte offset = fetch();
+            mem.setByte((ushort)(0xFF00 + offset), value);
         }
         private void implementOpCodeE1()
         {
@@ -1713,9 +1715,12 @@ namespace trentGB
         {
             throw new NotImplementedException("Implement Op Code 0xEF");
         }
-        private void implementOpCodeF0()
+        private void putIOPlusMemIntoA() // 0xF0
         {
-            throw new NotImplementedException("Implement Op Code 0xF0");
+            Byte offset = fetch();
+            Byte value = mem.getByte((ushort)(0xFF00 + offset));
+            
+            setA(value);
         }
         private void implementOpCodeF1()
         {
