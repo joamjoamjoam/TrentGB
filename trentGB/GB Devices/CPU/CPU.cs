@@ -286,14 +286,14 @@ namespace trentGB
             opCodeTranslationDict.Add(0xB5, orALinA);
             opCodeTranslationDict.Add(0xB6, orAMemHLinA);
             opCodeTranslationDict.Add(0xB7, orAAinA);
-            opCodeTranslationDict.Add(0xB8, implementOpCodeB8);
-            opCodeTranslationDict.Add(0xB9, implementOpCodeB9);
-            opCodeTranslationDict.Add(0xBA, implementOpCodeBA);
-            opCodeTranslationDict.Add(0xBB, implementOpCodeBB);
-            opCodeTranslationDict.Add(0xBC, implementOpCodeBC);
-            opCodeTranslationDict.Add(0xBD, implementOpCodeBD);
-            opCodeTranslationDict.Add(0xBE, implementOpCodeBE);
-            opCodeTranslationDict.Add(0xBF, implementOpCodeBF);
+            opCodeTranslationDict.Add(0xB8, cmpAB);
+            opCodeTranslationDict.Add(0xB9, cmpAC);
+            opCodeTranslationDict.Add(0xBA, cmpAD);
+            opCodeTranslationDict.Add(0xBB, cmpAE);
+            opCodeTranslationDict.Add(0xBC, cmpAH);
+            opCodeTranslationDict.Add(0xBD, cmpAL);
+            opCodeTranslationDict.Add(0xBE, cmpAMemHL);
+            opCodeTranslationDict.Add(0xBF, cmpAA);
             opCodeTranslationDict.Add(0xC0, implementOpCodeC0);
             opCodeTranslationDict.Add(0xC1, popIntoBC);
             opCodeTranslationDict.Add(0xC2, implementOpCodeC2);
@@ -340,7 +340,7 @@ namespace trentGB
             opCodeTranslationDict.Add(0xEB, unusedEB);
             opCodeTranslationDict.Add(0xEC, unusedEC);
             opCodeTranslationDict.Add(0xED, unusedED);
-            opCodeTranslationDict.Add(0xEE, implementOpCodeEE);
+            opCodeTranslationDict.Add(0xEE, xorANinA);
             opCodeTranslationDict.Add(0xEF, implementOpCodeEF);
             opCodeTranslationDict.Add(0xF0, putIOPlusMemIntoA);
             opCodeTranslationDict.Add(0xF1, popIntoAF);
@@ -356,7 +356,7 @@ namespace trentGB
             opCodeTranslationDict.Add(0xFB, implementOpCodeFB);
             opCodeTranslationDict.Add(0xFC, unusedFC);
             opCodeTranslationDict.Add(0xFD, unusedFD);
-            opCodeTranslationDict.Add(0xFE, implementOpCodeFE);
+            opCodeTranslationDict.Add(0xFE, cmpAN);
             opCodeTranslationDict.Add(0xFF, implementOpCodeFF);
         }
 
@@ -1775,37 +1775,69 @@ namespace trentGB
 
             setA(value);
         }
-        private void implementOpCodeB8()
+        private void cmpAB() // 0xB8
         {
-            throw new NotImplementedException("Implement Op Code 0xB8");
+            Byte value = 0;
+            // cmp(n,A)
+            value = cmp(getB(), getA());
+
+            setA(value);
         }
-        private void implementOpCodeB9()
+        private void cmpAC() // 0xB9
         {
-            throw new NotImplementedException("Implement Op Code 0xB9");
+            Byte value = 0;
+            // cmp(n,A)
+            value = cmp(getC(), getA());
+
+            setA(value);
         }
-        private void implementOpCodeBA()
+        private void cmpAD() // 0xBA
         {
-            throw new NotImplementedException("Implement Op Code 0xBA");
+            Byte value = 0;
+            // cmp(n,A)
+            value = cmp(getD(), getA());
+
+            setA(value);
         }
-        private void implementOpCodeBB()
+        private void cmpAE() // 0xBB
         {
-            throw new NotImplementedException("Implement Op Code 0xBB");
+            Byte value = 0;
+            // cmp(n,A)
+            value = cmp(getE(), getA());
+
+            setA(value);
         }
-        private void implementOpCodeBC()
+        private void cmpAH() // 0xBC
         {
-            throw new NotImplementedException("Implement Op Code 0xBC");
+            Byte value = 0;
+            // cmp(n,A)
+            value = cmp(getH(), getA());
+
+            setA(value);
         }
-        private void implementOpCodeBD()
+        private void cmpAL() // 0xBD
         {
-            throw new NotImplementedException("Implement Op Code 0xBD");
+            Byte value = 0;
+            // cmp(n,A)
+            value = cmp(getL(), getA());
+
+            setA(value);
         }
-        private void implementOpCodeBE()
+        private void cmpAMemHL() // 0xBE
         {
-            throw new NotImplementedException("Implement Op Code 0xBE");
+            Byte value = mem.getByte(getHL());
+            // cmp(n,A)
+            value = cmp(value, getA());
+
+            setA(value);
         }
-        private void implementOpCodeBF()
+        private void cmpAA() // 0xBF
         {
-            throw new NotImplementedException("Implement Op Code 0xBF");
+            Byte value = 0;
+            // cmp(n,A)
+            value = cmp(getA(), getA());
+
+            setA(value);
         }
         private void implementOpCodeC0()
         {
@@ -2135,9 +2167,13 @@ namespace trentGB
         {
             throw new NotImplementedException(" 0xFD is Unused");
         }
-        private void implementOpCodeFE()
+        private void cmpAN() // 0xFE
         {
-            throw new NotImplementedException("Implement Op Code 0xFE");
+            Byte value = fetch();
+            // cmp(n,A)
+            value = cmp(value, getA());
+
+            setA(value);
         }
         private void implementOpCodeFF()
         {
@@ -2155,14 +2191,14 @@ namespace trentGB
         #region 8-Bit Math Functions
         private Byte increment(Byte value)
         {
+            byte result = (byte)((((int)value) + 1) & 0xFF);
+
             setZeroFlag(false);
             setHalfCarryFlag(false);
             setSubtractFlag(false);
             // Ignore Carry Flag
-            if (value == 0xFF)
+            if (result == 0)
             {
-                // Rollover
-                value = 0;
                 setZeroFlag(true);
             }
             else if ((value & 0x0F) == 0x0F)
@@ -2175,35 +2211,29 @@ namespace trentGB
                 value++;
             }
 
-            return value;
+            return result;
         }
 
         private Byte decrement(Byte value)
         {
+            byte result = (byte)((((int)value) - 1) & 0xFF);
+
             setZeroFlag(false);
             setHalfCarryFlag(false);
             setSubtractFlag(true);
             // Ignore Carry Flag
-            if (value == 0)
-            {
-                value = 255;
-            }
-            else if (value == 1)
+
+            if (result == 0)
             {
                 setZeroFlag(true);
-                value--;
-            }
-            else
-            {
-                value--;
             }
 
-            if ((value & 0x0F) == 0x0)
+            if ((value & 0x0F) == 0x00)
             {
                 setHalfCarryFlag(true);
             }
 
-            return value;
+            return result;
         }
 
         private Byte add(Byte op1, Byte op2)
@@ -2356,6 +2386,31 @@ namespace trentGB
             if (value == 0)
             {
                 setZeroFlag(true);
+            }
+
+            return value;
+        }
+
+        private Byte cmp(Byte op1, Byte op2)
+        {
+            int result = (int)op2 - (int)op1;
+            Byte value = (byte)((result & 0xFF));
+            setZeroFlag(false);
+            setHalfCarryFlag(false);
+            setSubtractFlag(true);
+            setCarryFlag(false);
+
+            if (value == 0)
+            {
+                setZeroFlag(true);
+            }
+            if (((op2 & 0xF) > (op1 & 0xF))) // Lower Nible of op2 is higher we need to borrow
+            {
+                setHalfCarryFlag(true);
+            }
+            if (op2 > op1) // Lower Nible of op2 is higher we need to borrow
+            {
+                setCarryFlag(true);
             }
 
             return value;
