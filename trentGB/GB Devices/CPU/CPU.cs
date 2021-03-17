@@ -10,6 +10,13 @@ namespace trentGB
 
     class CPU
     {
+        enum Add16Type
+        {
+            Normal,
+            HL
+        }
+
+
         private Byte A = 0;
         private Byte B = 0;
         private Byte C = 0;
@@ -28,12 +35,15 @@ namespace trentGB
         public bool done = false;
         public ROM rom;
 
+
+
         public CPU(AddressSpace m, ROM rom)
         {
             mem = m;
             this.rom = rom;
             loadOpCodeMap();
         }
+
 
         public void reset()
         {
@@ -100,7 +110,7 @@ namespace trentGB
             opCodeTranslationDict.Add(0x05, decB);
             opCodeTranslationDict.Add(0x06, ldB);
             opCodeTranslationDict.Add(0x07, implementOpCode07);
-            opCodeTranslationDict.Add(0x08, implementOpCode08);
+            opCodeTranslationDict.Add(0x08, ldSPFromMem16);
             opCodeTranslationDict.Add(0x09, implementOpCode09);
             opCodeTranslationDict.Add(0x0A, ldAMemBC);
             opCodeTranslationDict.Add(0x0B, decBC);
@@ -109,7 +119,7 @@ namespace trentGB
             opCodeTranslationDict.Add(0x0E, ldC);
             opCodeTranslationDict.Add(0x0F, implementOpCode0F);
             opCodeTranslationDict.Add(0x10, implementOpCode10);
-            opCodeTranslationDict.Add(0x11, implementOpCode11);
+            opCodeTranslationDict.Add(0x11, ldDE16);
             opCodeTranslationDict.Add(0x12, implementOpCode12);
             opCodeTranslationDict.Add(0x13, incDE);
             opCodeTranslationDict.Add(0x14, incD);
@@ -125,7 +135,7 @@ namespace trentGB
             opCodeTranslationDict.Add(0x1E, ldE);
             opCodeTranslationDict.Add(0x1F, implementOpCode1F);
             opCodeTranslationDict.Add(0x20, implementOpCode20);
-            opCodeTranslationDict.Add(0x21, implementOpCode21);
+            opCodeTranslationDict.Add(0x21, ldHL16);
             opCodeTranslationDict.Add(0x22, ldiMemHLWithA);
             opCodeTranslationDict.Add(0x23, incHL);
             opCodeTranslationDict.Add(0x24, incH);
@@ -141,7 +151,7 @@ namespace trentGB
             opCodeTranslationDict.Add(0x2E, ldL);
             opCodeTranslationDict.Add(0x2F, implementOpCode2F);
             opCodeTranslationDict.Add(0x30, implementOpCode30);
-            opCodeTranslationDict.Add(0x31, implementOpCode31);
+            opCodeTranslationDict.Add(0x31, ldSP16);
             opCodeTranslationDict.Add(0x32, lddMemHLWithA);
             opCodeTranslationDict.Add(0x33, incSP);
             opCodeTranslationDict.Add(0x34, incHLMem);
@@ -285,67 +295,67 @@ namespace trentGB
             opCodeTranslationDict.Add(0xBE, implementOpCodeBE);
             opCodeTranslationDict.Add(0xBF, implementOpCodeBF);
             opCodeTranslationDict.Add(0xC0, implementOpCodeC0);
-            opCodeTranslationDict.Add(0xC1, implementOpCodeC1);
+            opCodeTranslationDict.Add(0xC1, popIntoBC);
             opCodeTranslationDict.Add(0xC2, implementOpCodeC2);
             opCodeTranslationDict.Add(0xC3, implementOpCodeC3);
             opCodeTranslationDict.Add(0xC4, implementOpCodeC4);
-            opCodeTranslationDict.Add(0xC5, implementOpCodeC5);
+            opCodeTranslationDict.Add(0xC5, pushBCToStack);
             opCodeTranslationDict.Add(0xC6, implementOpCodeC6);
             opCodeTranslationDict.Add(0xC7, implementOpCodeC7);
             opCodeTranslationDict.Add(0xC8, implementOpCodeC8);
             opCodeTranslationDict.Add(0xC9, implementOpCodeC9);
             opCodeTranslationDict.Add(0xCA, implementOpCodeCA);
-            //opCodeTranslationDict.Add(0xCB, implementOpCodeCB);  OpCode Not Used
+            opCodeTranslationDict.Add(0xCB, implementOpCodeCB);
             opCodeTranslationDict.Add(0xCC, implementOpCodeCC);
             opCodeTranslationDict.Add(0xCD, implementOpCodeCD);
             opCodeTranslationDict.Add(0xCE, implementOpCodeCE);
             opCodeTranslationDict.Add(0xCF, implementOpCodeCF);
             opCodeTranslationDict.Add(0xD0, implementOpCodeD0);
-            opCodeTranslationDict.Add(0xD1, implementOpCodeD1);
+            opCodeTranslationDict.Add(0xD1, popIntoDE);
             opCodeTranslationDict.Add(0xD2, implementOpCodeD2);
-            //opCodeTranslationDict.Add(0xD3, implementOpCodeD3);  OpCode Not Used
+            opCodeTranslationDict.Add(0xD3, unusedD3);
             opCodeTranslationDict.Add(0xD4, implementOpCodeD4);
-            opCodeTranslationDict.Add(0xD5, implementOpCodeD5);
+            opCodeTranslationDict.Add(0xD5, pushDEToStack);
             opCodeTranslationDict.Add(0xD6, implementOpCodeD6);
             opCodeTranslationDict.Add(0xD7, implementOpCodeD7);
             opCodeTranslationDict.Add(0xD8, implementOpCodeD8);
             opCodeTranslationDict.Add(0xD9, implementOpCodeD9);
             opCodeTranslationDict.Add(0xDA, implementOpCodeDA);
-            //opCodeTranslationDict.Add(0xDB, implementOpCodeDB);  OpCode Not Used
+            opCodeTranslationDict.Add(0xDB, unusedDB); 
             opCodeTranslationDict.Add(0xDC, implementOpCodeDC);
-            //opCodeTranslationDict.Add(0xDD, implementOpCodeDD);  OpCode Not Used
+            opCodeTranslationDict.Add(0xDD, unusedDD);
             opCodeTranslationDict.Add(0xDE, implementOpCodeDE);
             opCodeTranslationDict.Add(0xDF, implementOpCodeDF);
             opCodeTranslationDict.Add(0xE0, putAIntoIOPlusMem);
-            opCodeTranslationDict.Add(0xE1, implementOpCodeE1);
+            opCodeTranslationDict.Add(0xE1, popIntoHL);
             opCodeTranslationDict.Add(0xE2, ldAIntoIOPlusC);
-            //opCodeTranslationDict.Add(0xE3, implementOpCodeE3);  OpCode Not Used
-            //opCodeTranslationDict.Add(0xE4, implementOpCodeE4);  OpCode Not Used
-            opCodeTranslationDict.Add(0xE5, implementOpCodeE5);
+            opCodeTranslationDict.Add(0xE3, unusedE3);
+            opCodeTranslationDict.Add(0xE4, unusedE4);
+            opCodeTranslationDict.Add(0xE5, pushHLToStack);
             opCodeTranslationDict.Add(0xE6, implementOpCodeE6);
             opCodeTranslationDict.Add(0xE7, implementOpCodeE7);
             opCodeTranslationDict.Add(0xE8, implementOpCodeE8);
             opCodeTranslationDict.Add(0xE9, implementOpCodeE9);
             opCodeTranslationDict.Add(0xEA, implementOpCodeEA);
-            //opCodeTranslationDict.Add(0xEB, implementOpCodeEB);  OpCode Not Used
-            //opCodeTranslationDict.Add(0xEC, implementOpCodeEC);  OpCode Not Used
-            //opCodeTranslationDict.Add(0xED, implementOpCodeED);  OpCode Not Used
+            opCodeTranslationDict.Add(0xEB, unusedEB);
+            opCodeTranslationDict.Add(0xEC, unusedEC);
+            opCodeTranslationDict.Add(0xED, unusedED);
             opCodeTranslationDict.Add(0xEE, implementOpCodeEE);
             opCodeTranslationDict.Add(0xEF, implementOpCodeEF);
             opCodeTranslationDict.Add(0xF0, putIOPlusMemIntoA);
-            opCodeTranslationDict.Add(0xF1, implementOpCodeF1);
+            opCodeTranslationDict.Add(0xF1, popIntoAF);
             opCodeTranslationDict.Add(0xF2, ldIOPlusCToA);
             opCodeTranslationDict.Add(0xF3, implementOpCodeF3);
-            //opCodeTranslationDict.Add(0xF4, implementOpCodeF4);  OpCode Not Used
-            opCodeTranslationDict.Add(0xF5, implementOpCodeF5);
+            opCodeTranslationDict.Add(0xF4, unusedF4);
+            opCodeTranslationDict.Add(0xF5, pushAFToStack);
             opCodeTranslationDict.Add(0xF6, implementOpCodeF6);
             opCodeTranslationDict.Add(0xF7, implementOpCodeF7);
-            opCodeTranslationDict.Add(0xF8, implementOpCodeF8);
-            opCodeTranslationDict.Add(0xF9, implementOpCodeF9);
+            opCodeTranslationDict.Add(0xF8, ldHLFromSPPlusN);
+            opCodeTranslationDict.Add(0xF9, ldSPFromHL);
             opCodeTranslationDict.Add(0xFA, ld16A);
             opCodeTranslationDict.Add(0xFB, implementOpCodeFB);
-            //opCodeTranslationDict.Add(0xFC, implementOpCodeFC);  OpCode Not Used
-            //opCodeTranslationDict.Add(0xFD, implementOpCodeFD);  OpCode Not Used
+            opCodeTranslationDict.Add(0xFC, unusedFC);
+            opCodeTranslationDict.Add(0xFD, unusedFD);
             opCodeTranslationDict.Add(0xFE, implementOpCodeFE);
             opCodeTranslationDict.Add(0xFF, implementOpCodeFF);
         }
@@ -438,14 +448,6 @@ namespace trentGB
         {
             SP = value;
         }
-        private void incrementSP()
-        {
-            SP += 1;
-        }
-        private void decrementSP()
-        {
-            SP -= 1;
-        }
 
         public ushort getPC()
         {
@@ -457,11 +459,20 @@ namespace trentGB
         }
         private void incrementPC()
         {
-            PC += 1;
+            PC = increment16(PC);
         }
         private void decrementPC()
         {
-            PC -= 1;
+            PC = decrement16(PC);
+        }
+
+        private void incrementSP()
+        {
+            SP = increment16(SP);
+        }
+        private void decrementSP()
+        {
+            SP = decrement16(SP);
         }
 
 
@@ -653,9 +664,13 @@ namespace trentGB
         {
             throw new NotImplementedException("Implement Op Code 0x07");
         }
-        private void implementOpCode08()
+        private void ldSPFromMem16()
         {
-            throw new NotImplementedException("Implement Op Code 0x08");
+            Byte value1 = fetch(); // lower
+            Byte value2 = fetch(); // upper
+            ushort value = (ushort) ((value2 << 8) + value1);
+
+            setSP(value);
         }
         private void implementOpCode09()
         {
@@ -703,9 +718,13 @@ namespace trentGB
         {
             throw new NotImplementedException("Implement Op Code 0x10");
         }
-        private void implementOpCode11()
+        private void ldDE16() // 0x11
         {
-            throw new NotImplementedException("Implement Op Code 0x11");
+            int value = fetch();
+            int value2 = fetch();
+            ushort rv = (ushort)((value2 << 8) + value);
+
+            setDE(rv);
         }
         private void implementOpCode12()
         {
@@ -781,7 +800,7 @@ namespace trentGB
 
             setE(value);
         }
-        private void ldE() // 0x06
+        private void ldE() // 0x1E
         {
             Byte value = fetch();
             setE(value);
@@ -794,9 +813,13 @@ namespace trentGB
         {
             throw new NotImplementedException("Implement Op Code 0x20");
         }
-        private void implementOpCode21()
+        private void ldHL16() // 0x21
         {
-            throw new NotImplementedException("Implement Op Code 0x21");
+            int value = fetch();
+            int value2 = fetch();
+            ushort rv = (ushort)((value2 << 8) + value);
+
+            setHL(rv);
         }
         private void ldiMemHLWithA() // 0x22
         {
@@ -890,9 +913,13 @@ namespace trentGB
         {
             throw new NotImplementedException("Implement Op Code 0x30");
         }
-        private void implementOpCode31()
+        private void ldSP16() // 0x31
         {
-            throw new NotImplementedException("Implement Op Code 0x31");
+            int value = fetch();
+            int value2 = fetch();
+            ushort rv = (ushort)((value2 << 8) + value);
+
+            setSP(rv);
         }
         private void lddMemHLWithA() // 0x32
         {
@@ -1560,9 +1587,16 @@ namespace trentGB
         {
             throw new NotImplementedException("Implement Op Code 0xC0");
         }
-        private void implementOpCodeC1()
+        private void popIntoBC() //0xC1
         {
-            throw new NotImplementedException("Implement Op Code 0xC1");
+            Byte lsb = mem.getByte(getSP());
+            incrementSP();
+            Byte msb = mem.getByte(getSP());
+            incrementSP();
+
+            ushort value = (ushort)((msb << 8) + lsb);
+
+            setBC(value);
         }
         private void implementOpCodeC2()
         {
@@ -1576,9 +1610,12 @@ namespace trentGB
         {
             throw new NotImplementedException("Implement Op Code 0xC4");
         }
-        private void implementOpCodeC5()
+        private void pushBCToStack() //0xC5
         {
-            throw new NotImplementedException("Implement Op Code 0xC5");
+            byte[] value = getByteArrayForUInt16(getBC());
+            mem.setBytes(getSP(), value);
+            decrementSP();
+            decrementSP();
         }
         private void implementOpCodeC6()
         {
@@ -1600,6 +1637,10 @@ namespace trentGB
         {
             throw new NotImplementedException("Implement Op Code 0xCA");
         }
+        private void implementOpCodeCB()
+        {
+            throw new NotImplementedException("Implement Op Code 0xCB");
+        }
         private void implementOpCodeCC()
         {
             throw new NotImplementedException("Implement Op Code 0xCC");
@@ -1620,21 +1661,35 @@ namespace trentGB
         {
             throw new NotImplementedException("Implement Op Code 0xD0");
         }
-        private void implementOpCodeD1()
+        private void popIntoDE() //0xD1
         {
-            throw new NotImplementedException("Implement Op Code 0xD1");
+            Byte lsb = mem.getByte(getSP());
+            incrementSP();
+            Byte msb = mem.getByte(getSP());
+            incrementSP();
+
+            ushort value = (ushort)((msb << 8) + lsb);
+
+            setDE(value);
         }
         private void implementOpCodeD2()
         {
             throw new NotImplementedException("Implement Op Code 0xD2");
         }
+        private void unusedD3() // 0xD3
+        {
+            throw new NotImplementedException(" 0xD3 is Unused");
+        }
         private void implementOpCodeD4()
         {
             throw new NotImplementedException("Implement Op Code 0xD4");
         }
-        private void implementOpCodeD5()
+        private void pushDEToStack() //0xD5
         {
-            throw new NotImplementedException("Implement Op Code 0xD5");
+            byte[] value = getByteArrayForUInt16(getDE());
+            mem.setBytes(getSP(), value);
+            decrementSP();
+            decrementSP();
         }
         private void implementOpCodeD6()
         {
@@ -1656,9 +1711,17 @@ namespace trentGB
         {
             throw new NotImplementedException("Implement Op Code 0xDA");
         }
+        private void unusedDB() // 0xDB
+        {
+            throw new NotImplementedException(" 0xDB is Unused");
+        }
         private void implementOpCodeDC()
         {
             throw new NotImplementedException("Implement Op Code 0xDC");
+        }
+        private void unusedDD() // 0xDD
+        {
+            throw new NotImplementedException(" 0xDD is Unused");
         }
         private void implementOpCodeDE()
         {
@@ -1674,18 +1737,36 @@ namespace trentGB
             Byte offset = fetch();
             mem.setByte((ushort)(0xFF00 + offset), value);
         }
-        private void implementOpCodeE1()
+        private void popIntoHL() //0xE1
         {
-            throw new NotImplementedException("Implement Op Code 0xE1");
+            Byte lsb = mem.getByte(getSP());
+            incrementSP();
+            Byte msb = mem.getByte(getSP());
+            incrementSP();
+
+            ushort value = (ushort)((msb << 8) + lsb);
+
+            setHL(value);
         }
-        private void ldAIntoIOPlusC()
+        private void ldAIntoIOPlusC() // 0xE2
         {
             Byte value = getA();
             mem.setByte((ushort)(0xFF00 + getC()), value);
         }
-        private void implementOpCodeE5()
+        private void unusedE3() // 0xE3
         {
-            throw new NotImplementedException("Implement Op Code 0xE5");
+            throw new NotImplementedException(" 0xE3 is Unused");
+        }
+        private void unusedE4() // 0xE4
+        {
+            throw new NotImplementedException(" 0xE4 is Unused");
+        }
+        private void pushHLToStack() //0xE5
+        {
+            byte[] value = getByteArrayForUInt16(getHL());
+            mem.setBytes(getSP(), value);
+            decrementSP();
+            decrementSP();
         }
         private void implementOpCodeE6()
         {
@@ -1707,6 +1788,18 @@ namespace trentGB
         {
             throw new NotImplementedException("Implement Op Code 0xEA");
         }
+        private void unusedEB() // 0xEB
+        {
+            throw new NotImplementedException(" 0xEB is Unused");
+        }
+        private void unusedEC() // 0xEC
+        {
+            throw new NotImplementedException(" 0xEC is Unused");
+        }
+        private void unusedED() // 0xED
+        {
+            throw new NotImplementedException(" 0xED is Unused");
+        }
         private void implementOpCodeEE()
         {
             throw new NotImplementedException("Implement Op Code 0xEE");
@@ -1722,9 +1815,16 @@ namespace trentGB
             
             setA(value);
         }
-        private void implementOpCodeF1()
+        private void popIntoAF() //0xF1
         {
-            throw new NotImplementedException("Implement Op Code 0xF1");
+            Byte lsb = mem.getByte(getSP());
+            incrementSP();
+            Byte msb = mem.getByte(getSP());
+            incrementSP();
+
+            ushort value = (ushort)((msb << 8) + lsb);
+
+            setAF(value);
         }
         private void ldIOPlusCToA() // 0xF2
         {
@@ -1735,9 +1835,17 @@ namespace trentGB
         {
             throw new NotImplementedException("Implement Op Code 0xF3");
         }
-        private void implementOpCodeF5()
+        private void unusedF4() // 0xF4
         {
-            throw new NotImplementedException("Implement Op Code 0xF5");
+            throw new NotImplementedException(" 0xF4 is Unused");
+        }
+        private void pushAFToStack() //0xF5
+        {
+            byte[] value = getByteArrayForUInt16(getAF());
+            mem.setByte(getSP(),value[0]);
+            decrementSP();
+            mem.setByte(getSP(), value[1]);
+            decrementSP();
         }
         private void implementOpCodeF6()
         {
@@ -1747,13 +1855,16 @@ namespace trentGB
         {
             throw new NotImplementedException("Implement Op Code 0xF7");
         }
-        private void implementOpCodeF8()
+        private void ldHLFromSPPlusN() // 0xF8
         {
-            throw new NotImplementedException("Implement Op Code 0xF8");
+            Byte value = fetch();
+            ushort compValue = addSP(getSP(), value);
+
+            setHL(compValue);
         }
-        private void implementOpCodeF9()
+        private void ldSPFromHL() // 0xF9
         {
-            throw new NotImplementedException("Implement Op Code 0xF9");
+            setSP(getHL());
         }
         private void ld16A() // 0xFA
         {
@@ -1766,6 +1877,14 @@ namespace trentGB
         private void implementOpCodeFB()
         {
             throw new NotImplementedException("Implement Op Code 0xFB");
+        }
+        private void unusedFC() // 0xFC
+        {
+            throw new NotImplementedException(" 0xFC is Unused");
+        }
+        private void unusedFD() // 0xFD
+        {
+            throw new NotImplementedException(" 0xFD is Unused");
         }
         private void implementOpCodeFE()
         {
@@ -1783,6 +1902,8 @@ namespace trentGB
         #endregion
 
         #region Instruction Helper Functions
+
+        #region 8-Bit Math Functions
         private Byte increment(Byte value)
         {
             setZeroFlag(false);
@@ -1795,26 +1916,10 @@ namespace trentGB
                 value = 0;
                 setZeroFlag(true);
             }
-            else if (value == 0x0F)
+            else if ((value & 0x0F) == 0x0F)
             {
                 value++;
                 setHalfCarryFlag(true);
-            }
-            else
-            {
-                value++;
-            }
-
-            return value;
-        }
-
-        private ushort increment16(ushort value)
-        {
-            // Ignore Carry Flag
-            if (value == 0xFFFF)
-            {
-                // Rollover
-                value = 0;
             }
             else
             {
@@ -1852,9 +1957,135 @@ namespace trentGB
             return value;
         }
 
+        private Byte add(Byte op1, Byte op2)
+        {
+            Byte value = (Byte)(((int)op1 + (int)op2) & 0xFF);
+            setZeroFlag(false);
+            setHalfCarryFlag(false);
+            setSubtractFlag(false);
+            setCarryFlag(false);
+
+            if (value == 0)
+            {
+                setZeroFlag(true);
+            }
+            if ((op1 & 0x0F) + (op2 & 0x0F) > 0x0F)
+            {
+                // Adding LSB Nibble > 0x0F (15)
+                setHalfCarryFlag(true);
+            }
+            if ((op1 & 0xFF) + (op2 & 0xFF) > 0xFF)
+            {
+                // Overflow Detected result > 0xFF (255)
+                setCarryFlag(true);
+            }
+
+            return value;
+        }
+
+        private Byte subtract(Byte op1, Byte op2)
+        {
+            int result = (int)op2 - (int)op1;
+            Byte value = (byte)((result & 0xFF));
+            setZeroFlag(false);
+            setHalfCarryFlag(false);
+            setSubtractFlag(true);
+            setCarryFlag(false);
+
+            if (value == 0)
+            {
+                setZeroFlag(true);
+            }
+            if (((op2 & 0xF) > (op1 & 0xF))) // Lower Nible of op2 is higher we need to borrow
+            {
+                setHalfCarryFlag(true);
+            }
+            if (op2 > op1) // Lower Nible of op2 is higher we need to borrow
+            {
+                setCarryFlag(true);
+            }
+
+            return value;
+        }
+        #endregion
+
+        #region 16-Bit Math Fucntions
+
+        private ushort add16(ushort op1, ushort op2, Add16Type type)
+        {
+            ushort value = (ushort)(((int)op1 + (int)op2) & 0xFFFF);
+
+
+            if (type == Add16Type.HL)
+            {
+                setHalfCarryFlag(false);
+                setSubtractFlag(false);
+                setCarryFlag(false);
+
+                if ((op1 & 0x0fff) + (op2 & 0x0fff) > 0x0fff)
+                {
+                    setHalfCarryFlag(true);
+                }
+                if ((op1 & 0xFFFF) + (op2 & 0xFFFF) > 0xFFFF)
+                {
+                    // Overflow Detected result > 0xFFFF (65535)
+                    setCarryFlag(true);
+                }
+            }
+            else
+            {
+                // Doesnt Exist???? No 16-Bit ADD n,n
+            }
+            
+
+            return value;
+        }
+
+        private ushort addSP(ushort sp, Byte n)
+        {
+            ushort value = (ushort)(((int)sp + (int)n) & 0xFFFF);
+            setZeroFlag(false);
+            setSubtractFlag(false);
+
+            setHalfCarryFlag(false);
+            setCarryFlag(false);
+
+            if ((((sp & 0xff) + (n & 0xff)) & 0x100) != 0)
+            {
+                // overflow
+                setCarryFlag(true);
+            }
+            if ((((sp & 0x0f) + (n & 0x0f)) & 0x10) != 0)
+            {
+                setHalfCarryFlag(true);
+
+            }
+
+            return value;
+        }
+
+
+        private ushort increment16(ushort value)
+        {
+            // Ignore All Flags
+            if (value == 0xFFFF)
+            {
+                // Rollover
+                value = 0;
+            }
+            else
+            {
+                value++;
+            }
+
+            return value;
+        }
+
+
+
         private ushort decrement16(ushort value)
         {
-            // Ignore Carry Flag
+            // Ignore All Flags
             if (value == 0)
             {
                 value = 0xFFFF;
@@ -1866,6 +2097,10 @@ namespace trentGB
 
             return value;
         }
+
+        #endregion
+
+        #region Misc Arithmatic functions
 
         private void decrementHL()
         {
@@ -1880,6 +2115,60 @@ namespace trentGB
             valueToIncrement = increment16(valueToIncrement);
             setHL(valueToIncrement);
         }
+        #endregion
+
+        #region C# Data Rollover Helper Functions
+
+        // Essentially same as CPU Helpers above but no flags are affected
+
+        private Byte decrementIgnoreFlags(Byte value)
+        {
+            if (value == 0)
+            {
+                value = 0xFF;
+            }
+            else if (value == 1)
+            {
+                value--;
+            }
+            else
+            {
+                value--;
+            }
+
+            return value;
+        }
+
+        private Byte incrementIgnoreFlags(Byte value)
+        {
+            if (value == 0xFF)
+            {
+                // Rollover
+                value = 0;
+            }
+            else if ((value & 0x0F) == 0x0F)
+            {
+                value++;
+            }
+            else
+            {
+                value++;
+            }
+
+            return value;
+        }
+
+        public byte[] getByteArrayForUInt16(ushort value)
+        {
+            // LSB First
+            byte[] rv = new byte[2];
+            rv[0] = (Byte)(value & 0x00FF);
+            rv[1] = (Byte)(((value & 0xFF00) >> 8) & 0xFF);
+
+            return rv;
+        }
+        #endregion
+
         #endregion
     }
 }
