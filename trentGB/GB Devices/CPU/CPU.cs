@@ -230,14 +230,14 @@ namespace trentGB
             opCodeTranslationDict.Add(0x7D, ldrAL);
             opCodeTranslationDict.Add(0x7E, ldrAFromMemHL);
             opCodeTranslationDict.Add(0x7F, ldrAA);
-            opCodeTranslationDict.Add(0x80, implementOpCode80);
-            opCodeTranslationDict.Add(0x81, implementOpCode81);
-            opCodeTranslationDict.Add(0x82, implementOpCode82);
-            opCodeTranslationDict.Add(0x83, implementOpCode83);
-            opCodeTranslationDict.Add(0x84, implementOpCode84);
-            opCodeTranslationDict.Add(0x85, implementOpCode85);
-            opCodeTranslationDict.Add(0x86, implementOpCode86);
-            opCodeTranslationDict.Add(0x87, implementOpCode87);
+            opCodeTranslationDict.Add(0x80, addBtoA);
+            opCodeTranslationDict.Add(0x81, addCtoA);
+            opCodeTranslationDict.Add(0x82, addDtoA);
+            opCodeTranslationDict.Add(0x83, addEtoA);
+            opCodeTranslationDict.Add(0x84, addHtoA);
+            opCodeTranslationDict.Add(0x85, addLtoA);
+            opCodeTranslationDict.Add(0x86, addMemAtHLtoA);
+            opCodeTranslationDict.Add(0x87, addAtoA);
             opCodeTranslationDict.Add(0x88, implementOpCode88);
             opCodeTranslationDict.Add(0x89, implementOpCode89);
             opCodeTranslationDict.Add(0x8A, implementOpCode8A);
@@ -300,7 +300,7 @@ namespace trentGB
             opCodeTranslationDict.Add(0xC3, implementOpCodeC3);
             opCodeTranslationDict.Add(0xC4, implementOpCodeC4);
             opCodeTranslationDict.Add(0xC5, pushBCToStack);
-            opCodeTranslationDict.Add(0xC6, implementOpCodeC6);
+            opCodeTranslationDict.Add(0xC6, addNtoA);
             opCodeTranslationDict.Add(0xC7, implementOpCodeC7);
             opCodeTranslationDict.Add(0xC8, implementOpCodeC8);
             opCodeTranslationDict.Add(0xC9, implementOpCodeC9);
@@ -1327,37 +1327,61 @@ namespace trentGB
             Byte value = getA();
             setA(value);
         }
-        private void implementOpCode80()
+        private void addBtoA() // 0x80
         {
-            throw new NotImplementedException("Implement Op Code 0x80");
+            Byte value = 0;
+            value = add(getA(), getB());
+
+            setA(value);
         }
-        private void implementOpCode81()
+        private void addCtoA() // 0x81
         {
-            throw new NotImplementedException("Implement Op Code 0x81");
+            Byte value = 0;
+            value = add(getA(), getC());
+
+            setA(value);
         }
-        private void implementOpCode82()
+        private void addDtoA() // 0x82
         {
-            throw new NotImplementedException("Implement Op Code 0x82");
+            Byte value = 0;
+            value = add(getA(), getD());
+
+            setA(value);
         }
-        private void implementOpCode83()
+        private void addEtoA() // 0x83
         {
-            throw new NotImplementedException("Implement Op Code 0x83");
+            Byte value = 0;
+            value = add(getA(), getE());
+
+            setA(value);
         }
-        private void implementOpCode84()
+        private void addHtoA() // 0x84
         {
-            throw new NotImplementedException("Implement Op Code 0x84");
+            Byte value = 0;
+            value = add(getA(), getH());
+
+            setA(value);
         }
-        private void implementOpCode85()
+        private void addLtoA() // 0x85
         {
-            throw new NotImplementedException("Implement Op Code 0x85");
+            Byte value = 0;
+            value = add(getA(), getL());
+
+            setA(value);
         }
-        private void implementOpCode86()
+        private void addMemAtHLtoA() // 0x86
         {
-            throw new NotImplementedException("Implement Op Code 0x86");
+            Byte value = mem.getByte(getHL());
+            value = add(getA(), value);
+
+            setA(value);
         }
-        private void implementOpCode87()
+        private void addAtoA() // 0x87
         {
-            throw new NotImplementedException("Implement Op Code 0x87");
+            Byte value = getA();
+            value = add(value, value);
+
+            setA(value);
         }
         private void implementOpCode88()
         {
@@ -1617,9 +1641,12 @@ namespace trentGB
             decrementSP();
             decrementSP();
         }
-        private void implementOpCodeC6()
+        private void addNtoA() // 0xC6
         {
-            throw new NotImplementedException("Implement Op Code 0xC6");
+            Byte value = fetch();
+            value = add(getA(), value);
+
+            setA(value);
         }
         private void implementOpCodeC7()
         {
