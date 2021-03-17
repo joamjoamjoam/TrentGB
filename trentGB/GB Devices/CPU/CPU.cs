@@ -262,30 +262,30 @@ namespace trentGB
             opCodeTranslationDict.Add(0x9D, subCarryLFromA);
             opCodeTranslationDict.Add(0x9E, subCarryMemAtHLFromA);
             opCodeTranslationDict.Add(0x9F, subCarryAFromA);
-            opCodeTranslationDict.Add(0xA0, implementOpCodeA0);
-            opCodeTranslationDict.Add(0xA1, implementOpCodeA1);
-            opCodeTranslationDict.Add(0xA2, implementOpCodeA2);
-            opCodeTranslationDict.Add(0xA3, implementOpCodeA3);
-            opCodeTranslationDict.Add(0xA4, implementOpCodeA4);
-            opCodeTranslationDict.Add(0xA5, implementOpCodeA5);
-            opCodeTranslationDict.Add(0xA6, implementOpCodeA6);
-            opCodeTranslationDict.Add(0xA7, implementOpCodeA7);
-            opCodeTranslationDict.Add(0xA8, implementOpCodeA8);
-            opCodeTranslationDict.Add(0xA9, implementOpCodeA9);
-            opCodeTranslationDict.Add(0xAA, implementOpCodeAA);
-            opCodeTranslationDict.Add(0xAB, implementOpCodeAB);
-            opCodeTranslationDict.Add(0xAC, implementOpCodeAC);
-            opCodeTranslationDict.Add(0xAD, implementOpCodeAD);
-            opCodeTranslationDict.Add(0xAE, implementOpCodeAE);
-            opCodeTranslationDict.Add(0xAF, implementOpCodeAF);
-            opCodeTranslationDict.Add(0xB0, implementOpCodeB0);
-            opCodeTranslationDict.Add(0xB1, implementOpCodeB1);
-            opCodeTranslationDict.Add(0xB2, implementOpCodeB2);
-            opCodeTranslationDict.Add(0xB3, implementOpCodeB3);
-            opCodeTranslationDict.Add(0xB4, implementOpCodeB4);
-            opCodeTranslationDict.Add(0xB5, implementOpCodeB5);
-            opCodeTranslationDict.Add(0xB6, implementOpCodeB6);
-            opCodeTranslationDict.Add(0xB7, implementOpCodeB7);
+            opCodeTranslationDict.Add(0xA0, andABinA);
+            opCodeTranslationDict.Add(0xA1, andACinA);
+            opCodeTranslationDict.Add(0xA2, andADinA);
+            opCodeTranslationDict.Add(0xA3, andAEinA);
+            opCodeTranslationDict.Add(0xA4, andAHinA);
+            opCodeTranslationDict.Add(0xA5, andALinA);
+            opCodeTranslationDict.Add(0xA6, andAMemHLinA);
+            opCodeTranslationDict.Add(0xA7, andAAinA);
+            opCodeTranslationDict.Add(0xA8, xorABinA);
+            opCodeTranslationDict.Add(0xA9, xorACinA);
+            opCodeTranslationDict.Add(0xAA, xorADinA);
+            opCodeTranslationDict.Add(0xAB, xorAEinA);
+            opCodeTranslationDict.Add(0xAC, xorAHinA);
+            opCodeTranslationDict.Add(0xAD, xorALinA);
+            opCodeTranslationDict.Add(0xAE, xorAMemHLinA);
+            opCodeTranslationDict.Add(0xAF, xorAAinA);
+            opCodeTranslationDict.Add(0xB0, orABinA);
+            opCodeTranslationDict.Add(0xB1, orACinA);
+            opCodeTranslationDict.Add(0xB2, orADinA);
+            opCodeTranslationDict.Add(0xB3, orAEinA);
+            opCodeTranslationDict.Add(0xB4, orAHinA);
+            opCodeTranslationDict.Add(0xB5, orALinA);
+            opCodeTranslationDict.Add(0xB6, orAMemHLinA);
+            opCodeTranslationDict.Add(0xB7, orAAinA);
             opCodeTranslationDict.Add(0xB8, implementOpCodeB8);
             opCodeTranslationDict.Add(0xB9, implementOpCodeB9);
             opCodeTranslationDict.Add(0xBA, implementOpCodeBA);
@@ -332,7 +332,7 @@ namespace trentGB
             opCodeTranslationDict.Add(0xE3, unusedE3);
             opCodeTranslationDict.Add(0xE4, unusedE4);
             opCodeTranslationDict.Add(0xE5, pushHLToStack);
-            opCodeTranslationDict.Add(0xE6, implementOpCodeE6);
+            opCodeTranslationDict.Add(0xE6, andANinA);
             opCodeTranslationDict.Add(0xE7, implementOpCodeE7);
             opCodeTranslationDict.Add(0xE8, implementOpCodeE8);
             opCodeTranslationDict.Add(0xE9, implementOpCodeE9);
@@ -348,7 +348,7 @@ namespace trentGB
             opCodeTranslationDict.Add(0xF3, implementOpCodeF3);
             opCodeTranslationDict.Add(0xF4, unusedF4);
             opCodeTranslationDict.Add(0xF5, pushAFToStack);
-            opCodeTranslationDict.Add(0xF6, implementOpCodeF6);
+            opCodeTranslationDict.Add(0xF6, orANinA);
             opCodeTranslationDict.Add(0xF7, implementOpCodeF7);
             opCodeTranslationDict.Add(0xF8, ldHLFromSPPlusN);
             opCodeTranslationDict.Add(0xF9, ldSPFromHL);
@@ -1583,101 +1583,197 @@ namespace trentGB
 
             setA(value);
         }
-        private void implementOpCodeA0()
+        private void andABinA() // 0xA0
         {
-            throw new NotImplementedException("Implement Op Code 0xA0");
+            Byte value = 0;
+            // and(n,A)
+            value = and(getB(), getA());
+
+            setA(value);
         }
-        private void implementOpCodeA1()
+        private void andACinA() // 0xA1
         {
-            throw new NotImplementedException("Implement Op Code 0xA1");
+            Byte value = 0;
+            // and(n,A)
+            value = and(getC(), getA());
+
+            setA(value);
         }
-        private void implementOpCodeA2()
+        private void andADinA() // 0xA2
         {
-            throw new NotImplementedException("Implement Op Code 0xA2");
+            Byte value = 0;
+            // and(n,A)
+            value = and(getD(), getA());
+
+            setA(value);
         }
-        private void implementOpCodeA3()
+        private void andAEinA() // 0xA3
         {
-            throw new NotImplementedException("Implement Op Code 0xA3");
+            Byte value = 0;
+            // and(n,A)
+            value = and(getE(), getA());
+
+            setA(value);
         }
-        private void implementOpCodeA4()
+        private void andAHinA() // 0xA4
         {
-            throw new NotImplementedException("Implement Op Code 0xA4");
+            Byte value = 0;
+            // and(n,A)
+            value = and(getH(), getA());
+
+            setA(value);
         }
-        private void implementOpCodeA5()
+        private void andALinA() // 0xA5
         {
-            throw new NotImplementedException("Implement Op Code 0xA5");
+            Byte value = 0;
+            // and(n,A)
+            value = and(getL(), getA());
+
+            setA(value);
         }
-        private void implementOpCodeA6()
+        private void andAMemHLinA() // 0xA6
         {
-            throw new NotImplementedException("Implement Op Code 0xA6");
+            Byte value = mem.getByte(getHL());
+            // and(n,A)
+            value = and(value, getA());
+
+            setA(value);
         }
-        private void implementOpCodeA7()
+        private void andAAinA() // 0xA7
         {
-            throw new NotImplementedException("Implement Op Code 0xA7");
+            Byte value = 0;
+            // and(n,A)
+            value = and(getA(), getA());
+
+            setA(value);
         }
-        private void implementOpCodeA8()
+        private void xorABinA() // 0xA8
         {
-            throw new NotImplementedException("Implement Op Code 0xA8");
+            Byte value = 0;
+            // xor(n,A)
+            value = xor(getB(), getA());
+
+            setA(value);
         }
-        private void implementOpCodeA9()
+        private void xorACinA() // 0xA9
         {
-            throw new NotImplementedException("Implement Op Code 0xA9");
+            Byte value = 0;
+            // xor(n,A)
+            value = xor(getC(), getA());
+
+            setA(value);
         }
-        private void implementOpCodeAA()
+        private void xorADinA() // 0xAA
         {
-            throw new NotImplementedException("Implement Op Code 0xAA");
+            Byte value = 0;
+            // xor(n,A)
+            value = xor(getD(), getA());
+
+            setA(value);
         }
-        private void implementOpCodeAB()
+        private void xorAEinA() // 0xAB
         {
-            throw new NotImplementedException("Implement Op Code 0xAB");
+            Byte value = 0;
+            // xor(n,A)
+            value = xor(getE(), getA());
+
+            setA(value);
         }
-        private void implementOpCodeAC()
+        private void xorAHinA() // 0xAC
         {
-            throw new NotImplementedException("Implement Op Code 0xAC");
+            Byte value = 0;
+            // xor(n,A)
+            value = xor(getH(), getA());
+
+            setA(value);
         }
-        private void implementOpCodeAD()
+        private void xorALinA() // 0xAD
         {
-            throw new NotImplementedException("Implement Op Code 0xAD");
+            Byte value = 0;
+            // xor(n,A)
+            value = xor(getL(), getA());
+
+            setA(value);
         }
-        private void implementOpCodeAE()
+        private void xorAMemHLinA() // 0xAE
         {
-            throw new NotImplementedException("Implement Op Code 0xAE");
+            Byte value = mem.getByte(getHL());
+            // xor(n,A)
+            value = xor(value, getA());
+
+            setA(value);
         }
-        private void implementOpCodeAF()
+        private void xorAAinA() // 0xAF
         {
-            throw new NotImplementedException("Implement Op Code 0xAF");
+            Byte value = 0;
+            // xor(n,A)
+            value = xor(getA(), getA());
+
+            setA(value);
         }
-        private void implementOpCodeB0()
+        private void orABinA() // 0xB0
         {
-            throw new NotImplementedException("Implement Op Code 0xB0");
+            Byte value = 0;
+            // or(n,A)
+            value = or(getB(), getA());
+
+            setA(value);
         }
-        private void implementOpCodeB1()
+        private void orACinA() // 0xB1
         {
-            throw new NotImplementedException("Implement Op Code 0xB1");
+            Byte value = 0;
+            // or(n,A)
+            value = or(getC(), getA());
+
+            setA(value);
         }
-        private void implementOpCodeB2()
+        private void orADinA() // 0xB2
         {
-            throw new NotImplementedException("Implement Op Code 0xB2");
+            Byte value = 0;
+            // or(n,A)
+            value = or(getD(), getA());
+
+            setA(value);
         }
-        private void implementOpCodeB3()
+        private void orAEinA() // 0xB3
         {
-            throw new NotImplementedException("Implement Op Code 0xB3");
+            Byte value = 0;
+            // or(n,A)
+            value = or(getE(), getA());
+
+            setA(value);
         }
-        private void implementOpCodeB4()
+        private void orAHinA() // 0xB4
         {
-            throw new NotImplementedException("Implement Op Code 0xB4");
+            Byte value = 0;
+            // or(n,A)
+            value = or(getH(), getA());
+
+            setA(value);
         }
-        private void implementOpCodeB5()
+        private void orALinA() // 0xB5
         {
-            throw new NotImplementedException("Implement Op Code 0xB5");
+            Byte value = 0;
+            // or(n,A)
+            value = or(getL(), getA());
+
+            setA(value);
         }
-        private void implementOpCodeB6()
+        private void orAMemHLinA() // 0xB6
         {
-            throw new NotImplementedException("Implement Op Code 0xB6");
+            Byte value = mem.getByte(getHL());
+            // or(n,A)
+            value = or(value, getA());
+
+            setA(value);
         }
-        private void implementOpCodeB7()
+        private void orAAinA() // 0xB7
         {
-            throw new NotImplementedException("Implement Op Code 0xB7");
+            Byte value = 0;
+            // or(n,A)
+            value = or(getA(), getA());
+
+            setA(value);
         }
         private void implementOpCodeB8()
         {
@@ -1909,9 +2005,13 @@ namespace trentGB
             decrementSP();
             decrementSP();
         }
-        private void implementOpCodeE6()
+        private void andANinA() // 0xE6
         {
-            throw new NotImplementedException("Implement Op Code 0xE6");
+            Byte value = fetch();
+            // and(n,A)
+            value = and(value, getA());
+
+            setA(value);
         }
         private void implementOpCodeE7()
         {
@@ -1941,9 +2041,13 @@ namespace trentGB
         {
             throw new NotImplementedException(" 0xED is Unused");
         }
-        private void implementOpCodeEE()
+        private void xorANinA() // 0xEE
         {
-            throw new NotImplementedException("Implement Op Code 0xEE");
+            Byte value = fetch();
+            // xor(n,A)
+            value = xor(value, getA());
+
+            setA(value);
         }
         private void implementOpCodeEF()
         {
@@ -1988,9 +2092,13 @@ namespace trentGB
             mem.setByte(getSP(), value[1]);
             decrementSP();
         }
-        private void implementOpCodeF6()
+        private void orANinA() // 0xF6
         {
-            throw new NotImplementedException("Implement Op Code 0xF6");
+            Byte value = fetch();
+            // add(n,A)
+            value = or(value, getA());
+
+            setA(value);
         }
         private void implementOpCodeF7()
         {
@@ -2175,7 +2283,7 @@ namespace trentGB
 
             return value;
         }
-
+        
         private Byte subtractCarry(Byte op1, Byte op2)
         {
             int carryFlag = (getCarryFlag()) ? 1 : 0;
@@ -2201,6 +2309,60 @@ namespace trentGB
 
             return value;
         }
+
+        private Byte and(Byte op1, Byte op2)
+        {
+            setHalfCarryFlag(true);
+            setSubtractFlag(false);
+            setCarryFlag(false);
+            setZeroFlag(false);
+
+            byte value = (byte)((op2 & op1));
+
+            if (value == 0)
+            {
+                setZeroFlag(true);
+            }
+
+            return value;
+        }
+
+        private Byte or(Byte op1, Byte op2)
+        {
+            setHalfCarryFlag(false);
+            setSubtractFlag(false);
+            setCarryFlag(false);
+            setZeroFlag(false);
+
+            byte value = (byte)((op2 | op1));
+
+            if (value == 0)
+            {
+                setZeroFlag(true);
+            }
+
+            return value;
+        }
+
+        private Byte xor(Byte op1, Byte op2)
+        {
+            setHalfCarryFlag(false);
+            setSubtractFlag(false);
+            setCarryFlag(false);
+            setZeroFlag(false);
+
+            byte value = (byte)(((op2 ^ op1) & 0xFF));
+
+            if (value == 0)
+            {
+                setZeroFlag(true);
+            }
+
+            return value;
+        }
+
+
+
         #endregion
 
         #region 16-Bit Math Fucntions
