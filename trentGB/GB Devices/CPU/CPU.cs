@@ -238,30 +238,30 @@ namespace trentGB
             opCodeTranslationDict.Add(0x85, addLtoA);
             opCodeTranslationDict.Add(0x86, addMemAtHLtoA);
             opCodeTranslationDict.Add(0x87, addAtoA);
-            opCodeTranslationDict.Add(0x88, implementOpCode88);
-            opCodeTranslationDict.Add(0x89, implementOpCode89);
-            opCodeTranslationDict.Add(0x8A, implementOpCode8A);
-            opCodeTranslationDict.Add(0x8B, implementOpCode8B);
-            opCodeTranslationDict.Add(0x8C, implementOpCode8C);
-            opCodeTranslationDict.Add(0x8D, implementOpCode8D);
-            opCodeTranslationDict.Add(0x8E, implementOpCode8E);
-            opCodeTranslationDict.Add(0x8F, implementOpCode8F);
-            opCodeTranslationDict.Add(0x90, implementOpCode90);
-            opCodeTranslationDict.Add(0x91, implementOpCode91);
-            opCodeTranslationDict.Add(0x92, implementOpCode92);
-            opCodeTranslationDict.Add(0x93, implementOpCode93);
-            opCodeTranslationDict.Add(0x94, implementOpCode94);
-            opCodeTranslationDict.Add(0x95, implementOpCode95);
-            opCodeTranslationDict.Add(0x96, implementOpCode96);
-            opCodeTranslationDict.Add(0x97, implementOpCode97);
-            opCodeTranslationDict.Add(0x98, implementOpCode98);
-            opCodeTranslationDict.Add(0x99, implementOpCode99);
-            opCodeTranslationDict.Add(0x9A, implementOpCode9A);
-            opCodeTranslationDict.Add(0x9B, implementOpCode9B);
-            opCodeTranslationDict.Add(0x9C, implementOpCode9C);
-            opCodeTranslationDict.Add(0x9D, implementOpCode9D);
-            opCodeTranslationDict.Add(0x9E, implementOpCode9E);
-            opCodeTranslationDict.Add(0x9F, implementOpCode9F);
+            opCodeTranslationDict.Add(0x88, addCarryBtoA);
+            opCodeTranslationDict.Add(0x89, addCarryCtoA);
+            opCodeTranslationDict.Add(0x8A, addCarryDtoA);
+            opCodeTranslationDict.Add(0x8B, addCarryEtoA);
+            opCodeTranslationDict.Add(0x8C, addCarryHtoA);
+            opCodeTranslationDict.Add(0x8D, addCarryLtoA);
+            opCodeTranslationDict.Add(0x8E, addCarryBtoA);
+            opCodeTranslationDict.Add(0x8F, addCarryAtoA);
+            opCodeTranslationDict.Add(0x90, subBFromA);
+            opCodeTranslationDict.Add(0x91, subCFromA);
+            opCodeTranslationDict.Add(0x92, subDFromA);
+            opCodeTranslationDict.Add(0x93, subEFromA);
+            opCodeTranslationDict.Add(0x94, subHFromA);
+            opCodeTranslationDict.Add(0x95, subLFromA);
+            opCodeTranslationDict.Add(0x96, subMemAtHLFromA);
+            opCodeTranslationDict.Add(0x97, subAFromA);
+            opCodeTranslationDict.Add(0x98, subCarryBFromA);
+            opCodeTranslationDict.Add(0x99, subCarryCFromA);
+            opCodeTranslationDict.Add(0x9A, subCarryDFromA);
+            opCodeTranslationDict.Add(0x9B, subCarryEFromA);
+            opCodeTranslationDict.Add(0x9C, subCarryHFromA);
+            opCodeTranslationDict.Add(0x9D, subCarryLFromA);
+            opCodeTranslationDict.Add(0x9E, subCarryMemAtHLFromA);
+            opCodeTranslationDict.Add(0x9F, subCarryAFromA);
             opCodeTranslationDict.Add(0xA0, implementOpCodeA0);
             opCodeTranslationDict.Add(0xA1, implementOpCodeA1);
             opCodeTranslationDict.Add(0xA2, implementOpCodeA2);
@@ -316,7 +316,7 @@ namespace trentGB
             opCodeTranslationDict.Add(0xD3, unusedD3);
             opCodeTranslationDict.Add(0xD4, implementOpCodeD4);
             opCodeTranslationDict.Add(0xD5, pushDEToStack);
-            opCodeTranslationDict.Add(0xD6, implementOpCodeD6);
+            opCodeTranslationDict.Add(0xD6, subNFromA);
             opCodeTranslationDict.Add(0xD7, implementOpCodeD7);
             opCodeTranslationDict.Add(0xD8, implementOpCodeD8);
             opCodeTranslationDict.Add(0xD9, implementOpCodeD9);
@@ -324,7 +324,7 @@ namespace trentGB
             opCodeTranslationDict.Add(0xDB, unusedDB); 
             opCodeTranslationDict.Add(0xDC, implementOpCodeDC);
             opCodeTranslationDict.Add(0xDD, unusedDD);
-            opCodeTranslationDict.Add(0xDE, implementOpCodeDE);
+            opCodeTranslationDict.Add(0xDE, subCarryNFromA);  // SBC A,n
             opCodeTranslationDict.Add(0xDF, implementOpCodeDF);
             opCodeTranslationDict.Add(0xE0, putAIntoIOPlusMem);
             opCodeTranslationDict.Add(0xE1, popIntoHL);
@@ -1383,101 +1383,205 @@ namespace trentGB
 
             setA(value);
         }
-        private void implementOpCode88()
+        private void addCarryBtoA() // 0x88
         {
-            throw new NotImplementedException("Implement Op Code 0x88");
+            Byte value = 0;
+            value = addCarry(getA(), getB());
+
+            setA(value);
         }
-        private void implementOpCode89()
+        private void addCarryCtoA() // 0x89
         {
-            throw new NotImplementedException("Implement Op Code 0x89");
+            Byte value = 0;
+            value = addCarry(getA(), getC());
+
+            setA(value);
         }
-        private void implementOpCode8A()
+        private void addCarryDtoA() // 0x8A
         {
-            throw new NotImplementedException("Implement Op Code 0x8A");
+            Byte value = 0;
+            value = addCarry(getA(), getD());
+
+            setA(value);
         }
-        private void implementOpCode8B()
+        private void addCarryEtoA() // 0x8B
         {
-            throw new NotImplementedException("Implement Op Code 0x8B");
+            Byte value = 0;
+            value = addCarry(getA(), getE());
+
+            setA(value);
         }
-        private void implementOpCode8C()
+        private void addCarryHtoA() // 0x8C
         {
-            throw new NotImplementedException("Implement Op Code 0x8C");
+            Byte value = 0;
+            value = addCarry(getA(), getH());
+
+            setA(value);
         }
-        private void implementOpCode8D()
+        private void addCarryLtoA() // 0x8D
         {
-            throw new NotImplementedException("Implement Op Code 0x8D");
+            Byte value = 0;
+            value = addCarry(getA(), getL());
+
+            setA(value);
         }
-        private void implementOpCode8E()
+        private void addCarryMemAtHLtoA() // 0x8E
         {
-            throw new NotImplementedException("Implement Op Code 0x8E");
+            Byte value = mem.getByte(getHL());
+            value = addCarry(getA(), value);
+
+            setA(value);
         }
-        private void implementOpCode8F()
+        private void addCarryAtoA() // 0x8F
         {
-            throw new NotImplementedException("Implement Op Code 0x8F");
+            Byte value = 0;
+            value = addCarry(value, value);
+
+            setA(value);
         }
-        private void implementOpCode90()
+        private void subBFromA() // 0x90
         {
-            throw new NotImplementedException("Implement Op Code 0x90");
+            Byte value = 0;
+
+            // subtract(n, A)
+            value = subtract(getB(), getA());
+
+            setA(value);
         }
-        private void implementOpCode91()
+        private void subCFromA() // 0x91
         {
-            throw new NotImplementedException("Implement Op Code 0x91");
+            Byte value = 0;
+
+            // subtract(n, A)
+            value = subtract(getC(), getA());
+
+            setA(value);
         }
-        private void implementOpCode92()
+        private void subDFromA() // 0x92
         {
-            throw new NotImplementedException("Implement Op Code 0x92");
+            Byte value = 0;
+
+            // subtract(n, A)
+            value = subtract(getD(), getA());
+
+            setA(value);
         }
-        private void implementOpCode93()
+        private void subEFromA() // 0x93
         {
-            throw new NotImplementedException("Implement Op Code 0x93");
+            Byte value = 0;
+
+            // subtract(n, A)
+            value = subtract(getE(), getA());
+
+            setA(value);
         }
-        private void implementOpCode94()
+        private void subHFromA() // 0x94
         {
-            throw new NotImplementedException("Implement Op Code 0x94");
+            Byte value = 0;
+
+            // subtract(n, A)
+            value = subtract(getH(), getA());
+
+            setA(value);
         }
-        private void implementOpCode95()
+        private void subLFromA() // 0x95
         {
-            throw new NotImplementedException("Implement Op Code 0x95");
+            Byte value = 0;
+
+            // subtract(n, A)
+            value = subtract(getL(), getA());
+
+            setA(value);
         }
-        private void implementOpCode96()
+        private void subMemAtHLFromA() // 0x96
         {
-            throw new NotImplementedException("Implement Op Code 0x96");
+            Byte value = 0;
+
+            // subtract(n, A)
+            value = subtract(mem.getByte(getHL()), getA());
+
+            setA(value);
         }
-        private void implementOpCode97()
+        private void subAFromA() // 0x97
         {
-            throw new NotImplementedException("Implement Op Code 0x97");
+            Byte value = 0;
+
+            // subtract(n, A)
+            value = subtract(getA(), getA());
+
+            setA(value);
         }
-        private void implementOpCode98()
+        private void subCarryBFromA() // 0x98
         {
-            throw new NotImplementedException("Implement Op Code 0x98");
+            Byte value = 0;
+
+            // subtract(n, A)
+            value = subtractCarry(getB(), getA());
+
+            setA(value);
         }
-        private void implementOpCode99()
+        private void subCarryCFromA() // 0x99
         {
-            throw new NotImplementedException("Implement Op Code 0x99");
+            Byte value = 0;
+
+            // subtract(n, A)
+            value = subtractCarry(getC(), getA());
+
+            setA(value);
         }
-        private void implementOpCode9A()
+        private void subCarryDFromA() // 0x9A
         {
-            throw new NotImplementedException("Implement Op Code 0x9A");
+            Byte value = 0;
+
+            // subtractCarry(n, A)
+            value = subtractCarry(getD(), getA());
+
+            setA(value);
         }
-        private void implementOpCode9B()
+        private void subCarryEFromA() // 0x9B
         {
-            throw new NotImplementedException("Implement Op Code 0x9B");
+            Byte value = 0;
+
+            // subtractCarry(n, A)
+            value = subtractCarry(getE(), getA());
+
+            setA(value);
         }
-        private void implementOpCode9C()
+        private void subCarryHFromA() // 0x9C
         {
-            throw new NotImplementedException("Implement Op Code 0x9C");
+            Byte value = 0;
+
+            // subtractCarry(n, A)
+            value = subtractCarry(getH(), getA());
+
+            setA(value);
         }
-        private void implementOpCode9D()
+        private void subCarryLFromA() // 0x9D
         {
-            throw new NotImplementedException("Implement Op Code 0x9D");
+            Byte value = 0;
+
+            // subtractCarry(n, A)
+            value = subtractCarry(getL(), getA());
+
+            setA(value);
         }
-        private void implementOpCode9E()
+        private void subCarryMemAtHLFromA() // 0x9E
         {
-            throw new NotImplementedException("Implement Op Code 0x9E");
+            Byte value = 0;
+
+            // subtractCarry(n, A)
+            value = subtractCarry(mem.getByte(getHL()), getA());
+
+            setA(value);
         }
-        private void implementOpCode9F()
+        private void subCarryAFromA() // 0x9F
         {
-            throw new NotImplementedException("Implement Op Code 0x9F");
+            Byte value = 0;
+
+            // subtractCarry(n, A)
+            value = subtractCarry(getA(), getA());
+
+            setA(value);
         }
         private void implementOpCodeA0()
         {
@@ -1718,9 +1822,14 @@ namespace trentGB
             decrementSP();
             decrementSP();
         }
-        private void implementOpCodeD6()
+        private void subNFromA() // 0xD6
         {
-            throw new NotImplementedException("Implement Op Code 0xD6");
+            Byte value = fetch();
+
+            // subtract(n, A)
+            value = subtract(value, getA());
+
+            setA(value);
         }
         private void implementOpCodeD7()
         {
@@ -1750,9 +1859,14 @@ namespace trentGB
         {
             throw new NotImplementedException(" 0xDD is Unused");
         }
-        private void implementOpCodeDE()
+        private void subCarryNFromA() // 0xDE
         {
-            throw new NotImplementedException("Implement Op Code 0xDE");
+            Byte value = fetch();
+
+            // subtractCarry(n, A)
+            value = subtractCarry(value, getA());
+
+            setA(value);
         }
         private void implementOpCodeDF()
         {
@@ -2010,6 +2124,33 @@ namespace trentGB
             return value;
         }
 
+        private Byte addCarry(Byte op1, Byte op2)
+        {
+            int carryFlag = (getCarryFlag()) ? 1 : 0;
+            Byte value = (Byte)(((int)op1 + (int)op2 + carryFlag) & 0xFF);
+            setZeroFlag(false);
+            setHalfCarryFlag(false);
+            setSubtractFlag(false);
+            setCarryFlag(false);
+
+            if (value == 0)
+            {
+                setZeroFlag(true);
+            }
+            if (((op1 & 0x0F) + (op2 & 0x0F) + carryFlag) > 0x0F)
+            {
+                // Adding LSB Nibble > 0x0F (15)
+                setHalfCarryFlag(true);
+            }
+            if (((op1 & 0xFF) + (op2 & 0xFF) + carryFlag) > 0xFF)
+            {
+                // Overflow Detected result > 0xFF (255)
+                setCarryFlag(true);
+            }
+
+            return value;
+        }
+
         private Byte subtract(Byte op1, Byte op2)
         {
             int result = (int)op2 - (int)op1;
@@ -2028,6 +2169,32 @@ namespace trentGB
                 setHalfCarryFlag(true);
             }
             if (op2 > op1) // Lower Nible of op2 is higher we need to borrow
+            {
+                setCarryFlag(true);
+            }
+
+            return value;
+        }
+
+        private Byte subtractCarry(Byte op1, Byte op2)
+        {
+            int carryFlag = (getCarryFlag()) ? 1 : 0;
+            int result = (int)op2 - (int)op1 - carryFlag;
+            Byte value = (byte)((result & 0xFF));
+            setZeroFlag(false);
+            setHalfCarryFlag(false);
+            setSubtractFlag(true);
+            setCarryFlag(false);
+
+            if (value == 0)
+            {
+                setZeroFlag(true);
+            }
+            if (((op2 ^ op1 ^ (value & 0xff)) & (1 << 4)) != 0)
+            {
+                setHalfCarryFlag(true);
+            }
+            if (result < 0)
             {
                 setCarryFlag(true);
             }
