@@ -111,7 +111,7 @@ namespace trentGB
             opCodeTranslationDict.Add(0x06, ldB);
             opCodeTranslationDict.Add(0x07, implementOpCode07);
             opCodeTranslationDict.Add(0x08, ldSPFromMem16);
-            opCodeTranslationDict.Add(0x09, implementOpCode09);
+            opCodeTranslationDict.Add(0x09, addBCtoHL);
             opCodeTranslationDict.Add(0x0A, ldAMemBC);
             opCodeTranslationDict.Add(0x0B, decBC);
             opCodeTranslationDict.Add(0x0C, incC);
@@ -127,7 +127,7 @@ namespace trentGB
             opCodeTranslationDict.Add(0x16, ldD);
             opCodeTranslationDict.Add(0x17, implementOpCode17);
             opCodeTranslationDict.Add(0x18, implementOpCode18);
-            opCodeTranslationDict.Add(0x19, implementOpCode19);
+            opCodeTranslationDict.Add(0x19, addDEtoHL);
             opCodeTranslationDict.Add(0x1A, ldAMemDE);
             opCodeTranslationDict.Add(0x1B, decDE);
             opCodeTranslationDict.Add(0x1C, incE);
@@ -143,7 +143,7 @@ namespace trentGB
             opCodeTranslationDict.Add(0x26, ldH);
             opCodeTranslationDict.Add(0x27, implementOpCode27);
             opCodeTranslationDict.Add(0x28, implementOpCode28);
-            opCodeTranslationDict.Add(0x29, implementOpCode29);
+            opCodeTranslationDict.Add(0x29, addHLtoHL);
             opCodeTranslationDict.Add(0x2A, ldiAMemHL);
             opCodeTranslationDict.Add(0x2B, decHL);
             opCodeTranslationDict.Add(0x2C, incL);
@@ -159,7 +159,7 @@ namespace trentGB
             opCodeTranslationDict.Add(0x36, ldHLMem);
             opCodeTranslationDict.Add(0x37, implementOpCode37);
             opCodeTranslationDict.Add(0x38, implementOpCode38);
-            opCodeTranslationDict.Add(0x39, implementOpCode39);
+            opCodeTranslationDict.Add(0x39, addSPtoHL);
             opCodeTranslationDict.Add(0x3A, lddAMemHL);
             opCodeTranslationDict.Add(0x3B, decSP);
             opCodeTranslationDict.Add(0x3C, incA);
@@ -334,7 +334,7 @@ namespace trentGB
             opCodeTranslationDict.Add(0xE5, pushHLToStack);
             opCodeTranslationDict.Add(0xE6, andANinA);
             opCodeTranslationDict.Add(0xE7, implementOpCodeE7);
-            opCodeTranslationDict.Add(0xE8, implementOpCodeE8);
+            opCodeTranslationDict.Add(0xE8, addNtoSP);
             opCodeTranslationDict.Add(0xE9, implementOpCodeE9);
             opCodeTranslationDict.Add(0xEA, implementOpCodeEA);
             opCodeTranslationDict.Add(0xEB, unusedEB);
@@ -664,7 +664,7 @@ namespace trentGB
         {
             throw new NotImplementedException("Implement Op Code 0x07");
         }
-        private void ldSPFromMem16()
+        private void ldSPFromMem16() // 0x08
         {
             Byte value1 = fetch(); // lower
             Byte value2 = fetch(); // upper
@@ -672,9 +672,9 @@ namespace trentGB
 
             setSP(value);
         }
-        private void implementOpCode09()
+        private void addBCtoHL() //0x09
         {
-            throw new NotImplementedException("Implement Op Code 0x09");
+            setHL(add16(getHL(), getBC(), Add16Type.HL));
         }
         private void ldAMemBC() // 0x0A
         {
@@ -767,9 +767,9 @@ namespace trentGB
         {
             throw new NotImplementedException("Implement Op Code 0x18");
         }
-        private void implementOpCode19()
+        private void addDEtoHL() //0x19
         {
-            throw new NotImplementedException("Implement Op Code 0x19");
+            setHL(add16(getHL(), getDE(), Add16Type.HL));
         }
         private void ldAMemDE() // 0x1A
         {
@@ -865,9 +865,9 @@ namespace trentGB
         {
             throw new NotImplementedException("Implement Op Code 0x28");
         }
-        private void implementOpCode29()
+        private void addHLtoHL() //0x29
         {
-            throw new NotImplementedException("Implement Op Code 0x29");
+            setHL(add16(getHL(), getHL(), Add16Type.HL));
         }
         private void ldiAMemHL() // 0x2A
         {
@@ -965,9 +965,9 @@ namespace trentGB
         {
             throw new NotImplementedException("Implement Op Code 0x38");
         }
-        private void implementOpCode39()
+        private void addSPtoHL() //0x39
         {
-            throw new NotImplementedException("Implement Op Code 0x39");
+            setHL(add16(getHL(), getSP(), Add16Type.HL));
         }
         private void lddAMemHL() // 0x3A
         {
@@ -2049,9 +2049,12 @@ namespace trentGB
         {
             throw new NotImplementedException("Implement Op Code 0xE7");
         }
-        private void implementOpCodeE8()
+        private void addNtoSP() // 0xE8
         {
-            throw new NotImplementedException("Implement Op Code 0xE8");
+            Byte value = fetch();
+            ushort compValue = addSP(getSP(), value);
+
+            setSP(compValue);
         }
         private void implementOpCodeE9()
         {
@@ -2433,7 +2436,7 @@ namespace trentGB
                 setSubtractFlag(false);
                 setCarryFlag(false);
 
-                if ((op1 & 0x0fff) + (op2 & 0x0fff) > 0x0fff)
+                if ((op1 & 0x0fff) + (op2 & 0x0FFF) > 0x0FFF)
                 {
                     setHalfCarryFlag(true);
                 }
