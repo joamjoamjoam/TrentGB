@@ -54,6 +54,7 @@
     </Compile>
     <Compile Include="GB Devices\CPU\CPU.cs" />
     <Compile Include="GB Devices\Gameboy.cs" />
+    <Compile Include="GB Devices\LCD\LCD.cs" />
     <Compile Include="GB Devices\Memory\AddressSpace.cs" />
     <Compile Include="GB Devices\Memory\ROM.cs" />
     <Compile Include="Program.cs" />

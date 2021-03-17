@@ -33,6 +33,11 @@ namespace trentGB
         private Dictionary<Byte, Action> opCodeTranslationDict = new Dictionary<byte, Action>();
 
         public bool done = false;
+        public bool isHalted = false; // CPU Halted until next interrupt.
+        public bool isStopped = false; // CPU and LCD Halted until a Buttoin is pressed.
+        public bool shouldDisableInterrupts = false;
+        public bool shouldEnableInterrupts = false;
+
         public ROM rom;
 
 
@@ -97,7 +102,21 @@ namespace trentGB
 
         public void decodeAndExecute(Byte opCode)
         {
+            bool enableInterrupts = shouldEnableInterrupts;
+            bool disableInterrupts = shouldDisableInterrupts;
+
             opCodeTranslationDict[opCode].Invoke();
+
+            if (enableInterrupts)
+            {
+                // TODO Enable Interrupts
+                shouldEnableInterrupts = false;
+            }
+            if (disableInterrupts)
+            {
+                // TODO Disable Interrupts
+                shouldDisableInterrupts = false;
+            }
         }
 
         private void loadOpCodeMap()
@@ -109,7 +128,7 @@ namespace trentGB
             opCodeTranslationDict.Add(0x04, incB);
             opCodeTranslationDict.Add(0x05, decB);
             opCodeTranslationDict.Add(0x06, ldB);
-            opCodeTranslationDict.Add(0x07, implementOpCode07);
+            opCodeTranslationDict.Add(0x07, rlcA);
             opCodeTranslationDict.Add(0x08, ldSPFromMem16);
             opCodeTranslationDict.Add(0x09, addBCtoHL);
             opCodeTranslationDict.Add(0x0A, ldAMemBC);
@@ -117,15 +136,15 @@ namespace trentGB
             opCodeTranslationDict.Add(0x0C, incC);
             opCodeTranslationDict.Add(0x0D, decC);
             opCodeTranslationDict.Add(0x0E, ldC);
-            opCodeTranslationDict.Add(0x0F, implementOpCode0F);
-            opCodeTranslationDict.Add(0x10, implementOpCode10);
+            opCodeTranslationDict.Add(0x0F, rrcA);
+            opCodeTranslationDict.Add(0x10, stopCPU);
             opCodeTranslationDict.Add(0x11, ldDE16);
             opCodeTranslationDict.Add(0x12, implementOpCode12);
             opCodeTranslationDict.Add(0x13, incDE);
             opCodeTranslationDict.Add(0x14, incD);
             opCodeTranslationDict.Add(0x15, decD);
             opCodeTranslationDict.Add(0x16, ldD);
-            opCodeTranslationDict.Add(0x17, implementOpCode17);
+            opCodeTranslationDict.Add(0x17, rlA);
             opCodeTranslationDict.Add(0x18, implementOpCode18);
             opCodeTranslationDict.Add(0x19, addDEtoHL);
             opCodeTranslationDict.Add(0x1A, ldAMemDE);
@@ -133,7 +152,7 @@ namespace trentGB
             opCodeTranslationDict.Add(0x1C, incE);
             opCodeTranslationDict.Add(0x1D, decE);
             opCodeTranslationDict.Add(0x1E, ldE);
-            opCodeTranslationDict.Add(0x1F, implementOpCode1F);
+            opCodeTranslationDict.Add(0x1F, rrA);
             opCodeTranslationDict.Add(0x20, implementOpCode20);
             opCodeTranslationDict.Add(0x21, ldHL16);
             opCodeTranslationDict.Add(0x22, ldiMemHLWithA);
@@ -141,7 +160,7 @@ namespace trentGB
             opCodeTranslationDict.Add(0x24, incH);
             opCodeTranslationDict.Add(0x25, decH);
             opCodeTranslationDict.Add(0x26, ldH);
-            opCodeTranslationDict.Add(0x27, implementOpCode27);
+            opCodeTranslationDict.Add(0x27, daaRegA);
             opCodeTranslationDict.Add(0x28, implementOpCode28);
             opCodeTranslationDict.Add(0x29, addHLtoHL);
             opCodeTranslationDict.Add(0x2A, ldiAMemHL);
@@ -149,7 +168,7 @@ namespace trentGB
             opCodeTranslationDict.Add(0x2C, incL);
             opCodeTranslationDict.Add(0x2D, decL);
             opCodeTranslationDict.Add(0x2E, ldL);
-            opCodeTranslationDict.Add(0x2F, implementOpCode2F);
+            opCodeTranslationDict.Add(0x2F, complementA);
             opCodeTranslationDict.Add(0x30, implementOpCode30);
             opCodeTranslationDict.Add(0x31, ldSP16);
             opCodeTranslationDict.Add(0x32, lddMemHLWithA);
@@ -157,7 +176,7 @@ namespace trentGB
             opCodeTranslationDict.Add(0x34, incHLMem);
             opCodeTranslationDict.Add(0x35, decHLMem);
             opCodeTranslationDict.Add(0x36, ldHLMem);
-            opCodeTranslationDict.Add(0x37, implementOpCode37);
+            opCodeTranslationDict.Add(0x37, highCarryFlag);
             opCodeTranslationDict.Add(0x38, implementOpCode38);
             opCodeTranslationDict.Add(0x39, addSPtoHL);
             opCodeTranslationDict.Add(0x3A, lddAMemHL);
@@ -165,7 +184,7 @@ namespace trentGB
             opCodeTranslationDict.Add(0x3C, incA);
             opCodeTranslationDict.Add(0x3D, decA);
             opCodeTranslationDict.Add(0x3E, ldA);
-            opCodeTranslationDict.Add(0x3F, implementOpCode3F);
+            opCodeTranslationDict.Add(0x3F, complementCarryFlag);
             opCodeTranslationDict.Add(0x40, ldrBB);
             opCodeTranslationDict.Add(0x41, ldrBC);
             opCodeTranslationDict.Add(0x42, ldrBD);
@@ -220,7 +239,7 @@ namespace trentGB
             opCodeTranslationDict.Add(0x73, ldHLMemFromE);
             opCodeTranslationDict.Add(0x74, ldHLMemFromH);
             opCodeTranslationDict.Add(0x75, ldHLMemFromL);
-            opCodeTranslationDict.Add(0x76, implementOpCode76);
+            opCodeTranslationDict.Add(0x76, haltCPU);
             opCodeTranslationDict.Add(0x77, implementOpCode77);
             opCodeTranslationDict.Add(0x78, ldrAB);
             opCodeTranslationDict.Add(0x79, ldrAC);
@@ -345,7 +364,7 @@ namespace trentGB
             opCodeTranslationDict.Add(0xF0, putIOPlusMemIntoA);
             opCodeTranslationDict.Add(0xF1, popIntoAF);
             opCodeTranslationDict.Add(0xF2, ldIOPlusCToA);
-            opCodeTranslationDict.Add(0xF3, implementOpCodeF3);
+            opCodeTranslationDict.Add(0xF3, disableInterruptsAfterNextIns);
             opCodeTranslationDict.Add(0xF4, unusedF4);
             opCodeTranslationDict.Add(0xF5, pushAFToStack);
             opCodeTranslationDict.Add(0xF6, orANinA);
@@ -353,7 +372,7 @@ namespace trentGB
             opCodeTranslationDict.Add(0xF8, ldHLFromSPPlusN);
             opCodeTranslationDict.Add(0xF9, ldSPFromHL);
             opCodeTranslationDict.Add(0xFA, ld16A);
-            opCodeTranslationDict.Add(0xFB, implementOpCodeFB);
+            opCodeTranslationDict.Add(0xFB, enableInterruptsAfterNextIns);
             opCodeTranslationDict.Add(0xFC, unusedFC);
             opCodeTranslationDict.Add(0xFD, unusedFD);
             opCodeTranslationDict.Add(0xFE, cmpAN);
@@ -660,9 +679,9 @@ namespace trentGB
             Byte value = fetch();
             setB(value);
         }
-        private void implementOpCode07()
+        private void rlcA() // 0x07
         {
-            throw new NotImplementedException("Implement Op Code 0x07");
+            setA(rotateLeftCarry(getA()));
         }
         private void ldSPFromMem16() // 0x08
         {
@@ -710,13 +729,23 @@ namespace trentGB
             Byte value = fetch();
             setC(value);
         }
-        private void implementOpCode0F()
+        private void rrcA() // 0x0F
         {
-            throw new NotImplementedException("Implement Op Code 0x0F");
+            setA(rotateRightCarry(getA()));
         }
-        private void implementOpCode10()
+        private void stopCPU() // 0x10
         {
-            throw new NotImplementedException("Implement Op Code 0x10");
+            Byte command = fetch();
+
+            if (command == 0x00)
+            {
+                isHalted = true;
+            }
+            else
+            {
+                throw new NotImplementedException($"0x10 prefix Command 0x{command.ToString("X2")} is not implented.");
+            }
+            
         }
         private void ldDE16() // 0x11
         {
@@ -759,9 +788,9 @@ namespace trentGB
             Byte value = fetch();
             setD(value);
         }
-        private void implementOpCode17()
+        private void rlA() // 0x17
         {
-            throw new NotImplementedException("Implement Op Code 0x17");
+            setA(rotateLeft(getA()));
         }
         private void implementOpCode18()
         {
@@ -805,9 +834,9 @@ namespace trentGB
             Byte value = fetch();
             setE(value);
         }
-        private void implementOpCode1F()
+        private void rrA() // 0x1F
         {
-            throw new NotImplementedException("Implement Op Code 0x1F");
+            setA(rotateRight(getA()));
         }
         private void implementOpCode20()
         {
@@ -857,9 +886,13 @@ namespace trentGB
             Byte value = fetch();
             setH(value);
         }
-        private void implementOpCode27()
+        private void daaRegA() // 0x27
         {
-            throw new NotImplementedException("Implement Op Code 0x27");
+            Byte value = 0;
+
+            value = daa(getA());
+
+            setA(value);
         }
         private void implementOpCode28()
         {
@@ -905,9 +938,13 @@ namespace trentGB
             Byte value = fetch();
             setL(value);
         }
-        private void implementOpCode2F()
+        private void complementA() // 0x2F
         {
-            throw new NotImplementedException("Implement Op Code 0x2F");
+            Byte value = (Byte)((~getA()) & 0xFF);
+
+            setSubtractFlag(true);
+            setHalfCarryFlag(true);
+            setA(value);
         }
         private void implementOpCode30()
         {
@@ -957,9 +994,12 @@ namespace trentGB
             Byte value = fetch();
             mem.setByte(getHL(), value);
         }
-        private void implementOpCode37()
+        private void highCarryFlag() // 0x37
         {
-            throw new NotImplementedException("Implement Op Code 0x37");
+            setSubtractFlag(false);
+            setHalfCarryFlag(false);
+
+            setCarryFlag(true);
         }
         private void implementOpCode38()
         {
@@ -1005,9 +1045,12 @@ namespace trentGB
             Byte value = fetch();
             setA(value);
         }
-        private void implementOpCode3F()
+        private void complementCarryFlag() // 0x3F
         {
-            throw new NotImplementedException("Implement Op Code 0x3F");
+            setSubtractFlag(false);
+            setHalfCarryFlag(false);
+
+            setCarryFlag(!getCarryFlag());
         }
         private void ldrBB() // 0x40
         {
@@ -1279,9 +1322,9 @@ namespace trentGB
             Byte value = getL();
             mem.setByte(getHL(), value);
         }
-        private void implementOpCode76()
+        private void haltCPU() // 0x76
         {
-            throw new NotImplementedException("Implement Op Code 0x76");
+            isHalted = true;
         }
         private void implementOpCode77()
         {
@@ -2111,9 +2154,9 @@ namespace trentGB
             Byte value = mem.getByte((ushort)(0xFF00 + getC()));
             setA(value);
         }
-        private void implementOpCodeF3()
+        private void disableInterruptsAfterNextIns() // 0xF3
         {
-            throw new NotImplementedException("Implement Op Code 0xF3");
+            shouldDisableInterrupts = true;
         }
         private void unusedF4() // 0xF4
         {
@@ -2158,9 +2201,9 @@ namespace trentGB
             setAF(value);
             // HACK this May Not Work??
         }
-        private void implementOpCodeFB()
+        private void enableInterruptsAfterNextIns() // 0xFB
         {
-            throw new NotImplementedException("Implement Op Code 0xFB");
+            shouldEnableInterrupts = true;
         }
         private void unusedFC() // 0xFC
         {
@@ -2419,6 +2462,119 @@ namespace trentGB
             return value;
         }
 
+        private Byte daa(byte arg)
+        {
+            int result = arg;
+            Byte rv = 0;
+            bool carryFlag = getCarryFlag();
+            bool halfCarryFlag = getHalfCarryFlag();
+            bool subFlag = getSubtractFlag();
+            bool zeroFlag = getZeroFlag();
+
+            setHalfCarryFlag(false);
+            setZeroFlag(false);
+            setCarryFlag(false);
+
+            if (subFlag)
+            {
+                if (halfCarryFlag)
+                {
+                    result = (result - 6) & 0xff;
+                }
+                if (carryFlag)
+                {
+                    result = (result - 0x60) & 0xff;
+                }
+            }
+            else
+            {
+                if (halfCarryFlag || (result & 0xf) > 9)
+                {
+                    result += 0x06;
+                }
+                if (carryFlag || result > 0x9f)
+                {
+                    result += 0x60;
+                }
+            }
+            setHalfCarryFlag(false);
+            if (result > 0xff)
+            {
+                setCarryFlag(true);
+            }
+            rv = (Byte) (result & 0xff);
+
+            setZeroFlag(rv == 0);
+
+            
+            return rv;
+        }
+
+        private Byte rotateLeftCarry(Byte op1)
+        {
+            Byte result = (byte) ((op1 << 1) & 0xFF);
+            if ((op1 & 0x80) != 0)
+            {
+                // rotated off a one
+                result |= 0x01;
+                setCarryFlag(true);
+            }
+            else
+            {
+                // rotated off a 0
+                setCarryFlag(false);
+            }
+            setZeroFlag(false);
+            setSubtractFlag(false);
+            setHalfCarryFlag(false);
+            return result;
+        }
+
+        private Byte rotateLeft(Byte op1)
+        {
+            int carryFlag = (getCarryFlag()) ? 1 : 0;
+            Byte result = (byte)((op1 << 1) & 0xFF);
+            result = (byte)(result | carryFlag);
+            setCarryFlag((op1 & 0x80) != 0);
+
+            setZeroFlag(false);
+            setSubtractFlag(false);
+            setHalfCarryFlag(false);
+            return result;
+        }
+
+        private Byte rotateRightCarry(Byte op1)
+        {
+            Byte result = (byte)((op1 >> 1));
+            if ((op1 & 0x01) == 1)
+            {
+                // rotated off a one
+                result |= 0x80;
+                setCarryFlag(true);
+            }
+            else
+            {
+                // rotated off a 0
+                setCarryFlag(false);
+            }
+            setZeroFlag(false);
+            setSubtractFlag(false);
+            setHalfCarryFlag(false);
+            return result;
+        }
+
+        private Byte rotateRight(Byte op1)
+        {
+            Byte carryFlagAdj =(Byte) ((getCarryFlag()) ? 0x80 : 0);
+            Byte result = (byte)((op1 >> 1));
+            result = (byte)(result | carryFlagAdj);
+            setCarryFlag((op1 & 0x01) != 0);
+
+            setZeroFlag(false);
+            setSubtractFlag(false);
+            setHalfCarryFlag(false);
+            return result;
+        }
 
 
         #endregion

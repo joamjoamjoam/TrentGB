@@ -11,12 +11,14 @@ namespace trentGB
         private AddressSpace memory = null;
         private ROM rom = null;
         private CPU cpu = null;
+        private LCD lcd = null;
 
         public Gameboy(ROM romToPlay)
         {
             rom = romToPlay;
             memory = new AddressSpace();
             cpu = new CPU(memory, romToPlay);
+            lcd = new LCD();
         }
 
 
@@ -30,7 +32,14 @@ namespace trentGB
 
             while (!cpu.done)
             {
-                cpu.decodeAndExecute(cpu.fetch());
+                Byte nextInstruction = cpu.fetch();
+                if (nextInstruction == 0x10)
+                {
+                    // Halt CPU and LCD
+                    lcd.stop();
+                }
+
+                cpu.decodeAndExecute(nextInstruction);
             }
 
         }
