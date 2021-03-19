@@ -460,196 +460,196 @@ namespace trentGB
             switch (extOpCode)
             {
                 case 0x00:
-                    null;
+                    setB(rotateLeftCarry(getB()));
                     break;
                 case 0x01:
-                    null;
+                    setC(rotateLeftCarry(getC()));
                     break;
                 case 0x02:
-                    null;
+                    setD(rotateLeftCarry(getD()));
                     break;
                 case 0x03:
-                    null;
+                    setE(rotateLeftCarry(getE()));
                     break;
                 case 0x04:
-                    null;
+                    setH(rotateLeftCarry(getH()));
                     break;
                 case 0x05:
-                    null;
+                    setL(rotateLeftCarry(getL()));
                     break;
                 case 0x06:
-                    null;
+                    mem.setByte(getHL(), rotateLeftCarry(mem.getByte(getHL())));
                     break;
                 case 0x07:
-                    null;
+                    setA(rotateLeftCarry(getA()));
                     break;
                 case 0x08:
-                    null;
+                    setB(rotateRightCarry(getB()));
                     break;
                 case 0x09:
-                    null;
+                    setC(rotateRightCarry(getC()));
                     break;
                 case 0x0A:
-                    null;
+                    setD(rotateRightCarry(getD()));
                     break;
                 case 0x0B:
-                    null;
+                    setE(rotateRightCarry(getE()));
                     break;
                 case 0x0C:
-                    null;
+                    setH(rotateRightCarry(getH()));
                     break;
                 case 0x0D:
-                    null;
+                    setL(rotateRightCarry(getL()));
                     break;
                 case 0x0E:
-                    null;
+                    mem.setByte(getHL(), rotateRightCarry(mem.getByte(getHL())));
                     break;
                 case 0x0F:
-                    null;
+                    setA(rotateRightCarry(getA()));
                     break;
                 case 0x10:
-                    null;
+                    setB(rotateLeft(getB()));
                     break;
                 case 0x11:
-                    null;
+                    setC(rotateLeft(getC()));
                     break;
                 case 0x12:
-                    null;
+                    setD(rotateLeft(getD()));
                     break;
                 case 0x13:
-                    null;
+                    setE(rotateLeft(getE()));
                     break;
                 case 0x14:
-                    null;
+                    setH(rotateLeft(getH()));
                     break;
                 case 0x15:
-                    null;
+                    setL(rotateLeft(getL()));
                     break;
                 case 0x16:
-                    null;
+                    mem.setByte(getHL(), rotateLeft(mem.getByte(getHL())));
                     break;
                 case 0x17:
-                    null;
+                    setA(rotateLeft(getA()));
                     break;
                 case 0x18:
-                    null;
+                    setB(rotateRight(getB()));
                     break;
                 case 0x19:
-                    null;
+                    setC(rotateRight(getC()));
                     break;
                 case 0x1A:
-                    null;
+                    setD(rotateRight(getD()));
                     break;
                 case 0x1B:
-                    null;
+                    setE(rotateRight(getE()));
                     break;
                 case 0x1C:
-                    null;
+                    setH(rotateRight(getH()));
                     break;
                 case 0x1D:
-                    null;
+                    setL (rotateRight(getL()));
                     break;
                 case 0x1E:
-                    null;
+                    mem.setByte(getHL(), rotateRight(mem.getByte(getHL())));
                     break;
                 case 0x1F:
-                    null;
+                    setA(rotateRight(getA()));
                     break;
                 case 0x20:
-                    null;
+                    setB(sla(getB()));
                     break;
                 case 0x21:
-                    null;
+                    setC(sla(getC()));
                     break;
                 case 0x22:
-                    null;
+                    setD(sla(getD()));
                     break;
                 case 0x23:
-                    null;
+                    setE(sla(getE()));
                     break;
                 case 0x24:
-                    null;
+                    setH(sla(getH()));
                     break;
                 case 0x25:
-                    null;
+                    setL(sla(getL()));
                     break;
                 case 0x26:
-                    null;
+                    mem.setByte(getHL(), sla(mem.getByte(getHL())));
                     break;
                 case 0x27:
-                    null;
+                    setA(sla(getA()));
                     break;
                 case 0x28:
-                    null;
+                    setB(sra(getB()));
                     break;
                 case 0x29:
-                    null;
+                    setC(sra(getC()));
                     break;
                 case 0x2A:
-                    null;
+                    setD(sra(getD()));
                     break;
                 case 0x2B:
-                    null;
+                    setE(sra(getE()));
                     break;
                 case 0x2C:
-                    null;
+                    setH(sra(getH()));
                     break;
                 case 0x2D:
-                    null;
+                    setL(sra(getL()));
                     break;
                 case 0x2E:
-                    null;
+                    mem.setByte(getHL(), sra(mem.getByte(getHL())));
                     break;
                 case 0x2F:
-                    null;
+                    setA(sra(getA()));
                     break;
                 case 0x30:
-                    null;
+                    setB(swapNibbles(getB()));
                     break;
                 case 0x31:
-                    null;
+                    setC(swapNibbles(getC()));
                     break;
                 case 0x32:
-                    null;
+                    setD(swapNibbles(getD()));
                     break;
                 case 0x33:
-                    null;
+                    setE(swapNibbles(getE()));
                     break;
                 case 0x34:
-                    null;
+                    setH(swapNibbles(getH()));
                     break;
                 case 0x35:
-                    null;
+                    setL(swapNibbles(getL()));
                     break;
                 case 0x36:
-                    null;
+                    mem.setByte(getHL(), swapNibbles(mem.getByte(getHL())));
                     break;
                 case 0x37:
-                    null;
+                    setA(swapNibbles(getA()));
                     break;
                 case 0x38:
-                    null;
+                    setB(srl(getB()));
                     break;
                 case 0x39:
-                    null;
+                    setC(srl(getC()));
                     break;
                 case 0x3A:
-                    null;
+                    setD(srl(getD()));
                     break;
                 case 0x3B:
-                    null;
+                    setE(srl(getE()));
                     break;
                 case 0x3C:
-                    null;
+                    setH(srl(getH()));
                     break;
                 case 0x3D:
-                    null;
+                    setL(srl(getL()));
                     break;
                 case 0x3E:
-                    null;
+                    mem.setByte(getHL(), srl(mem.getByte(getHL())));
                     break;
                 case 0x3F:
-                    null;
+                    setA(srl(getA()));
                     break;
                 case 0x40:
                     executeBitOperation(BitOperationType.Test, 'B', 0x01);
@@ -3626,6 +3626,54 @@ namespace trentGB
             setSubtractFlag(false);
             setHalfCarryFlag(false);
             return result;
+        }
+
+        private Byte swapNibbles(byte value)
+        {
+            Byte msn =(Byte) ((value & 0x0F) << 4);
+            Byte lsn = (Byte) ((value & 0xF0) >> 4);
+
+            return ((Byte) (msn | lsn));
+        }
+
+        private Byte sla(byte value)
+        {
+            Byte rv = (byte)((((int)value) << 1) & 0xFF);
+
+            setSubtractFlag(false);
+            setHalfCarryFlag(false);
+
+            setCarryFlag((value & 0x80) != 0);
+            setZeroFlag(rv == 0);
+
+
+            return rv;
+        }
+
+        private Byte sra(byte value)
+        {
+            Byte rv = (Byte)(((((int)value) >> 1) | (((int)value) & 0x80)) & 0xFF);
+
+            setSubtractFlag(false);
+            setHalfCarryFlag(false);
+
+            setCarryFlag((value & 0x01) != 0);
+            setZeroFlag(rv == 0);
+
+            return rv;
+        }
+
+        private Byte srl(byte value)
+        {
+            Byte rv = (Byte)((((int)value) >> 1) & 0xFF);
+
+            setSubtractFlag(false);
+            setHalfCarryFlag(false);
+
+            setCarryFlag((value & 0x01) != 0);
+            setZeroFlag(rv == 0);
+
+            return rv;
         }
 
 
