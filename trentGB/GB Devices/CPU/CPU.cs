@@ -17,6 +17,14 @@ namespace trentGB
         }
 
 
+        public enum SpeedMode
+        {
+            GB,
+            CGBSingleSpeed,
+            CGBDoubleSpeed
+        }
+
+
         private Byte A = 0;
         private Byte B = 0;
         private Byte C = 0;
@@ -31,12 +39,14 @@ namespace trentGB
         private ushort SP = 0;
         private AddressSpace mem = null;
         private Dictionary<Byte, Action> opCodeTranslationDict = new Dictionary<byte, Action>();
+        private Dictionary<Byte, Action> CBPrefixedOpCodeTranslationDict = new Dictionary<byte, Action>();
 
-        public bool done = false;
         public bool isHalted = false; // CPU Halted until next interrupt.
         public bool isStopped = false; // CPU and LCD Halted until a Buttoin is pressed.
         public bool shouldDisableInterrupts = false;
         public bool shouldEnableInterrupts = false;
+        private long ticksSinceLastCycle = 0;
+
 
         public ROM rom;
 
@@ -49,10 +59,73 @@ namespace trentGB
             loadOpCodeMap();
         }
 
+        public SpeedMode getSpeedMode()
+        {
+            // Hardcoded CGB
+            SpeedMode rv = SpeedMode.CGBSingleSpeed;
+            if ((mem.getByte(0xFF4D) & 0x80) > 0)
+            {
+                rv = SpeedMode.CGBDoubleSpeed;
+            }
+            else
+            {
+                rv = SpeedMode.CGBSingleSpeed;
+            }
+
+            return rv;
+        }
+
+        public void performTicks(long timeDelta)
+        {
+            if (getSpeedMode() == SpeedMode.CGBDoubleSpeed)
+            {
+                // Run tick for every 
+            }
+            else
+            {
+                // Run tick evry us
+            }
+        }
+
+        public void tick()
+        {
+            bool shouldPerformCycle = false;
+            ticksSinceLastCycle++;
+            if (getSpeedMode() == SpeedMode.CGBDoubleSpeed)
+            {
+                // Should Cycle evry 2 ticks 2.10 MHz or ~ clocks 4.194/2
+                if (ticksSinceLastCycle == 2)
+                {
+                    shouldPerformCycle = true;
+                    ticksSinceLastCycle = 0;
+                }
+            }
+            else
+            {
+                // Should Cycle every 4 ticks effective cycle rate of 1.04 MHz
+                if (ticksSinceLastCycle == 4)
+                {
+                    shouldPerformCycle = true;
+                    ticksSinceLastCycle = 0;
+                }
+            }
+
+            if (shouldPerformCycle)
+            {
+                Byte nextInstruction = fetch();
+                if (nextInstruction == 0x10)
+                {
+                    // Halt CPU and LCD
+                    // lcd.stop();
+                }
+
+                decodeAndExecute(nextInstruction);
+            }
+        }
+
 
         public void reset()
         {
-            done = false;
             setAF(0x11B0); // Set this based on ROMs GB Mode. For Now Hardcode for GBC A = 0x11
             setBC(0x0013);
             setDE(0x00D8);
@@ -139,13 +212,13 @@ namespace trentGB
             opCodeTranslationDict.Add(0x0F, rrcA);
             opCodeTranslationDict.Add(0x10, stopCPU);
             opCodeTranslationDict.Add(0x11, ldDE16);
-            opCodeTranslationDict.Add(0x12, implementOpCode12);
+            opCodeTranslationDict.Add(0x12, ldAIntoMemDE16);
             opCodeTranslationDict.Add(0x13, incDE);
             opCodeTranslationDict.Add(0x14, incD);
             opCodeTranslationDict.Add(0x15, decD);
             opCodeTranslationDict.Add(0x16, ldD);
             opCodeTranslationDict.Add(0x17, rlA);
-            opCodeTranslationDict.Add(0x18, implementOpCode18);
+            opCodeTranslationDict.Add(0x18, jumpPCPlusN);
             opCodeTranslationDict.Add(0x19, addDEtoHL);
             opCodeTranslationDict.Add(0x1A, ldAMemDE);
             opCodeTranslationDict.Add(0x1B, decDE);
@@ -153,7 +226,7 @@ namespace trentGB
             opCodeTranslationDict.Add(0x1D, decE);
             opCodeTranslationDict.Add(0x1E, ldE);
             opCodeTranslationDict.Add(0x1F, rrA);
-            opCodeTranslationDict.Add(0x20, implementOpCode20);
+            opCodeTranslationDict.Add(0x20, jumpIfZeroFlagResetPlusN);
             opCodeTranslationDict.Add(0x21, ldHL16);
             opCodeTranslationDict.Add(0x22, ldiMemHLWithA);
             opCodeTranslationDict.Add(0x23, incHL);
@@ -161,7 +234,7 @@ namespace trentGB
             opCodeTranslationDict.Add(0x25, decH);
             opCodeTranslationDict.Add(0x26, ldH);
             opCodeTranslationDict.Add(0x27, daaRegA);
-            opCodeTranslationDict.Add(0x28, implementOpCode28);
+            opCodeTranslationDict.Add(0x28, jumpIfZeroFlagSetPlusN);
             opCodeTranslationDict.Add(0x29, addHLtoHL);
             opCodeTranslationDict.Add(0x2A, ldiAMemHL);
             opCodeTranslationDict.Add(0x2B, decHL);
@@ -169,7 +242,7 @@ namespace trentGB
             opCodeTranslationDict.Add(0x2D, decL);
             opCodeTranslationDict.Add(0x2E, ldL);
             opCodeTranslationDict.Add(0x2F, complementA);
-            opCodeTranslationDict.Add(0x30, implementOpCode30);
+            opCodeTranslationDict.Add(0x30, jumpIfCarryFlagResetPlusN);
             opCodeTranslationDict.Add(0x31, ldSP16);
             opCodeTranslationDict.Add(0x32, lddMemHLWithA);
             opCodeTranslationDict.Add(0x33, incSP);
@@ -177,7 +250,7 @@ namespace trentGB
             opCodeTranslationDict.Add(0x35, decHLMem);
             opCodeTranslationDict.Add(0x36, ldHLMem);
             opCodeTranslationDict.Add(0x37, highCarryFlag);
-            opCodeTranslationDict.Add(0x38, implementOpCode38);
+            opCodeTranslationDict.Add(0x38, jumpIfCarryFlagSetPlusN);
             opCodeTranslationDict.Add(0x39, addSPtoHL);
             opCodeTranslationDict.Add(0x3A, lddAMemHL);
             opCodeTranslationDict.Add(0x3B, decSP);
@@ -240,7 +313,7 @@ namespace trentGB
             opCodeTranslationDict.Add(0x74, ldHLMemFromH);
             opCodeTranslationDict.Add(0x75, ldHLMemFromL);
             opCodeTranslationDict.Add(0x76, haltCPU);
-            opCodeTranslationDict.Add(0x77, implementOpCode77);
+            opCodeTranslationDict.Add(0x77, ldAIntoMemHL16);
             opCodeTranslationDict.Add(0x78, ldrAB);
             opCodeTranslationDict.Add(0x79, ldrAC);
             opCodeTranslationDict.Add(0x7A, ldrAD);
@@ -313,38 +386,38 @@ namespace trentGB
             opCodeTranslationDict.Add(0xBD, cmpAL);
             opCodeTranslationDict.Add(0xBE, cmpAMemHL);
             opCodeTranslationDict.Add(0xBF, cmpAA);
-            opCodeTranslationDict.Add(0xC0, implementOpCodeC0);
+            opCodeTranslationDict.Add(0xC0, retIfZReset);
             opCodeTranslationDict.Add(0xC1, popIntoBC);
-            opCodeTranslationDict.Add(0xC2, implementOpCodeC2);
-            opCodeTranslationDict.Add(0xC3, implementOpCodeC3);
-            opCodeTranslationDict.Add(0xC4, implementOpCodeC4);
+            opCodeTranslationDict.Add(0xC2, jumpIfZeroFlagReset);
+            opCodeTranslationDict.Add(0xC3, jumpToNN);
+            opCodeTranslationDict.Add(0xC4, callNNIfZReset);
             opCodeTranslationDict.Add(0xC5, pushBCToStack);
             opCodeTranslationDict.Add(0xC6, addNtoA);
-            opCodeTranslationDict.Add(0xC7, implementOpCodeC7);
-            opCodeTranslationDict.Add(0xC8, implementOpCodeC8);
-            opCodeTranslationDict.Add(0xC9, implementOpCodeC9);
-            opCodeTranslationDict.Add(0xCA, implementOpCodeCA);
+            opCodeTranslationDict.Add(0xC7, rst00);
+            opCodeTranslationDict.Add(0xC8, retIfZSet);
+            opCodeTranslationDict.Add(0xC9, ret);
+            opCodeTranslationDict.Add(0xCA, jumpIfZeroFlagSet);
             opCodeTranslationDict.Add(0xCB, implementOpCodeCB);
-            opCodeTranslationDict.Add(0xCC, implementOpCodeCC);
-            opCodeTranslationDict.Add(0xCD, implementOpCodeCD);
-            opCodeTranslationDict.Add(0xCE, implementOpCodeCE);
-            opCodeTranslationDict.Add(0xCF, implementOpCodeCF);
-            opCodeTranslationDict.Add(0xD0, implementOpCodeD0);
+            opCodeTranslationDict.Add(0xCC, callNNIfZSet);
+            opCodeTranslationDict.Add(0xCD, callNN);
+            opCodeTranslationDict.Add(0xCE, addCarryNtoA);
+            opCodeTranslationDict.Add(0xCF, rst08);
+            opCodeTranslationDict.Add(0xD0, retIfCarryReset);
             opCodeTranslationDict.Add(0xD1, popIntoDE);
-            opCodeTranslationDict.Add(0xD2, implementOpCodeD2);
+            opCodeTranslationDict.Add(0xD2, jumpIfCarryFlagReset);
             opCodeTranslationDict.Add(0xD3, unusedD3);
-            opCodeTranslationDict.Add(0xD4, implementOpCodeD4);
+            opCodeTranslationDict.Add(0xD4, callNNIfCReset);
             opCodeTranslationDict.Add(0xD5, pushDEToStack);
             opCodeTranslationDict.Add(0xD6, subNFromA);
-            opCodeTranslationDict.Add(0xD7, implementOpCodeD7);
-            opCodeTranslationDict.Add(0xD8, implementOpCodeD8);
-            opCodeTranslationDict.Add(0xD9, implementOpCodeD9);
-            opCodeTranslationDict.Add(0xDA, implementOpCodeDA);
+            opCodeTranslationDict.Add(0xD7, rst10);
+            opCodeTranslationDict.Add(0xD8, retIfCarrySet);
+            opCodeTranslationDict.Add(0xD9, retEnableInterrupts);
+            opCodeTranslationDict.Add(0xDA, jumpIfCarryFlagSet);
             opCodeTranslationDict.Add(0xDB, unusedDB); 
-            opCodeTranslationDict.Add(0xDC, implementOpCodeDC);
+            opCodeTranslationDict.Add(0xDC, callNNIfCSet);
             opCodeTranslationDict.Add(0xDD, unusedDD);
             opCodeTranslationDict.Add(0xDE, subCarryNFromA);  // SBC A,n
-            opCodeTranslationDict.Add(0xDF, implementOpCodeDF);
+            opCodeTranslationDict.Add(0xDF, rst18);
             opCodeTranslationDict.Add(0xE0, putAIntoIOPlusMem);
             opCodeTranslationDict.Add(0xE1, popIntoHL);
             opCodeTranslationDict.Add(0xE2, ldAIntoIOPlusC);
@@ -352,15 +425,15 @@ namespace trentGB
             opCodeTranslationDict.Add(0xE4, unusedE4);
             opCodeTranslationDict.Add(0xE5, pushHLToStack);
             opCodeTranslationDict.Add(0xE6, andANinA);
-            opCodeTranslationDict.Add(0xE7, implementOpCodeE7);
+            opCodeTranslationDict.Add(0xE7, rst20);
             opCodeTranslationDict.Add(0xE8, addNtoSP);
-            opCodeTranslationDict.Add(0xE9, implementOpCodeE9);
-            opCodeTranslationDict.Add(0xEA, implementOpCodeEA);
+            opCodeTranslationDict.Add(0xE9, jumpMemHL);
+            opCodeTranslationDict.Add(0xEA, ldAIntoNN16);
             opCodeTranslationDict.Add(0xEB, unusedEB);
             opCodeTranslationDict.Add(0xEC, unusedEC);
             opCodeTranslationDict.Add(0xED, unusedED);
             opCodeTranslationDict.Add(0xEE, xorANinA);
-            opCodeTranslationDict.Add(0xEF, implementOpCodeEF);
+            opCodeTranslationDict.Add(0xEF, rst28);
             opCodeTranslationDict.Add(0xF0, putIOPlusMemIntoA);
             opCodeTranslationDict.Add(0xF1, popIntoAF);
             opCodeTranslationDict.Add(0xF2, ldIOPlusCToA);
@@ -368,7 +441,7 @@ namespace trentGB
             opCodeTranslationDict.Add(0xF4, unusedF4);
             opCodeTranslationDict.Add(0xF5, pushAFToStack);
             opCodeTranslationDict.Add(0xF6, orANinA);
-            opCodeTranslationDict.Add(0xF7, implementOpCodeF7);
+            opCodeTranslationDict.Add(0xF7, rst30);
             opCodeTranslationDict.Add(0xF8, ldHLFromSPPlusN);
             opCodeTranslationDict.Add(0xF9, ldSPFromHL);
             opCodeTranslationDict.Add(0xFA, ld16A);
@@ -376,7 +449,7 @@ namespace trentGB
             opCodeTranslationDict.Add(0xFC, unusedFC);
             opCodeTranslationDict.Add(0xFD, unusedFD);
             opCodeTranslationDict.Add(0xFE, cmpAN);
-            opCodeTranslationDict.Add(0xFF, implementOpCodeFF);
+            opCodeTranslationDict.Add(0xFF, rst38);
         }
 
 
@@ -755,9 +828,9 @@ namespace trentGB
 
             setDE(rv);
         }
-        private void implementOpCode12()
+        private void ldAIntoMemDE16() // 0x12
         {
-            throw new NotImplementedException("Implement Op Code 0x12");
+            mem.setByte(getDE(), getA());
         }
         private void incDE() //0x03
         {
@@ -792,9 +865,12 @@ namespace trentGB
         {
             setA(rotateLeft(getA()));
         }
-        private void implementOpCode18()
+        private void jumpPCPlusN() // 0x18
         {
-            throw new NotImplementedException("Implement Op Code 0x18");
+            Byte value = fetch();
+            ushort address = add16IgnoreFlags(PC, value);
+
+            setPC(address);
         }
         private void addDEtoHL() //0x19
         {
@@ -838,9 +914,14 @@ namespace trentGB
         {
             setA(rotateRight(getA()));
         }
-        private void implementOpCode20()
+        private void jumpIfZeroFlagResetPlusN() // 0x20
         {
-            throw new NotImplementedException("Implement Op Code 0x20");
+            Byte offset = fetch();
+            ushort value = add16IgnoreFlags(getPC(), offset);
+            if (!getZeroFlag())
+            {
+                setPC(value);
+            }
         }
         private void ldHL16() // 0x21
         {
@@ -894,9 +975,14 @@ namespace trentGB
 
             setA(value);
         }
-        private void implementOpCode28()
+        private void jumpIfZeroFlagSetPlusN() // 0x28
         {
-            throw new NotImplementedException("Implement Op Code 0x28");
+            Byte offset = fetch();
+            ushort value = add16IgnoreFlags(getPC(), offset);
+            if (getZeroFlag())
+            {
+                setPC(value);
+            }
         }
         private void addHLtoHL() //0x29
         {
@@ -946,9 +1032,14 @@ namespace trentGB
             setHalfCarryFlag(true);
             setA(value);
         }
-        private void implementOpCode30()
+        private void jumpIfCarryFlagResetPlusN() // 0x30
         {
-            throw new NotImplementedException("Implement Op Code 0x30");
+            Byte offset = fetch();
+            ushort value = add16IgnoreFlags(getPC(), offset);
+            if (!getCarryFlag())
+            {
+                setPC(value);
+            }
         }
         private void ldSP16() // 0x31
         {
@@ -1001,9 +1092,14 @@ namespace trentGB
 
             setCarryFlag(true);
         }
-        private void implementOpCode38()
+        private void jumpIfCarryFlagSetPlusN() // 0x38
         {
-            throw new NotImplementedException("Implement Op Code 0x38");
+            Byte offset = fetch();
+            ushort value = add16IgnoreFlags(getPC(), offset);
+            if (getCarryFlag())
+            {
+                setPC(value);
+            }
         }
         private void addSPtoHL() //0x39
         {
@@ -1326,9 +1422,9 @@ namespace trentGB
         {
             isHalted = true;
         }
-        private void implementOpCode77()
+        private void ldAIntoMemHL16() // 0x77
         {
-            throw new NotImplementedException("Implement Op Code 0x77");
+            mem.setByte(getHL(), getA());
         }
         private void ldrAB() // 0x78
         {
@@ -1882,9 +1978,12 @@ namespace trentGB
 
             setA(value);
         }
-        private void implementOpCodeC0()
+        private void retIfZReset() // 0xC0
         {
-            throw new NotImplementedException("Implement Op Code 0xC0");
+            if (!getZeroFlag())
+            {
+                setPC(pop16OffStack());
+            }
         }
         private void popIntoBC() //0xC1
         {
@@ -1897,24 +1996,36 @@ namespace trentGB
 
             setBC(value);
         }
-        private void implementOpCodeC2()
+        private void jumpIfZeroFlagReset() // 0xC2
         {
-            throw new NotImplementedException("Implement Op Code 0xC2");
+            Byte lsb = fetch();
+            Byte msb = fetch();
+            ushort value = (ushort)((msb << 8) + lsb);
+            if (!getZeroFlag())
+            {
+                setPC(value);
+            }
         }
-        private void implementOpCodeC3()
+        private void jumpToNN() // 0xC3
         {
-            throw new NotImplementedException("Implement Op Code 0xC3");
+            Byte lsb = fetch();
+            Byte msb = fetch();
+            ushort value = (ushort)((msb << 8) + lsb);
+            setPC(value);
         }
-        private void implementOpCodeC4()
+        private void callNNIfZReset() //0xC4
         {
-            throw new NotImplementedException("Implement Op Code 0xC4");
+            Byte lsb = fetch();
+            Byte msb = fetch();
+            if (!getZeroFlag())
+            {
+                pushOnStack(getUInt16ForBytes(lsb, msb));
+            }
         }
         private void pushBCToStack() //0xC5
         {
             byte[] value = getByteArrayForUInt16(getBC());
-            mem.setBytes(getSP(), value);
-            decrementSP();
-            decrementSP();
+            pushOnStack(value);
         }
         private void addNtoA() // 0xC6
         {
@@ -1923,45 +2034,70 @@ namespace trentGB
 
             setA(value);
         }
-        private void implementOpCodeC7()
+        private void rst00() // 0xC7
         {
-            throw new NotImplementedException("Implement Op Code 0xC7");
+            pushOnStack(getPC());
+            setPC(0x0000);
         }
-        private void implementOpCodeC8()
+        private void retIfZSet() // 0xC8
         {
-            throw new NotImplementedException("Implement Op Code 0xC8");
+            if (getZeroFlag())
+            {
+                setPC(pop16OffStack());
+            }
         }
-        private void implementOpCodeC9()
+        private void ret() // 0xC9
         {
-            throw new NotImplementedException("Implement Op Code 0xC9");
+            setPC(pop16OffStack());
         }
-        private void implementOpCodeCA()
+        private void jumpIfZeroFlagSet() // 0xCA
         {
-            throw new NotImplementedException("Implement Op Code 0xCA");
+            Byte lsb = fetch();
+            Byte msb = fetch();
+            ushort value = (ushort)((msb << 8) + lsb);
+            if (getZeroFlag())
+            {
+                setPC(value);
+            }
         }
         private void implementOpCodeCB()
         {
             throw new NotImplementedException("Implement Op Code 0xCB");
         }
-        private void implementOpCodeCC()
+        private void callNNIfZSet() //0xCC
         {
-            throw new NotImplementedException("Implement Op Code 0xCC");
+            Byte lsb = fetch();
+            Byte msb = fetch();
+            if (getZeroFlag())
+            {
+                pushOnStack(getUInt16ForBytes(lsb, msb));
+            }
         }
-        private void implementOpCodeCD()
+        private void callNN() //0xCD
         {
-            throw new NotImplementedException("Implement Op Code 0xCD");
+            Byte lsb = fetch();
+            Byte msb = fetch();
+            pushOnStack(getUInt16ForBytes(lsb, msb));
         }
-        private void implementOpCodeCE()
+        private void addCarryNtoA() // 0xCE
         {
-            throw new NotImplementedException("Implement Op Code 0xCE");
+            Byte value = fetch();
+            Byte rv = 0;
+            rv = addCarry(getA(), value);
+
+            setA(rv);
         }
-        private void implementOpCodeCF()
+        private void rst08() // 0xCF
         {
-            throw new NotImplementedException("Implement Op Code 0xCF");
+            pushOnStack(getPC());
+            setPC(0x0008);
         }
-        private void implementOpCodeD0()
+        private void retIfCarryReset() // 0xD0
         {
-            throw new NotImplementedException("Implement Op Code 0xD0");
+            if (!getCarryFlag())
+            {
+                setPC(pop16OffStack());
+            }
         }
         private void popIntoDE() //0xD1
         {
@@ -1974,24 +2110,33 @@ namespace trentGB
 
             setDE(value);
         }
-        private void implementOpCodeD2()
+        private void jumpIfCarryFlagReset() // 0xD2
         {
-            throw new NotImplementedException("Implement Op Code 0xD2");
+            Byte lsb = fetch();
+            Byte msb = fetch();
+            ushort value = (ushort)((msb << 8) + lsb);
+            if (!getCarryFlag())
+            {
+                setPC(value);
+            }
         }
         private void unusedD3() // 0xD3
         {
             throw new NotImplementedException(" 0xD3 is Unused");
         }
-        private void implementOpCodeD4()
+        private void callNNIfCReset() //0xD4
         {
-            throw new NotImplementedException("Implement Op Code 0xD4");
+            Byte lsb = fetch();
+            Byte msb = fetch();
+            if (!getCarryFlag())
+            {
+                pushOnStack(getUInt16ForBytes(lsb, msb));
+            }
         }
         private void pushDEToStack() //0xD5
         {
             byte[] value = getByteArrayForUInt16(getDE());
-            mem.setBytes(getSP(), value);
-            decrementSP();
-            decrementSP();
+            pushOnStack(value);
         }
         private void subNFromA() // 0xD6
         {
@@ -2002,29 +2147,45 @@ namespace trentGB
 
             setA(value);
         }
-        private void implementOpCodeD7()
+        private void rst10() // 0xD7
         {
-            throw new NotImplementedException("Implement Op Code 0xD7");
+            pushOnStack(getPC());
+            setPC(0x0010);
         }
-        private void implementOpCodeD8()
+        private void retIfCarrySet() // 0xD8
         {
-            throw new NotImplementedException("Implement Op Code 0xD8");
+            if (getCarryFlag())
+            {
+                setPC(pop16OffStack());
+            }
         }
-        private void implementOpCodeD9()
+        private void retEnableInterrupts() // 0xC9
         {
-            throw new NotImplementedException("Implement Op Code 0xD9");
+            setPC(pop16OffStack());
+            shouldEnableInterrupts = true;
         }
-        private void implementOpCodeDA()
+        private void jumpIfCarryFlagSet() // 0xDA
         {
-            throw new NotImplementedException("Implement Op Code 0xDA");
+            Byte lsb = fetch();
+            Byte msb = fetch();
+            ushort value = (ushort)((msb << 8) + lsb);
+            if (getCarryFlag())
+            {
+                setPC(value);
+            }
         }
         private void unusedDB() // 0xDB
         {
             throw new NotImplementedException(" 0xDB is Unused");
         }
-        private void implementOpCodeDC()
+        private void callNNIfCSet() //0xDC
         {
-            throw new NotImplementedException("Implement Op Code 0xDC");
+            Byte lsb = fetch();
+            Byte msb = fetch();
+            if (getCarryFlag())
+            {
+                pushOnStack(getUInt16ForBytes(lsb, msb));
+            }
         }
         private void unusedDD() // 0xDD
         {
@@ -2039,9 +2200,10 @@ namespace trentGB
 
             setA(value);
         }
-        private void implementOpCodeDF()
+        private void rst18() // 0xDF
         {
-            throw new NotImplementedException("Implement Op Code 0xDF");
+            pushOnStack(getPC());
+            setPC(0x0018);
         }
         private void putAIntoIOPlusMem() // 0xE0
         {
@@ -2076,9 +2238,7 @@ namespace trentGB
         private void pushHLToStack() //0xE5
         {
             byte[] value = getByteArrayForUInt16(getHL());
-            mem.setBytes(getSP(), value);
-            decrementSP();
-            decrementSP();
+            pushOnStack(value);
         }
         private void andANinA() // 0xE6
         {
@@ -2088,9 +2248,10 @@ namespace trentGB
 
             setA(value);
         }
-        private void implementOpCodeE7()
+        private void rst20() // 0xE7
         {
-            throw new NotImplementedException("Implement Op Code 0xE7");
+            pushOnStack(getPC());
+            setPC(0x0020);
         }
         private void addNtoSP() // 0xE8
         {
@@ -2099,13 +2260,17 @@ namespace trentGB
 
             setSP(compValue);
         }
-        private void implementOpCodeE9()
+        private void jumpMemHL() // 0xE9
         {
-            throw new NotImplementedException("Implement Op Code 0xE9");
+            byte[] value = mem.getBytes(getHL(), 2);
+
+            setPC(getUInt16ForBytes(value));
         }
-        private void implementOpCodeEA()
+        private void ldAIntoNN16() // 0xEA
         {
-            throw new NotImplementedException("Implement Op Code 0xEA");
+            Byte lsb = fetch();
+            Byte msb = fetch();
+            mem.setByte(getUInt16ForBytes(lsb, msb), getA());
         }
         private void unusedEB() // 0xEB
         {
@@ -2127,9 +2292,10 @@ namespace trentGB
 
             setA(value);
         }
-        private void implementOpCodeEF()
+        private void rst28() // 0xEF
         {
-            throw new NotImplementedException("Implement Op Code 0xEF");
+            pushOnStack(getPC());
+            setPC(0x0028);
         }
         private void putIOPlusMemIntoA() // 0xF0
         {
@@ -2165,10 +2331,7 @@ namespace trentGB
         private void pushAFToStack() //0xF5
         {
             byte[] value = getByteArrayForUInt16(getAF());
-            mem.setByte(getSP(),value[0]);
-            decrementSP();
-            mem.setByte(getSP(), value[1]);
-            decrementSP();
+            pushOnStack(value);
         }
         private void orANinA() // 0xF6
         {
@@ -2178,9 +2341,10 @@ namespace trentGB
 
             setA(value);
         }
-        private void implementOpCodeF7()
+        private void rst30() // 0xF7
         {
-            throw new NotImplementedException("Implement Op Code 0xF7");
+            pushOnStack(getPC());
+            setPC(0x0030);
         }
         private void ldHLFromSPPlusN() // 0xF8
         {
@@ -2221,9 +2385,10 @@ namespace trentGB
 
             setA(value);
         }
-        private void implementOpCodeFF()
+        private void rst38() // 0xFF
         {
-            throw new NotImplementedException("Implement Op Code 0xFF");
+            pushOnStack(getPC());
+            setPC(0x0038);
         }
 
 
@@ -2685,6 +2850,39 @@ namespace trentGB
             valueToIncrement = increment16(valueToIncrement);
             setHL(valueToIncrement);
         }
+
+        private void pushOnStack(Byte value)
+        {
+            mem.setByte(getSP(), value);
+            decrementSP();
+        }
+
+        private void pushOnStack(ushort value)
+        {
+            byte[] tmp = getByteArrayForUInt16(value);
+            pushOnStack(tmp[1]);
+            pushOnStack(tmp[0]);
+            
+        }
+        private void pushOnStack(byte[] value)
+        {
+            pushOnStack(value[1]);
+            pushOnStack(value[0]);
+        }
+
+        private Byte popOffStack()
+        {
+            Byte value = mem.getByte(getSP());
+            incrementSP();
+
+            return value;
+        }
+        private ushort pop16OffStack()
+        {
+            Byte lsb = popOffStack();
+            Byte msb = popOffStack();
+            return getUInt16ForBytes(lsb, msb);
+        }
         #endregion
 
         #region C# Data Rollover Helper Functions
@@ -2728,6 +2926,26 @@ namespace trentGB
             return value;
         }
 
+        private Byte addIgnoreFlags(Byte value1, Byte value2)
+        {
+            return (Byte)((value1 + value2) & 0xFF);
+        }
+
+        private ushort add16IgnoreFlags(Byte value1, ushort value2)
+        {
+            return add16IgnoreFlags((ushort)value1, value2);
+        }
+
+        private ushort add16IgnoreFlags(ushort value1, Byte value2)
+        {
+            return add16IgnoreFlags(value1, (ushort) value2);
+        }
+
+        private ushort add16IgnoreFlags(ushort value1, ushort value2)
+        {
+            return (ushort)((value1 + value2) & 0xFFFF);
+        }
+
         public byte[] getByteArrayForUInt16(ushort value)
         {
             // LSB First
@@ -2737,6 +2955,17 @@ namespace trentGB
 
             return rv;
         }
+
+        public ushort getUInt16ForBytes(Byte lsb, Byte msb)
+        {
+            return (ushort) (((msb << 8) + lsb) & 0xFFFF);
+        }
+
+        public ushort getUInt16ForBytes(byte[] arr)
+        {
+            return getUInt16ForBytes(arr[0], arr[1]);
+        }
+
         #endregion
 
         #endregion

@@ -33,6 +33,12 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="OpenGL.Net, Version=0.8.4.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\OpenGL.Net.0.8.4\lib\net461\OpenGL.Net.dll</HintPath>
+    </Reference>
+    <Reference Include="OpenGL.Net.WinForms, Version=0.8.4.0, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\OpenGL.Net.WinForms.0.8.4\lib\net461\OpenGL.Net.WinForms.dll</HintPath>
+    </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
     <Reference Include="System.Xml.Linq" />
@@ -55,6 +61,7 @@
     <Compile Include="GB Devices\CPU\CPU.cs" />
     <Compile Include="GB Devices\Gameboy.cs" />
     <Compile Include="GB Devices\LCD\LCD.cs" />
+    <Compile Include="GB Devices\LCD\LCDController.cs" />
     <Compile Include="GB Devices\Memory\AddressSpace.cs" />
     <Compile Include="GB Devices\Memory\ROM.cs" />
     <Compile Include="Program.cs" />
@@ -71,6 +78,7 @@
       <AutoGen>True</AutoGen>
       <DependentUpon>Resources.resx</DependentUpon>
     </Compile>
+    <None Include="packages.config" />
     <None Include="Properties\Settings.settings">
       <Generator>SettingsSingleFileGenerator</Generator>
       <LastGenOutput>Settings.Designer.cs</LastGenOutput>
@@ -85,4 +93,9 @@
     <None Include="App.config" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+  <PropertyGroup>
+    <PostBuildEvent>RD $(ProjectDir)$(OutDir)Roms /s /q
+mkdir $(ProjectDir)$(OutDir)Roms
+%25systemroot%25\System32\xcopy $(ProjectDir)Roms $(ProjectDir)$(OutDir)Roms /e</PostBuildEvent>
+  </PropertyGroup>
 </Project>

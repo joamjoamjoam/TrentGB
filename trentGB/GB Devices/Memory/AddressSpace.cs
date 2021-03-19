@@ -40,6 +40,7 @@ namespace trentGB
     class AddressSpace
     {
         private byte[] bytes = new byte[0xFFFF+1];
+        ushort echoOffset = (0xE000 - 0xC000);
 
         public AddressSpace()
         {
@@ -78,6 +79,17 @@ namespace trentGB
         public void setByte(ushort address, Byte value)
         {
             bytes[address] = value;
+
+            // On Set Byte Make Sure we maintain the Memory Echo Space
+
+            if (address >= 0xC000 && address <= 0xDE00)
+            {
+                bytes[address + echoOffset] = value;
+            }
+            else if (address >= 0xE000 && address <= 0xFE00)
+            {
+                bytes[address - echoOffset] = value;
+            }
         }
 
         public void setBytes(ushort address, Byte[] values)
@@ -86,6 +98,15 @@ namespace trentGB
             if (((UInt32)address + values.Count()) <= 0xFFFF)
             {
                 Array.ConstrainedCopy(values, 0, bytes, address, values.Count());
+
+                if (address >= 0xC000 && address <= 0xDE00)
+                {
+                    Array.ConstrainedCopy(values, 0, bytes, (address + echoOffset), values.Count());
+                }
+                else if (address >= 0xE000 && address <= 0xFE00)
+                {
+                    Array.ConstrainedCopy(values, 0, bytes, (address - echoOffset), values.Count());
+                }
             }
             else
             {

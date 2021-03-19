@@ -205,8 +205,8 @@ namespace trentGB
                 Array.Reverse(licenseeCodeArr);
             }
 
-            String licenseeCodeStr = $"{(char)licenseeCodeArr[1]}{(char)licenseeCodeArr[0]}";
-            String rv = $"Unknown Licensee {licenseeCodeStr} (0x{licenseeCodeArr[1]}{licenseeCodeArr[0]})";
+            String licenseeCodeStr = (licenseeCodeArr.Count() == 2) ? $"{(char)licenseeCodeArr[1]}{(char)licenseeCodeArr[0]}" : $"0{(char)licenseeCodeArr[0]}";
+            String rv = $"Unknown Licensee {licenseeCodeStr} (0x{((licenseeCodeArr.Count() == 2) ? licenseeCodeArr[1] : 0)}{licenseeCodeArr[0]})";
             switch (licenseeCodeStr)
             {
                 case "00":
