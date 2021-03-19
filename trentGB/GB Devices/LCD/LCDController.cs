@@ -12,11 +12,12 @@ namespace trentGB
         private int vBlankCycleCount = 0;
         private int vBlankCycleTiming = 0;
         private LCD display = null;
+        private AddressSpace mem = null;
 
-        public LCDController(LCD display)
+        public LCDController(LCD display, AddressSpace memory)
         {
             this.display = display;
-
+            mem = memory;
             // perform vBlank at 59.73 Hz or this many Cycles
             vBlankCycleTiming = (int)(Gameboy.clockTimingInHz / 59.73f);
         }
@@ -30,6 +31,7 @@ namespace trentGB
             // perform VBlank at 59.73 HZ or every
             if (vBlankCycleCount >= vBlankCycleTiming)
             {
+                mem.requestInterrupt(CPU.InterruptType.VBlank);
                 display.setFrameBuffer(display.buildRandomSolidColorImage());
                 display.drawImage();
                 vBlankCycleCount = 0;

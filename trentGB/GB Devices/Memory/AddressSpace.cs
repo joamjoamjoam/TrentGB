@@ -98,6 +98,11 @@ namespace trentGB
             }
         }
 
+        public void requestInterrupt(CPU.InterruptType type)
+        {
+            setByte(0xFF0F, (Byte)((getByte(0xFF0F) | (int)type)));
+        }
+
         public void setBytes(ushort address, Byte[] values)
         {
 

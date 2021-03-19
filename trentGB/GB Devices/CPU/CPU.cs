@@ -33,6 +33,22 @@ namespace trentGB
             Set
         }
 
+        public enum CPUState
+        {
+            Running,
+            Halted,
+            Stopped
+        }
+
+        public enum InterruptType
+        {
+            VBlank = 0x01,
+            LCDStat = 0x02,
+            Timer = 0x04,
+            Serial = 0x08,
+            Joypad = 0x10
+        }
+
 
         private Byte A = 0;
         private Byte B = 0;
@@ -46,11 +62,12 @@ namespace trentGB
 
         private ushort PC = 0;
         private ushort SP = 0;
+        private bool IME = false;
+        private CPUState state = CPUState.Running;
+
         private AddressSpace mem = null;
         private Dictionary<Byte, Action> opCodeTranslationDict = new Dictionary<byte, Action>();
 
-        public bool isHalted = false; // CPU Halted until next interrupt.
-        public bool isStopped = false; // CPU and LCD Halted until a Buttoin is pressed.
         public bool shouldDisableInterrupts = false;
         public bool shouldEnableInterrupts = false;
         private long ticksSinceLastCycle = 0;
@@ -77,7 +94,7 @@ namespace trentGB
 
         public SpeedMode getSpeedMode()
         {
-            // Hardcoded CGB
+            // Hardcoded GB
             SpeedMode rv = SpeedMode.CGBSingleSpeed;
             if ((mem.getByte(0xFF4D) & 0x80) > 0)
             {
@@ -144,17 +161,49 @@ namespace trentGB
                 if (nextInstruction == 0x10)
                 {
                     // Halt CPU and LCD
+
                     // lcd.stop();
                 }
 
-                decodeAndExecute(nextInstruction);
+                // Check For Interrupts
+
+                if (IME && isInterruptEnabled(InterruptType.VBlank) && isInterruptRequested(InterruptType.VBlank)) 
+                {
+                    fireInterrupt(InterruptType.VBlank);
+                }
+                else if (IME && isInterruptEnabled(InterruptType.LCDStat) && isInterruptRequested(InterruptType.LCDStat))
+                {
+                    fireInterrupt(InterruptType.LCDStat);
+                }
+                else if (IME && isInterruptEnabled(InterruptType.Timer) && isInterruptRequested(InterruptType.Timer))
+                {
+                    fireInterrupt(InterruptType.Timer);
+                }
+                else if (IME && isInterruptEnabled(InterruptType.Serial) && isInterruptRequested(InterruptType.Serial))
+                {
+                    fireInterrupt(InterruptType.Serial);
+                }
+                else if (IME && isInterruptEnabled(InterruptType.Joypad) && isInterruptRequested(InterruptType.Joypad))
+                {
+                    fireInterrupt(InterruptType.Joypad);
+                }
+                else if (state == CPUState.Halted || state == CPUState.Stopped)
+                {
+                    // Do Nothing
+                }
+                else
+                {
+                    decodeAndExecute(nextInstruction);
+                }
+
+                
             }
         }
 
 
         public void reset()
         {
-            setAF(0x11B0); // Set this based on ROMs GB Mode. For Now Hardcode for GBC A = 0x11
+            setAF(0x01B0); // Set this based on ROMs GB Mode. For Now Hardcode for GB A = 0x01
             setBC(0x0013);
             setDE(0x00D8);
             setHL(0x014D);
@@ -233,12 +282,12 @@ namespace trentGB
 
             if (enableInterrupts)
             {
-                // TODO Enable Interrupts
+                IME = true;
                 shouldEnableInterrupts = false;
             }
             if (disableInterrupts)
             {
-                // TODO Disable Interrupts
+                IME = false;
                 shouldDisableInterrupts = false;
             }
 
@@ -1405,6 +1454,69 @@ namespace trentGB
             }
         }
 
+        #region Interrupt Operations
+        private bool isAnInterruptRequested()
+        {
+            return ((mem.getByte(0xFF0F) & 0x01F) > 0);
+        }
+
+        private bool isInterruptRequested(InterruptType type)
+        {
+            return ((mem.getByte(0xFF0F) & (int)type) > 0);
+        }
+
+        private bool isInterruptEnabled(InterruptType type)
+        {
+            bool rv = false;
+            if (IME && ((mem.getByte(0xFFFF) & (int)type) > 0))
+            {
+                // Interrupt is Enabled and Requested
+                rv = true;
+            }
+
+            return rv;
+        }
+
+
+        private bool fireInterrupt(InterruptType type)
+        {
+            // SHould Break this out to make it cycle accurate later
+            bool rv = false;
+            IME = false;
+            Byte handlerAddress = 0;
+
+            switch (type)
+            {
+                case InterruptType.VBlank:
+                    handlerAddress = 0x40;
+                    mem.setByte(0xFF0F, (Byte)((mem.getByte(0xFF0F) & ~(int)type)));
+                    break;
+                case InterruptType.LCDStat:
+                    handlerAddress = 0x48;
+                    mem.setByte(0xFF0F, (Byte)((mem.getByte(0xFF0F) & ~(int)type)));
+                    break;
+                case InterruptType.Timer:
+                    handlerAddress = 0x50;
+                    mem.setByte(0xFF0F, (Byte)((mem.getByte(0xFF0F) & ~(int)type)));
+                    break;
+                case InterruptType.Serial:
+                    handlerAddress = 0x58;
+                    mem.setByte(0xFF0F, (Byte)((mem.getByte(0xFF0F) & ~(int)type)));
+                    break;
+                case InterruptType.Joypad:
+                    handlerAddress = 0x60;
+                    mem.setByte(0xFF0F, (Byte)((mem.getByte(0xFF0F) & ~(int)type)));
+                    break;
+            }
+
+            pushOnStack(getPC());
+            setPC(handlerAddress);
+
+            return rv;
+        }
+        #endregion
+
+
         #region Register Operations
 
         public Byte getA()
@@ -1759,7 +1871,7 @@ namespace trentGB
 
             if (command == 0x00)
             {
-                isHalted = true;
+                state = CPUState.Stopped;
             }
             else
             {
@@ -1814,8 +1926,8 @@ namespace trentGB
         }
         private void jumpPCPlusN() // 0x18
         {
-            Byte value = fetch();
-            ushort address = add16IgnoreFlags(PC, value);
+            SByte offset = (SByte)fetch();
+            ushort address = add16IgnoreFlags(PC, offset);
 
             setPC(address);
         }
@@ -1863,7 +1975,7 @@ namespace trentGB
         }
         private void jumpIfZeroFlagResetPlusN() // 0x20
         {
-            Byte offset = fetch();
+            SByte offset = (SByte)fetch();
             ushort value = add16IgnoreFlags(getPC(), offset);
             if (!getZeroFlag())
             {
@@ -1924,7 +2036,7 @@ namespace trentGB
         }
         private void jumpIfZeroFlagSetPlusN() // 0x28
         {
-            Byte offset = fetch();
+            SByte offset = (SByte)fetch();
             ushort value = add16IgnoreFlags(getPC(), offset);
             if (getZeroFlag())
             {
@@ -1981,7 +2093,7 @@ namespace trentGB
         }
         private void jumpIfCarryFlagResetPlusN() // 0x30
         {
-            Byte offset = fetch();
+            SByte offset = (SByte)fetch();
             ushort value = add16IgnoreFlags(getPC(), offset);
             if (!getCarryFlag())
             {
@@ -2041,7 +2153,7 @@ namespace trentGB
         }
         private void jumpIfCarryFlagSetPlusN() // 0x38
         {
-            Byte offset = fetch();
+            SByte offset = (SByte)fetch();
             ushort value = add16IgnoreFlags(getPC(), offset);
             if (getCarryFlag())
             {
@@ -2367,7 +2479,7 @@ namespace trentGB
         }
         private void haltCPU() // 0x76
         {
-            isHalted = true;
+            state = CPUState.Halted;
         }
         private void ldAIntoMemHL16() // 0x77
         {
@@ -3204,8 +3316,8 @@ namespace trentGB
         }
         private void addNtoSP() // 0xE8
         {
-            Byte value = fetch();
-            ushort compValue = addSP(getSP(), value);
+            SByte offset = (SByte)fetch();
+            ushort compValue = addSP(getSP(), offset);
 
             setSP(compValue);
         }
@@ -3297,8 +3409,8 @@ namespace trentGB
         }
         private void ldHLFromSPPlusN() // 0xF8
         {
-            Byte value = fetch();
-            ushort compValue = addSP(getSP(), value);
+            SByte offset = (SByte)fetch();
+            ushort compValue = addSP(getSP(), offset);
 
             setHL(compValue);
         }
@@ -3796,6 +3908,29 @@ namespace trentGB
             return value;
         }
 
+        private ushort addSP(ushort sp, SByte n)
+        {
+            ushort value = (ushort)(((int)sp + (int)n) & 0xFFFF);
+            setZeroFlag(false);
+            setSubtractFlag(false);
+
+            setHalfCarryFlag(false);
+            setCarryFlag(false);
+
+            if ((((sp & 0xff) + (n & 0xff)) & 0x100) != 0)
+            {
+                // overflow
+                setCarryFlag(true);
+            }
+            if ((((sp & 0x0f) + (n & 0x0f)) & 0x10) != 0)
+            {
+                setHalfCarryFlag(true);
+
+            }
+
+            return value;
+        }
+
 
         private ushort increment16(ushort value)
         {
@@ -3938,6 +4073,11 @@ namespace trentGB
             return add16IgnoreFlags(value1, (ushort) value2);
         }
 
+        private ushort add16IgnoreFlags(ushort value1, SByte value2)
+        {
+            return (ushort)((value1 + value2) & 0xFFFF);
+        }
+
         private ushort add16IgnoreFlags(ushort value1, ushort value2)
         {
             return (ushort)((value1 + value2) & 0xFFFF);
@@ -3961,6 +4101,11 @@ namespace trentGB
         public ushort getUInt16ForBytes(byte[] arr)
         {
             return getUInt16ForBytes(arr[0], arr[1]);
+        }
+
+        public SByte getSignedByte(byte val)
+        {
+            return (SByte)(((~val) + 1) & 0xFF);
         }
 
         #endregion

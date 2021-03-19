@@ -32,7 +32,7 @@ namespace trentGB
             memory = new AddressSpace();
             cpu = new CPU(memory, romToPlay, clock);
             lcd = new LCD(display);
-            lcdController = new LCDController(lcd);
+            lcdController = new LCDController(lcd, memory);
 
             memory.loadRom(romToPlay);
         }
