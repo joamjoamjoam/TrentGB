@@ -63,6 +63,8 @@ namespace trentGB
         // Debug
         Stopwatch clock = null;
 
+        CPUDebugger debuggerForm = null;
+
 
         public CPU(AddressSpace m, ROM rom, Stopwatch clock)
         {
@@ -70,6 +72,7 @@ namespace trentGB
             this.rom = rom;
             loadOpCodeMap();
             this.clock = clock;
+            debuggerForm = new CPUDebugger();
         }
 
         public SpeedMode getSpeedMode()
@@ -95,9 +98,21 @@ namespace trentGB
             return rv;
         }
 
+        public String getOpCodeDesc(Byte opCode)
+        {
+            String rv = $"{opCodeTranslationDict[opCode].Method.Name}";
+
+            for (int i = rv.Length - 1; i < 50; i++)
+            {
+                rv += " ";
+            }
+
+            return rv;
+        }
+
         public new String ToString()
         {
-            return $"AF = 0x{getAF().ToString("X4")}, BC = 0x{getBC().ToString("X4")}, DE = 0x{getDE().ToString("X4")}, HL = 0x{getHL().ToString("X4")}, SP = 0x{getSP().ToString("X4")}, PC = 0x{getPC().ToString("X4")}, A = 0x{getA().ToString("X2")}, B = 0x{getB().ToString("X2")}, C = 0x{getC().ToString("X2")}, D = 0x{getD().ToString("X2")}, E = 0x{getE().ToString("X2")}, H = 0x{getH().ToString("X2")}, L = 0x{getL().ToString("X2")}, F = 0x{getF().ToString("X2")} ({generateFlagsStr()}), (BC) = 0x{mem.peekByte(getBC())}, (DE) = 0x{mem.peekByte(getDE()).ToString("X2")}, (HL) = 0x{mem.peekByte(getHL()).ToString("X2")}";
+            return $"AF = 0x{getAF().ToString("X4")}, BC = 0x{getBC().ToString("X4")}, DE = 0x{getDE().ToString("X4")}, HL = 0x{getHL().ToString("X4")}, SP = 0x{getSP().ToString("X4")}, PC = 0x{getPC().ToString("X4")}, A = 0x{getA().ToString("X2")}, B = 0x{getB().ToString("X2")}, C = 0x{getC().ToString("X2")}, D = 0x{getD().ToString("X2")}, E = 0x{getE().ToString("X2")}, H = 0x{getH().ToString("X2")}, L = 0x{getL().ToString("X2")}, F = 0x{getF().ToString("X2")} ({generateFlagsStr()}), (BC) = 0x{mem.peekByte(getBC()).ToString("X2")}, (DE) = 0x{mem.peekByte(getDE()).ToString("X2")}, (HL) = 0x{mem.peekByte(getHL()).ToString("X2")}";
         }
 
         public void tick()
@@ -197,11 +212,13 @@ namespace trentGB
             peekBytes[0] = mem.peekByte(getPC());
             peekBytes[1] = mem.peekByte((ushort)((getPC() + 1) & 0xFFFF));
             ushort peek16 = getUInt16ForBytes(peekBytes);
+            String beforeText = $"Before:\nOP 0x{opCode.ToString("X2")} -> {getOpCodeDesc(opCode)}\nPossible Params = 0x{peekBytes[0].ToString("X2")} 0x{peekBytes[1].ToString("X2")}\nAs UI16 0x{peek16.ToString("X4")}\n\n{this.ToString().Replace(", ", "\n")}\n(0x{peek16.ToString("X4")}) = 0x{mem.peekByte(peek16).ToString("X2")}\n\nContinue Debugging??";
             if (debugModeEnabled)
             {
                 clock.Stop();
 
-                DialogResult res = MessageBox.Show($"Before:\nOP 0x{opCode.ToString("X2")} -> {opCodeTranslationDict[opCode].Method.Name}\nPossible Params = 0x{peekBytes[0].ToString("X2")} 0x{peekBytes[1].ToString("X2")}\nAs UI16 {peek16.ToString("X4")}\n\n{this.ToString().Replace(", ", "\n")}\n(0x{peek16.ToString("X4")}) = 0x{mem.peekByte(peek16).ToString("X2")}\n\nContinue Debugging??", "Breakpoint", MessageBoxButtons.YesNo);
+                debuggerForm.setDisplayText(beforeText);
+                DialogResult res = debuggerForm.ShowDialog();
                 if (res == DialogResult.No)
                 {
                     debugModeEnabled = false;
@@ -228,7 +245,11 @@ namespace trentGB
             if (debugModeEnabled)
             {
                 clock.Stop();
-                DialogResult res = MessageBox.Show($"After:\nOP 0x{opCode.ToString("X2")} -> {opCodeTranslationDict[opCode].Method.Name}\nPossible Params = 0x{peekBytes[0].ToString("X2")} 0x{peekBytes[1].ToString("X2")}\nAs UI16 0x{peek16.ToString("X4")}\n\n{this.ToString().Replace(", ", "\n")}\n(0x{peek16.ToString("X4")}) = 0x{mem.peekByte(peek16).ToString("X2")}\n\nNext OP: 0x{mem.peekByte(getPC())} -> {opCodeTranslationDict[mem.peekByte(getPC())].Method.Name}\n\nContinue Debugging??", "Breakpoint", MessageBoxButtons.YesNo);
+                String afterText = $"After: \nOP 0x{opCode.ToString("X2")} -> {getOpCodeDesc(opCode)}\nPossible Params = 0x{peekBytes[0].ToString("X2")} 0x{peekBytes[1].ToString("X2")}\nAs UI16 0x{peek16.ToString("X4")}\n\n{this.ToString().Replace(", ", "\n")}\n(0x{peek16.ToString("X4")}) = 0x{mem.peekByte(peek16).ToString("X2")}\n\nNext OP: 0x{mem.peekByte(getPC())} -> {getOpCodeDesc(mem.peekByte(getPC()))}\n\nContinue Debugging??";
+                debuggerForm.setDisplayText(beforeText, afterText);
+
+                DialogResult res = debuggerForm.ShowDialog();
+
                 if (res == DialogResult.No)
                 {
                     debugModeEnabled = false;

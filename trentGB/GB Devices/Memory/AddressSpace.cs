@@ -63,7 +63,7 @@ namespace trentGB
 
         public byte peekByte(ushort address)
         {
-            // Used for CYcle Inaccurate Memory Access for Debugging
+            // Used for Cycle Inaccurate Memory Access for Debugging
             return bytes[address];
         }
 
