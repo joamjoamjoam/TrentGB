@@ -24,6 +24,13 @@ namespace trentGB
             CGBDoubleSpeed
         }
 
+        public enum BitOperationType
+        {
+            Test,
+            Reset,
+            Set
+        }
+
 
         private Byte A = 0;
         private Byte B = 0;
@@ -39,7 +46,9 @@ namespace trentGB
         private ushort SP = 0;
         private AddressSpace mem = null;
         private Dictionary<Byte, Action> opCodeTranslationDict = new Dictionary<byte, Action>();
-        private Dictionary<Byte, Action> CBPrefixedOpCodeTranslationDict = new Dictionary<byte, Action>();
+        private delegate void CBMaskMapDelegate(BitOperationType type, Char register, Byte mask);
+        private CBMaskMapDelegate bitOperation;
+        private Dictionary<Byte, CBMaskMapDelegate> CBPrefixedOpCodeTranslationDict = new Dictionary<byte, CBMaskMapDelegate>();
 
         public bool isHalted = false; // CPU Halted until next interrupt.
         public bool isStopped = false; // CPU and LCD Halted until a Buttoin is pressed.
@@ -57,6 +66,7 @@ namespace trentGB
             mem = m;
             this.rom = rom;
             loadOpCodeMap();
+            bitOperation += executeBitOperation;
         }
 
         public SpeedMode getSpeedMode()
@@ -73,18 +83,6 @@ namespace trentGB
             }
 
             return rv;
-        }
-
-        public void performTicks(long timeDelta)
-        {
-            if (getSpeedMode() == SpeedMode.CGBDoubleSpeed)
-            {
-                // Run tick for every 
-            }
-            else
-            {
-                // Run tick evry us
-            }
         }
 
         public void tick()
@@ -190,8 +188,11 @@ namespace trentGB
                 // TODO Disable Interrupts
                 shouldDisableInterrupts = false;
             }
+
+            
         }
 
+        #region CPU Instruction Map
         private void loadOpCodeMap()
         {
             opCodeTranslationDict.Add(0x00, opNOP);
@@ -397,7 +398,7 @@ namespace trentGB
             opCodeTranslationDict.Add(0xC8, retIfZSet);
             opCodeTranslationDict.Add(0xC9, ret);
             opCodeTranslationDict.Add(0xCA, jumpIfZeroFlagSet);
-            opCodeTranslationDict.Add(0xCB, implementOpCodeCB);
+            opCodeTranslationDict.Add(0xCB, executeCBPrefixedOpCode);
             opCodeTranslationDict.Add(0xCC, callNNIfZSet);
             opCodeTranslationDict.Add(0xCD, callNN);
             opCodeTranslationDict.Add(0xCE, addCarryNtoA);
@@ -451,7 +452,891 @@ namespace trentGB
             opCodeTranslationDict.Add(0xFE, cmpAN);
             opCodeTranslationDict.Add(0xFF, rst38);
         }
+        #endregion
 
+        #region CB Prefixed Instructions
+        private void executeCBOperation(Byte extOpCode)
+        {
+            switch (extOpCode)
+            {
+                case 0x00:
+                    null;
+                    break;
+                case 0x01:
+                    null;
+                    break;
+                case 0x02:
+                    null;
+                    break;
+                case 0x03:
+                    null;
+                    break;
+                case 0x04:
+                    null;
+                    break;
+                case 0x05:
+                    null;
+                    break;
+                case 0x06:
+                    null;
+                    break;
+                case 0x07:
+                    null;
+                    break;
+                case 0x08:
+                    null;
+                    break;
+                case 0x09:
+                    null;
+                    break;
+                case 0x0A:
+                    null;
+                    break;
+                case 0x0B:
+                    null;
+                    break;
+                case 0x0C:
+                    null;
+                    break;
+                case 0x0D:
+                    null;
+                    break;
+                case 0x0E:
+                    null;
+                    break;
+                case 0x0F:
+                    null;
+                    break;
+                case 0x10:
+                    null;
+                    break;
+                case 0x11:
+                    null;
+                    break;
+                case 0x12:
+                    null;
+                    break;
+                case 0x13:
+                    null;
+                    break;
+                case 0x14:
+                    null;
+                    break;
+                case 0x15:
+                    null;
+                    break;
+                case 0x16:
+                    null;
+                    break;
+                case 0x17:
+                    null;
+                    break;
+                case 0x18:
+                    null;
+                    break;
+                case 0x19:
+                    null;
+                    break;
+                case 0x1A:
+                    null;
+                    break;
+                case 0x1B:
+                    null;
+                    break;
+                case 0x1C:
+                    null;
+                    break;
+                case 0x1D:
+                    null;
+                    break;
+                case 0x1E:
+                    null;
+                    break;
+                case 0x1F:
+                    null;
+                    break;
+                case 0x20:
+                    null;
+                    break;
+                case 0x21:
+                    null;
+                    break;
+                case 0x22:
+                    null;
+                    break;
+                case 0x23:
+                    null;
+                    break;
+                case 0x24:
+                    null;
+                    break;
+                case 0x25:
+                    null;
+                    break;
+                case 0x26:
+                    null;
+                    break;
+                case 0x27:
+                    null;
+                    break;
+                case 0x28:
+                    null;
+                    break;
+                case 0x29:
+                    null;
+                    break;
+                case 0x2A:
+                    null;
+                    break;
+                case 0x2B:
+                    null;
+                    break;
+                case 0x2C:
+                    null;
+                    break;
+                case 0x2D:
+                    null;
+                    break;
+                case 0x2E:
+                    null;
+                    break;
+                case 0x2F:
+                    null;
+                    break;
+                case 0x30:
+                    null;
+                    break;
+                case 0x31:
+                    null;
+                    break;
+                case 0x32:
+                    null;
+                    break;
+                case 0x33:
+                    null;
+                    break;
+                case 0x34:
+                    null;
+                    break;
+                case 0x35:
+                    null;
+                    break;
+                case 0x36:
+                    null;
+                    break;
+                case 0x37:
+                    null;
+                    break;
+                case 0x38:
+                    null;
+                    break;
+                case 0x39:
+                    null;
+                    break;
+                case 0x3A:
+                    null;
+                    break;
+                case 0x3B:
+                    null;
+                    break;
+                case 0x3C:
+                    null;
+                    break;
+                case 0x3D:
+                    null;
+                    break;
+                case 0x3E:
+                    null;
+                    break;
+                case 0x3F:
+                    null;
+                    break;
+                case 0x40:
+                    executeBitOperation(BitOperationType.Test, 'B', 0x01);
+                    break;
+                case 0x41:
+                    executeBitOperation(BitOperationType.Test, 'C', 0x01);
+                    break;
+                case 0x42:
+                    executeBitOperation(BitOperationType.Test, 'D', 0x01);
+                    break;
+                case 0x43:
+                    executeBitOperation(BitOperationType.Test, 'E', 0x01);
+                    break;
+                case 0x44:
+                    executeBitOperation(BitOperationType.Test, 'H', 0x01);
+                    break;
+                case 0x45:
+                    executeBitOperation(BitOperationType.Test, 'L', 0x01);
+                    break;
+                case 0x46:
+                    executeBitOperation(BitOperationType.Test, 'M', 0x01);
+                    break;
+                case 0x47:
+                    executeBitOperation(BitOperationType.Test, 'A', 0x01);
+                    break;
+                case 0x48:
+                    executeBitOperation(BitOperationType.Test, 'B', 0x02);
+                    break;
+                case 0x49:
+                    executeBitOperation(BitOperationType.Test, 'C', 0x02);
+                    break;
+                case 0x4A:
+                    executeBitOperation(BitOperationType.Test, 'D', 0x02);
+                    break;
+                case 0x4B:
+                    executeBitOperation(BitOperationType.Test, 'E', 0x02);
+                    break;
+                case 0x4C:
+                    executeBitOperation(BitOperationType.Test, 'H', 0x02);
+                    break;
+                case 0x4D:
+                    executeBitOperation(BitOperationType.Test, 'L', 0x02);
+                    break;
+                case 0x4E:
+                    executeBitOperation(BitOperationType.Test, 'M', 0x02);
+                    break;
+                case 0x4F:
+                    executeBitOperation(BitOperationType.Test, 'A', 0x02);
+                    break;
+                case 0x50:
+                    executeBitOperation(BitOperationType.Test, 'B', 0x04);
+                    break;
+                case 0x51:
+                    executeBitOperation(BitOperationType.Test, 'C', 0x04);
+                    break;
+                case 0x52:
+                    executeBitOperation(BitOperationType.Test, 'D', 0x04);
+                    break;
+                case 0x53:
+                    executeBitOperation(BitOperationType.Test, 'E', 0x04);
+                    break;
+                case 0x54:
+                    executeBitOperation(BitOperationType.Test, 'H', 0x04);
+                    break;
+                case 0x55:
+                    executeBitOperation(BitOperationType.Test, 'L', 0x04);
+                    break;
+                case 0x56:
+                    executeBitOperation(BitOperationType.Test, 'M', 0x04);
+                    break;
+                case 0x57:
+                    executeBitOperation(BitOperationType.Test, 'A', 0x04);
+                    break;
+                case 0x58:
+                    executeBitOperation(BitOperationType.Test, 'B', 0x08);
+                    break;
+                case 0x59:
+                    executeBitOperation(BitOperationType.Test, 'C', 0x08);
+                    break;
+                case 0x5A:
+                    executeBitOperation(BitOperationType.Test, 'D', 0x08);
+                    break;
+                case 0x5B:
+                    executeBitOperation(BitOperationType.Test, 'E', 0x08);
+                    break;
+                case 0x5C:
+                    executeBitOperation(BitOperationType.Test, 'H', 0x08);
+                    break;
+                case 0x5D:
+                    executeBitOperation(BitOperationType.Test, 'L', 0x08);
+                    break;
+                case 0x5E:
+                    executeBitOperation(BitOperationType.Test, 'M', 0x08);
+                    break;
+                case 0x5F:
+                    executeBitOperation(BitOperationType.Test, 'A', 0x08);
+                    break;
+                case 0x60:
+                    executeBitOperation(BitOperationType.Test, 'B', 0x10);
+                    break;
+                case 0x61:
+                    executeBitOperation(BitOperationType.Test, 'C', 0x10);
+                    break;
+                case 0x62:
+                    executeBitOperation(BitOperationType.Test, 'D', 0x10);
+                    break;
+                case 0x63:
+                    executeBitOperation(BitOperationType.Test, 'E', 0x10);
+                    break;
+                case 0x64:
+                    executeBitOperation(BitOperationType.Test, 'H', 0x10);
+                    break;
+                case 0x65:
+                    executeBitOperation(BitOperationType.Test, 'L', 0x10);
+                    break;
+                case 0x66:
+                    executeBitOperation(BitOperationType.Test, 'M', 0x10);
+                    break;
+                case 0x67:
+                    executeBitOperation(BitOperationType.Test, 'A', 0x10);
+                    break;
+                case 0x68:
+                    executeBitOperation(BitOperationType.Test, 'B', 0x20);
+                    break;
+                case 0x69:
+                    executeBitOperation(BitOperationType.Test, 'C', 0x20);
+                    break;
+                case 0x6A:
+                    executeBitOperation(BitOperationType.Test, 'D', 0x20);
+                    break;
+                case 0x6B:
+                    executeBitOperation(BitOperationType.Test, 'E', 0x20);
+                    break;
+                case 0x6C:
+                    executeBitOperation(BitOperationType.Test, 'H', 0x20);
+                    break;
+                case 0x6D:
+                    executeBitOperation(BitOperationType.Test, 'L', 0x20);
+                    break;
+                case 0x6E:
+                    executeBitOperation(BitOperationType.Test, 'M', 0x20);
+                    break;
+                case 0x6F:
+                    executeBitOperation(BitOperationType.Test, 'A', 0x20);
+                    break;
+                case 0x70:
+                    executeBitOperation(BitOperationType.Test, 'B', 0x40);
+                    break;
+                case 0x71:
+                    executeBitOperation(BitOperationType.Test, 'C', 0x40);
+                    break;
+                case 0x72:
+                    executeBitOperation(BitOperationType.Test, 'D', 0x40);
+                    break;
+                case 0x73:
+                    executeBitOperation(BitOperationType.Test, 'E', 0x40);
+                    break;
+                case 0x74:
+                    executeBitOperation(BitOperationType.Test, 'H', 0x40);
+                    break;
+                case 0x75:
+                    executeBitOperation(BitOperationType.Test, 'L', 0x40);
+                    break;
+                case 0x76:
+                    executeBitOperation(BitOperationType.Test, 'M', 0x40);
+                    break;
+                case 0x77:
+                    executeBitOperation(BitOperationType.Test, 'A', 0x40);
+                    break;
+                case 0x78:
+                    executeBitOperation(BitOperationType.Test, 'B', 0x80);
+                    break;
+                case 0x79:
+                    executeBitOperation(BitOperationType.Test, 'C', 0x80);
+                    break;
+                case 0x7A:
+                    executeBitOperation(BitOperationType.Test, 'D', 0x80);
+                    break;
+                case 0x7B:
+                    executeBitOperation(BitOperationType.Test, 'E', 0x80);
+                    break;
+                case 0x7C:
+                    executeBitOperation(BitOperationType.Test, 'H', 0x80);
+                    break;
+                case 0x7D:
+                    executeBitOperation(BitOperationType.Test, 'L', 0x80);
+                    break;
+                case 0x7E:
+                    executeBitOperation(BitOperationType.Test, 'M', 0x80);
+                    break;
+                case 0x7F:
+                    executeBitOperation(BitOperationType.Test, 'A', 0x80);
+                    break;
+                case 0x80:
+                    executeBitOperation(BitOperationType.Reset, 'B', 0x01);
+                    break;
+                case 0x81:
+                    executeBitOperation(BitOperationType.Reset, 'C', 0x01);
+                    break;
+                case 0x82:
+                    executeBitOperation(BitOperationType.Reset, 'D', 0x01);
+                    break;
+                case 0x83:
+                    executeBitOperation(BitOperationType.Reset, 'E', 0x01);
+                    break;
+                case 0x84:
+                    executeBitOperation(BitOperationType.Reset, 'H', 0x01);
+                    break;
+                case 0x85:
+                    executeBitOperation(BitOperationType.Reset, 'L', 0x01);
+                    break;
+                case 0x86:
+                    executeBitOperation(BitOperationType.Reset, 'M', 0x01);
+                    break;
+                case 0x87:
+                    executeBitOperation(BitOperationType.Reset, 'A', 0x01);
+                    break;
+                case 0x88:
+                    executeBitOperation(BitOperationType.Reset, 'B', 0x02);
+                    break;
+                case 0x89:
+                    executeBitOperation(BitOperationType.Reset, 'C', 0x02);
+                    break;
+                case 0x8A:
+                    executeBitOperation(BitOperationType.Reset, 'D', 0x02);
+                    break;
+                case 0x8B:
+                    executeBitOperation(BitOperationType.Reset, 'E', 0x02);
+                    break;
+                case 0x8C:
+                    executeBitOperation(BitOperationType.Reset, 'H', 0x02);
+                    break;
+                case 0x8D:
+                    executeBitOperation(BitOperationType.Reset, 'L', 0x02);
+                    break;
+                case 0x8E:
+                    executeBitOperation(BitOperationType.Reset, 'M', 0x02);
+                    break;
+                case 0x8F:
+                    executeBitOperation(BitOperationType.Reset, 'A', 0x02);
+                    break;
+                case 0x90:
+                    executeBitOperation(BitOperationType.Reset, 'B', 0x04);
+                    break;
+                case 0x91:
+                    executeBitOperation(BitOperationType.Reset, 'C', 0x04);
+                    break;
+                case 0x92:
+                    executeBitOperation(BitOperationType.Reset, 'D', 0x04);
+                    break;
+                case 0x93:
+                    executeBitOperation(BitOperationType.Reset, 'E', 0x04);
+                    break;
+                case 0x94:
+                    executeBitOperation(BitOperationType.Reset, 'H', 0x04);
+                    break;
+                case 0x95:
+                    executeBitOperation(BitOperationType.Reset, 'L', 0x04);
+                    break;
+                case 0x96:
+                    executeBitOperation(BitOperationType.Reset, 'M', 0x04);
+                    break;
+                case 0x97:
+                    executeBitOperation(BitOperationType.Reset, 'A', 0x04);
+                    break;
+                case 0x98:
+                    executeBitOperation(BitOperationType.Reset, 'B', 0x08);
+                    break;
+                case 0x99:
+                    executeBitOperation(BitOperationType.Reset, 'C', 0x08);
+                    break;
+                case 0x9A:
+                    executeBitOperation(BitOperationType.Reset, 'D', 0x08);
+                    break;
+                case 0x9B:
+                    executeBitOperation(BitOperationType.Reset, 'E', 0x08);
+                    break;
+                case 0x9C:
+                    executeBitOperation(BitOperationType.Reset, 'H', 0x08);
+                    break;
+                case 0x9D:
+                    executeBitOperation(BitOperationType.Reset, 'L', 0x08);
+                    break;
+                case 0x9E:
+                    executeBitOperation(BitOperationType.Reset, 'M', 0x08);
+                    break;
+                case 0x9F:
+                    executeBitOperation(BitOperationType.Reset, 'A', 0x08);
+                    break;
+                case 0xA0:
+                    executeBitOperation(BitOperationType.Reset, 'B', 0x10);
+                    break;
+                case 0xA1:
+                    executeBitOperation(BitOperationType.Reset, 'C', 0x10);
+                    break;
+                case 0xA2:
+                    executeBitOperation(BitOperationType.Reset, 'D', 0x10);
+                    break;
+                case 0xA3:
+                    executeBitOperation(BitOperationType.Reset, 'E', 0x10);
+                    break;
+                case 0xA4:
+                    executeBitOperation(BitOperationType.Reset, 'H', 0x10);
+                    break;
+                case 0xA5:
+                    executeBitOperation(BitOperationType.Reset, 'L', 0x10);
+                    break;
+                case 0xA6:
+                    executeBitOperation(BitOperationType.Reset, 'M', 0x10);
+                    break;
+                case 0xA7:
+                    executeBitOperation(BitOperationType.Reset, 'A', 0x10);
+                    break;
+                case 0xA8:
+                    executeBitOperation(BitOperationType.Reset, 'B', 0x20);
+                    break;
+                case 0xA9:
+                    executeBitOperation(BitOperationType.Reset, 'C', 0x20);
+                    break;
+                case 0xAA:
+                    executeBitOperation(BitOperationType.Reset, 'D', 0x20);
+                    break;
+                case 0xAB:
+                    executeBitOperation(BitOperationType.Reset, 'E', 0x20);
+                    break;
+                case 0xAC:
+                    executeBitOperation(BitOperationType.Reset, 'H', 0x20);
+                    break;
+                case 0xAD:
+                    executeBitOperation(BitOperationType.Reset, 'L', 0x20);
+                    break;
+                case 0xAE:
+                    executeBitOperation(BitOperationType.Reset, 'M', 0x20);
+                    break;
+                case 0xAF:
+                    executeBitOperation(BitOperationType.Reset, 'A', 0x20);
+                    break;
+                case 0xB0:
+                    executeBitOperation(BitOperationType.Reset, 'B', 0x40);
+                    break;
+                case 0xB1:
+                    executeBitOperation(BitOperationType.Reset, 'C', 0x40);
+                    break;
+                case 0xB2:
+                    executeBitOperation(BitOperationType.Reset, 'D', 0x40);
+                    break;
+                case 0xB3:
+                    executeBitOperation(BitOperationType.Reset, 'E', 0x40);
+                    break;
+                case 0xB4:
+                    executeBitOperation(BitOperationType.Reset, 'H', 0x40);
+                    break;
+                case 0xB5:
+                    executeBitOperation(BitOperationType.Reset, 'L', 0x40);
+                    break;
+                case 0xB6:
+                    executeBitOperation(BitOperationType.Reset, 'M', 0x40);
+                    break;
+                case 0xB7:
+                    executeBitOperation(BitOperationType.Reset, 'A', 0x40);
+                    break;
+                case 0xB8:
+                    executeBitOperation(BitOperationType.Reset, 'B', 0x80);
+                    break;
+                case 0xB9:
+                    executeBitOperation(BitOperationType.Reset, 'C', 0x80);
+                    break;
+                case 0xBA:
+                    executeBitOperation(BitOperationType.Reset, 'D', 0x80);
+                    break;
+                case 0xBB:
+                    executeBitOperation(BitOperationType.Reset, 'E', 0x80);
+                    break;
+                case 0xBC:
+                    executeBitOperation(BitOperationType.Reset, 'H', 0x80);
+                    break;
+                case 0xBD:
+                    executeBitOperation(BitOperationType.Reset, 'L', 0x80);
+                    break;
+                case 0xBE:
+                    executeBitOperation(BitOperationType.Reset, 'M', 0x80);
+                    break;
+                case 0xBF:
+                    executeBitOperation(BitOperationType.Reset, 'A', 0x80);
+                    break;
+                case 0xC0:
+                    executeBitOperation(BitOperationType.Set, 'B', 0x01);
+                    break;
+                case 0xC1:
+                    executeBitOperation(BitOperationType.Set, 'C', 0x01);
+                    break;
+                case 0xC2:
+                    executeBitOperation(BitOperationType.Set, 'D', 0x01);
+                    break;
+                case 0xC3:
+                    executeBitOperation(BitOperationType.Set, 'E', 0x01);
+                    break;
+                case 0xC4:
+                    executeBitOperation(BitOperationType.Set, 'H', 0x01);
+                    break;
+                case 0xC5:
+                    executeBitOperation(BitOperationType.Set, 'L', 0x01);
+                    break;
+                case 0xC6:
+                    executeBitOperation(BitOperationType.Set, 'M', 0x01);
+                    break;
+                case 0xC7:
+                    executeBitOperation(BitOperationType.Set, 'A', 0x01);
+                    break;
+                case 0xC8:
+                    executeBitOperation(BitOperationType.Set, 'B', 0x02);
+                    break;
+                case 0xC9:
+                    executeBitOperation(BitOperationType.Set, 'C', 0x02);
+                    break;
+                case 0xCA:
+                    executeBitOperation(BitOperationType.Set, 'D', 0x02);
+                    break;
+                case 0xCB:
+                    executeBitOperation(BitOperationType.Set, 'E', 0x02);
+                    break;
+                case 0xCC:
+                    executeBitOperation(BitOperationType.Set, 'H', 0x02);
+                    break;
+                case 0xCD:
+                    executeBitOperation(BitOperationType.Set, 'L', 0x02);
+                    break;
+                case 0xCE:
+                    executeBitOperation(BitOperationType.Set, 'M', 0x02);
+                    break;
+                case 0xCF:
+                    executeBitOperation(BitOperationType.Set, 'A', 0x02);
+                    break;
+                case 0xD0:
+                    executeBitOperation(BitOperationType.Set, 'B', 0x04);
+                    break;
+                case 0xD1:
+                    executeBitOperation(BitOperationType.Set, 'C', 0x04);
+                    break;
+                case 0xD2:
+                    executeBitOperation(BitOperationType.Set, 'D', 0x04);
+                    break;
+                case 0xD3:
+                    executeBitOperation(BitOperationType.Set, 'E', 0x04);
+                    break;
+                case 0xD4:
+                    executeBitOperation(BitOperationType.Set, 'H', 0x04);
+                    break;
+                case 0xD5:
+                    executeBitOperation(BitOperationType.Set, 'L', 0x04);
+                    break;
+                case 0xD6:
+                    executeBitOperation(BitOperationType.Set, 'M', 0x04);
+                    break;
+                case 0xD7:
+                    executeBitOperation(BitOperationType.Set, 'A', 0x04);
+                    break;
+                case 0xD8:
+                    executeBitOperation(BitOperationType.Set, 'B', 0x08);
+                    break;
+                case 0xD9:
+                    executeBitOperation(BitOperationType.Set, 'C', 0x08);
+                    break;
+                case 0xDA:
+                    executeBitOperation(BitOperationType.Set, 'D', 0x08);
+                    break;
+                case 0xDB:
+                    executeBitOperation(BitOperationType.Set, 'E', 0x08);
+                    break;
+                case 0xDC:
+                    executeBitOperation(BitOperationType.Set, 'H', 0x08);
+                    break;
+                case 0xDD:
+                    executeBitOperation(BitOperationType.Set, 'L', 0x08);
+                    break;
+                case 0xDE:
+                    executeBitOperation(BitOperationType.Set, 'M', 0x08);
+                    break;
+                case 0xDF:
+                    executeBitOperation(BitOperationType.Set, 'A', 0x08);
+                    break;
+                case 0xE0:
+                    executeBitOperation(BitOperationType.Set, 'B', 0x10);
+                    break;
+                case 0xE1:
+                    executeBitOperation(BitOperationType.Set, 'C', 0x10);
+                    break;
+                case 0xE2:
+                    executeBitOperation(BitOperationType.Set, 'D', 0x10);
+                    break;
+                case 0xE3:
+                    executeBitOperation(BitOperationType.Set, 'E', 0x10);
+                    break;
+                case 0xE4:
+                    executeBitOperation(BitOperationType.Set, 'H', 0x10);
+                    break;
+                case 0xE5:
+                    executeBitOperation(BitOperationType.Set, 'L', 0x10);
+                    break;
+                case 0xE6:
+                    executeBitOperation(BitOperationType.Set, 'M', 0x10);
+                    break;
+                case 0xE7:
+                    executeBitOperation(BitOperationType.Set, 'A', 0x10);
+                    break;
+                case 0xE8:
+                    executeBitOperation(BitOperationType.Set, 'B', 0x20);
+                    break;
+                case 0xE9:
+                    executeBitOperation(BitOperationType.Set, 'C', 0x20);
+                    break;
+                case 0xEA:
+                    executeBitOperation(BitOperationType.Set, 'D', 0x20);
+                    break;
+                case 0xEB:
+                    executeBitOperation(BitOperationType.Set, 'E', 0x20);
+                    break;
+                case 0xEC:
+                    executeBitOperation(BitOperationType.Set, 'H', 0x20);
+                    break;
+                case 0xED:
+                    executeBitOperation(BitOperationType.Set, 'L', 0x20);
+                    break;
+                case 0xEE:
+                    executeBitOperation(BitOperationType.Set, 'M', 0x20);
+                    break;
+                case 0xEF:
+                    executeBitOperation(BitOperationType.Set, 'A', 0x20);
+                    break;
+                case 0xF0:
+                    executeBitOperation(BitOperationType.Set, 'B', 0x40);
+                    break;
+                case 0xF1:
+                    executeBitOperation(BitOperationType.Set, 'C', 0x40);
+                    break;
+                case 0xF2:
+                    executeBitOperation(BitOperationType.Set, 'D', 0x40);
+                    break;
+                case 0xF3:
+                    executeBitOperation(BitOperationType.Set, 'E', 0x40);
+                    break;
+                case 0xF4:
+                    executeBitOperation(BitOperationType.Set, 'H', 0x40);
+                    break;
+                case 0xF5:
+                    executeBitOperation(BitOperationType.Set, 'L', 0x40);
+                    break;
+                case 0xF6:
+                    executeBitOperation(BitOperationType.Set, 'M', 0x40);
+                    break;
+                case 0xF7:
+                    executeBitOperation(BitOperationType.Set, 'A', 0x40);
+                    break;
+                case 0xF8:
+                    executeBitOperation(BitOperationType.Set, 'B', 0x80);
+                    break;
+                case 0xF9:
+                    executeBitOperation(BitOperationType.Set, 'C', 0x80);
+                    break;
+                case 0xFA:
+                    executeBitOperation(BitOperationType.Set, 'D', 0x80);
+                    break;
+                case 0xFB:
+                    executeBitOperation(BitOperationType.Set, 'E', 0x80);
+                    break;
+                case 0xFC:
+                    executeBitOperation(BitOperationType.Set, 'H', 0x80);
+                    break;
+                case 0xFD:
+                    executeBitOperation(BitOperationType.Set, 'L', 0x80);
+                    break;
+                case 0xFE:
+                    executeBitOperation(BitOperationType.Set, 'M', 0x80);
+                    break;
+                case 0xFF:
+                    executeBitOperation(BitOperationType.Set, 'A', 0x80);
+                    break;
+            }
+        }
+        #endregion
+
+        private void executeBitOperation(BitOperationType type, Char reg, Byte mask)
+        {
+            if (type == BitOperationType.Test)
+            {
+                bool set = false;
+
+                setSubtractFlag(false);
+                setHalfCarryFlag(true);
+                setZeroFlag(false);
+
+                switch (reg)
+                {
+                    case 'A':
+                        set = ((getA() & mask) > 0);
+                        break;
+                    case 'B':
+                        set = ((getB() & mask) > 0);
+                        break;
+                    case 'C':
+                        set = ((getC() & mask) > 0);
+                        break;
+                    case 'D':
+                        set = ((getD() & mask) > 0);
+                        break;
+                    case 'E':
+                        set = ((getE() & mask) > 0);
+                        break;
+                    case 'H':
+                        set = ((getH() & mask) > 0);
+                        break;
+                    case 'L':
+                        set = ((getL() & mask) > 0);
+                        break;
+                    case 'M':
+                        set = ((mem.getByte(getHL()) & mask) > 0);
+                        break;
+                }
+
+                if (!set)
+                {
+                    setZeroFlag(true);
+                }
+            }
+            else if (type == BitOperationType.Set)
+            {
+                switch (reg)
+                {
+                    case 'A':
+                        setA((byte)(getA() | mask));
+                        break;
+                    case 'B':
+                        setB((byte)(getB() | mask));
+                        break;
+                    case 'C':
+                        setC((byte)(getC() | mask));
+                        break;
+                    case 'D':
+                        setD((byte)(getD() | mask));
+                        break;
+                    case 'E':
+                        setE((byte)(getE() | mask));
+                        break;
+                    case 'H':
+                        setH((byte)(getH() | mask));
+                        break;
+                    case 'L':
+                        setL((byte)(getL() | mask));
+                        break;
+                    case 'M':
+                        ushort val = getHL();
+                        mem.setByte(val, (byte)((mem.getByte(val) | mask)));
+                        break;
+                }
+            }
+            else if(type == BitOperationType.Reset)
+            {
+                switch (reg)
+                {
+                    case 'A':
+                        setA((byte)(getA() & (~mask)));
+                        break;
+                    case 'B':
+                        setB((byte)(getB() & (~mask)));
+                        break;
+                    case 'C':
+                        setC((byte)(getC() & (~mask)));
+                        break;
+                    case 'D':
+                        setD((byte)(getD() & (~mask)));
+                        break;
+                    case 'E':
+                        setE((byte)(getE() & (~mask)));
+                        break;
+                    case 'H':
+                        setH((byte)(getH() & (~mask)));
+                        break;
+                    case 'L':
+                        setL((byte)(getL() & (~mask)));
+                        break;
+                    case 'M':
+                        ushort val = getHL();
+                        mem.setByte(val, (byte)((mem.getByte(val) & (~mask))));
+                        break;
+                }
+            }
+        }
 
         public new String ToString()
         {
@@ -2060,9 +2945,11 @@ namespace trentGB
                 setPC(value);
             }
         }
-        private void implementOpCodeCB()
+        private void executeCBPrefixedOpCode() // 0xCB
         {
-            throw new NotImplementedException("Implement Op Code 0xCB");
+            Byte extOpCode = fetch();
+
+            executeCBOperation(extOpCode);
         }
         private void callNNIfZSet() //0xCC
         {
@@ -2159,7 +3046,7 @@ namespace trentGB
                 setPC(pop16OffStack());
             }
         }
-        private void retEnableInterrupts() // 0xC9
+        private void retEnableInterrupts() // 0xD9
         {
             setPC(pop16OffStack());
             shouldEnableInterrupts = true;
