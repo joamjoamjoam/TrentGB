@@ -1,8 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Windows.Forms;
 
 namespace trentGB
 {
@@ -46,9 +48,6 @@ namespace trentGB
         private ushort SP = 0;
         private AddressSpace mem = null;
         private Dictionary<Byte, Action> opCodeTranslationDict = new Dictionary<byte, Action>();
-        private delegate void CBMaskMapDelegate(BitOperationType type, Char register, Byte mask);
-        private CBMaskMapDelegate bitOperation;
-        private Dictionary<Byte, CBMaskMapDelegate> CBPrefixedOpCodeTranslationDict = new Dictionary<byte, CBMaskMapDelegate>();
 
         public bool isHalted = false; // CPU Halted until next interrupt.
         public bool isStopped = false; // CPU and LCD Halted until a Buttoin is pressed.
@@ -56,17 +55,21 @@ namespace trentGB
         public bool shouldEnableInterrupts = false;
         private long ticksSinceLastCycle = 0;
 
-
-        public ROM rom;
-
+        public bool debugModeEnabled = true;
 
 
-        public CPU(AddressSpace m, ROM rom)
+        public ROM rom = null;
+
+        // Debug
+        Stopwatch clock = null;
+
+
+        public CPU(AddressSpace m, ROM rom, Stopwatch clock)
         {
             mem = m;
             this.rom = rom;
             loadOpCodeMap();
-            bitOperation += executeBitOperation;
+            this.clock = clock;
         }
 
         public SpeedMode getSpeedMode()
@@ -83,6 +86,18 @@ namespace trentGB
             }
 
             return rv;
+        }
+
+        public String generateFlagsStr()
+        {
+            String rv = $"{((getZeroFlag()) ? "Z" : "-")}{((getSubtractFlag()) ? "N" : "-")}{((getHalfCarryFlag()) ? "H" : "-")}{((getCarryFlag()) ? "C" : "-")}";
+
+            return rv;
+        }
+
+        public new String ToString()
+        {
+            return $"AF = 0x{getAF().ToString("X4")}, BC = 0x{getBC().ToString("X4")}, DE = 0x{getDE().ToString("X4")}, HL = 0x{getHL().ToString("X4")}, SP = 0x{getSP().ToString("X4")}, PC = 0x{getPC().ToString("X4")}, A = 0x{getA().ToString("X2")}, B = 0x{getB().ToString("X2")}, C = 0x{getC().ToString("X2")}, D = 0x{getD().ToString("X2")}, E = 0x{getE().ToString("X2")}, H = 0x{getH().ToString("X2")}, L = 0x{getL().ToString("X2")}, F = 0x{getF().ToString("X2")} ({generateFlagsStr()}), (BC) = 0x{mem.peekByte(getBC())}, (DE) = 0x{mem.peekByte(getDE()).ToString("X2")}, (HL) = 0x{mem.peekByte(getHL()).ToString("X2")}";
         }
 
         public void tick()
@@ -168,7 +183,7 @@ namespace trentGB
 
         public Byte fetch()
         {
-            return rom.getByte(PC++);
+            return mem.getByte(PC++);
         }
 
         public void decodeAndExecute(Byte opCode)
@@ -176,7 +191,28 @@ namespace trentGB
             bool enableInterrupts = shouldEnableInterrupts;
             bool disableInterrupts = shouldDisableInterrupts;
 
+
+            // Debug Window
+            Byte[] peekBytes = new byte[2];
+            peekBytes[0] = mem.peekByte(getPC());
+            peekBytes[1] = mem.peekByte((ushort)((getPC() + 1) & 0xFFFF));
+            ushort peek16 = getUInt16ForBytes(peekBytes);
+            if (debugModeEnabled)
+            {
+                clock.Stop();
+
+                DialogResult res = MessageBox.Show($"Before:\nOP 0x{opCode.ToString("X2")} -> {opCodeTranslationDict[opCode].Method.Name}\nPossible Params = 0x{peekBytes[0].ToString("X2")} 0x{peekBytes[1].ToString("X2")}\nAs UI16 {peek16.ToString("X4")}\n\n{this.ToString().Replace(", ", "\n")}\n(0x{peek16.ToString("X4")}) = 0x{mem.peekByte(peek16).ToString("X2")}\n\nContinue Debugging??", "Breakpoint", MessageBoxButtons.YesNo);
+                if (res == DialogResult.No)
+                {
+                    debugModeEnabled = false;
+                }
+                clock.Start();
+            }
+
+
             opCodeTranslationDict[opCode].Invoke();
+
+
 
             if (enableInterrupts)
             {
@@ -189,7 +225,17 @@ namespace trentGB
                 shouldDisableInterrupts = false;
             }
 
-            
+            if (debugModeEnabled)
+            {
+                clock.Stop();
+                DialogResult res = MessageBox.Show($"After:\nOP 0x{opCode.ToString("X2")} -> {opCodeTranslationDict[opCode].Method.Name}\nPossible Params = 0x{peekBytes[0].ToString("X2")} 0x{peekBytes[1].ToString("X2")}\nAs UI16 0x{peek16.ToString("X4")}\n\n{this.ToString().Replace(", ", "\n")}\n(0x{peek16.ToString("X4")}) = 0x{mem.peekByte(peek16).ToString("X2")}\n\nNext OP: 0x{mem.peekByte(getPC())} -> {opCodeTranslationDict[mem.peekByte(getPC())].Method.Name}\n\nContinue Debugging??", "Breakpoint", MessageBoxButtons.YesNo);
+                if (res == DialogResult.No)
+                {
+                    debugModeEnabled = false;
+                }
+                clock.Start();
+            }
+
         }
 
         #region CPU Instruction Map
@@ -1338,11 +1384,6 @@ namespace trentGB
             }
         }
 
-        public new String ToString()
-        {
-            return $"AF={getAF().ToString("X4")}, BC={getBC().ToString("X4")}, DE={getDE().ToString("X4")}, HL={getHL().ToString("X4")}, SP={getSP().ToString("X4")}, PC={getPC().ToString("X4")}, F={getF().ToString("X2")}";
-        }
-
         #region Register Operations
 
         public Byte getA()
@@ -1701,7 +1742,7 @@ namespace trentGB
             }
             else
             {
-                throw new NotImplementedException($"0x10 prefix Command 0x{command.ToString("X2")} is not implented.");
+                //throw new NotImplementedException($"0x10 prefix Command 0x{command.ToString("X2")} is not implented.");
             }
             
         }

@@ -61,6 +61,12 @@ namespace trentGB
         
         }
 
+        public byte peekByte(ushort address)
+        {
+            // Used for CYcle Inaccurate Memory Access for Debugging
+            return bytes[address];
+        }
+
         public byte[] getBytes(ushort address, ushort count)
         {
             byte[] rv = new Byte[count];
@@ -111,6 +117,22 @@ namespace trentGB
             else
             {
                 throw new Exception($"GetBytes: Writing a Value out of Range of Address Space");
+            }
+        }
+
+        public void loadRom(ROM rom)
+        {
+            int end1 = (rom.size > 0x4000) ? 0x4000 : rom.size;
+            int end2 = (rom.size > 0x8000) ? 0x8000 : rom.size;
+
+            for (ushort i = 0; i < end1; i++)
+            {
+                setByte(i, rom.getByte(i)); // Copy 1st Rom bank to RAM
+            }
+
+            for (ushort i = 0x4000; i < end2; i++)
+            {
+                setByte(i, rom.getByte(i)); // Copy 2nd Rom bank to RAM
             }
         }
     }

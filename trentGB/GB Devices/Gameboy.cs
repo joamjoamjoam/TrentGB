@@ -16,6 +16,7 @@ namespace trentGB
     {
         public static double clockTimingInMHz = 4.194;
         public static double clockTimingInHz = 4194000;
+        private Stopwatch clock = new Stopwatch();
 
         private AddressSpace memory = null;
         private ROM rom = null;
@@ -29,9 +30,11 @@ namespace trentGB
         {
             rom = romToPlay;
             memory = new AddressSpace();
-            cpu = new CPU(memory, romToPlay);
+            cpu = new CPU(memory, romToPlay, clock);
             lcd = new LCD(display);
             lcdController = new LCDController(lcd);
+
+            memory.loadRom(romToPlay);
         }
 
 
@@ -50,7 +53,7 @@ namespace trentGB
 
         private void runLoop()
         {
-            Stopwatch clock = new Stopwatch();
+            
             clock.Start();
             long startTime = clock.ElapsedMilliseconds;
             while (true)
@@ -72,7 +75,7 @@ namespace trentGB
         private void performSystemTick()
         {
             // This should tick at 4.194Mhz or 1tick every .5 us
-            //cpu.tick();
+            cpu.tick();
 
             // 4.194 MHz Dot Clock
             lcdController.tick();

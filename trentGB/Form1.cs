@@ -26,7 +26,8 @@ namespace trentGB
             dlg.Multiselect = false;
             //dlg.ShowDialog();
             //dlg.FileName = "Roms\cpu_instrs.gb";
-            dlg.FileName = $"Roms\\06-ld r,r.gb";
+            //dlg.FileName = $"Roms\\06-ld r,r.gb";
+            dlg.FileName = $"Roms\\Tetris (World) (Rev A).gb";
             if (dlg.FileName != null && dlg.FileName != "")
             {
                 Gameboy gb = null;
