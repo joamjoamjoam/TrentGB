@@ -12,16 +12,16 @@ namespace trentGB
 
     class Instruction
     {
-        byte cycles;
-        byte opCode;
-        byte length;
-        ushort address;
-        byte[] parameters = new byte[0];
-        Action opFunc = null;
-        String desc = "";
+        public readonly byte cycles;
+        public readonly byte opCode;
+        public readonly byte length;
+        public ushort address;
+        public byte[] parameters = new byte[0];
+        public readonly Action opFunc = null;
+        public readonly String desc = "";
         
 
-        public Instruction(byte opCode, byte cycles, byte length, Action act, ushort PC, ROM rom)
+        public Instruction(byte opCode, byte length, byte cycles , Action act, ushort PC, ROM rom)
         {
             // PC is at the adress for the first parametr if applicable
 
@@ -32,13 +32,47 @@ namespace trentGB
             this.opFunc = act;
             desc = act.Method.Name;
             parameters = new byte[length - 1];
+
+            if (opCode == 0xCB)
+            {
+                length = getCBOpLength();
+                // Append CB Instruction Length and Cycles
+                cycles = getCBCycles(rom.getByte(PC));
+            }
+
+
             for (int i = 0; i < length; i++)
             {
                 parameters[i] = rom.getByte((ushort)((PC+i) & 0xFFFF));
             }
         }
 
-        public Instruction(byte opCode, byte cycles, byte length, Action act)
+        public Instruction(Instruction model, ushort PC, ROM rom)
+        {
+            // PC is at the adress for the first parametr if applicable
+
+            this.opCode = model.opCode;
+            this.cycles = model.cycles;
+            this.length = model.length;
+            this.address = (ushort)((PC - 1) & 0xFFFF);
+            this.opFunc = model.opFunc;
+            desc = opFunc.Method.Name;
+            parameters = new byte[length - 1];
+
+            if (opCode == 0xCB && model.length == 1)
+            {
+                length = getCBOpLength();
+                // Append CB Instruction Length and Cycles
+                cycles = getCBCycles(rom.getByte(PC));
+            }
+
+            for (int i = 0; i < length; i++)
+            {
+                parameters[i] = rom.getByte((ushort)((PC + i) & 0xFFFF));
+            }
+        }
+
+        public Instruction(byte opCode, byte length, byte cycles , Action act)
         {
             // PC is at the adress for the first parametr if applicable
 
@@ -82,6 +116,62 @@ namespace trentGB
             }
 
             return $"{address.ToString("X4")}: {desc} 0x{String.Join(", 0x", parameters)}{paramRealValue}";
+        }
+
+        public Byte getCBOpLength()
+        {
+            return 3;
+        }
+
+        public Byte getCBCycles(Byte cbOpCode)
+        {
+            Byte rv = 8;
+            switch (cbOpCode)
+            {
+                case 0x06:
+                case 0x16:
+                case 0x26:
+                case 0x36:
+                case 0x86:
+                case 0x96:
+                case 0xA6:
+                case 0xB6:
+                case 0xC6:
+                case 0xD6:
+                case 0xE6:
+                case 0xF6:
+                case 0x0E:
+                case 0x1E:
+                case 0x2E:
+                case 0x3E:
+                case 0x8E:
+                case 0x9E:
+                case 0xAE:
+                case 0xBE:
+                case 0xCE:
+                case 0xDE:
+                case 0xEE:
+                case 0xFE:
+                    rv = 16;
+                    break;
+
+                case 0x46:
+                case 0x56:
+                case 0x66:
+                case 0x76:
+                case 0x4E:
+                case 0x5E:
+                case 0x6E:
+                case 0x7E:
+                    rv = 12;
+                    break;
+
+                default:
+                    rv = 8;
+                    break;
+            }
+
+            return rv;
         }
     }
 
@@ -142,7 +232,7 @@ namespace trentGB
         private CPUState state = CPUState.Running;
 
         private AddressSpace mem = null;
-        private Dictionary<Byte, Action> opCodeTranslationDict = new Dictionary<byte, Action>();
+        private Dictionary<Byte, Instruction> opCodeTranslationDict = new Dictionary<byte, Instruction>();
 
         public bool shouldDisableInterrupts = false;
         public bool shouldEnableInterrupts = false;
@@ -224,7 +314,7 @@ namespace trentGB
 
         public String getOpCodeDesc(Byte opCode)
         {
-            String rv = $"{opCodeTranslationDict[opCode].Method.Name}";
+            String rv = $"{opCodeTranslationDict[opCode].desc}";
 
             for (int i = rv.Length - 1; i < 50; i++)
             {
@@ -397,7 +487,7 @@ namespace trentGB
             }
 
 
-            opCodeTranslationDict[opCode].Invoke();
+            opCodeTranslationDict[opCode].execute();
 
 
 
@@ -445,262 +535,262 @@ namespace trentGB
         #region CPU Instruction Map
         private void loadOpCodeMap()
         {
-            opCodeTranslationDict.Add(0x00, opNOP);
-            opCodeTranslationDict.Add(0x01, ldBC16);
-            opCodeTranslationDict.Add(0x02, ldAToMemBC);
-            opCodeTranslationDict.Add(0x03, incBC);
-            opCodeTranslationDict.Add(0x04, incB);
-            opCodeTranslationDict.Add(0x05, decB);
-            opCodeTranslationDict.Add(0x06, ldB);
-            opCodeTranslationDict.Add(0x07, rlcA);
-            opCodeTranslationDict.Add(0x08, ldSPFromMem16);
-            opCodeTranslationDict.Add(0x09, addBCtoHL);
-            opCodeTranslationDict.Add(0x0A, ldAMemBC);
-            opCodeTranslationDict.Add(0x0B, decBC);
-            opCodeTranslationDict.Add(0x0C, incC);
-            opCodeTranslationDict.Add(0x0D, decC);
-            opCodeTranslationDict.Add(0x0E, ldC);
-            opCodeTranslationDict.Add(0x0F, rrcA);
-            opCodeTranslationDict.Add(0x10, stopCPU);
-            opCodeTranslationDict.Add(0x11, ldDE16);
-            opCodeTranslationDict.Add(0x12, ldAIntoMemDE16);
-            opCodeTranslationDict.Add(0x13, incDE);
-            opCodeTranslationDict.Add(0x14, incD);
-            opCodeTranslationDict.Add(0x15, decD);
-            opCodeTranslationDict.Add(0x16, ldD);
-            opCodeTranslationDict.Add(0x17, rlA);
-            opCodeTranslationDict.Add(0x18, jumpPCPlusN);
-            opCodeTranslationDict.Add(0x19, addDEtoHL);
-            opCodeTranslationDict.Add(0x1A, ldAMemDE);
-            opCodeTranslationDict.Add(0x1B, decDE);
-            opCodeTranslationDict.Add(0x1C, incE);
-            opCodeTranslationDict.Add(0x1D, decE);
-            opCodeTranslationDict.Add(0x1E, ldE);
-            opCodeTranslationDict.Add(0x1F, rrA);
-            opCodeTranslationDict.Add(0x20, jumpIfZeroFlagResetPlusN);
-            opCodeTranslationDict.Add(0x21, ldHL16);
-            opCodeTranslationDict.Add(0x22, ldiMemHLWithA);
-            opCodeTranslationDict.Add(0x23, incHL);
-            opCodeTranslationDict.Add(0x24, incH);
-            opCodeTranslationDict.Add(0x25, decH);
-            opCodeTranslationDict.Add(0x26, ldH);
-            opCodeTranslationDict.Add(0x27, daaRegA);
-            opCodeTranslationDict.Add(0x28, jumpIfZeroFlagSetPlusN);
-            opCodeTranslationDict.Add(0x29, addHLtoHL);
-            opCodeTranslationDict.Add(0x2A, ldiAMemHL);
-            opCodeTranslationDict.Add(0x2B, decHL);
-            opCodeTranslationDict.Add(0x2C, incL);
-            opCodeTranslationDict.Add(0x2D, decL);
-            opCodeTranslationDict.Add(0x2E, ldL);
-            opCodeTranslationDict.Add(0x2F, complementA);
-            opCodeTranslationDict.Add(0x30, jumpIfCarryFlagResetPlusN);
-            opCodeTranslationDict.Add(0x31, ldSP16);
-            opCodeTranslationDict.Add(0x32, lddMemHLWithA);
-            opCodeTranslationDict.Add(0x33, incSP);
-            opCodeTranslationDict.Add(0x34, incHLMem);
-            opCodeTranslationDict.Add(0x35, decHLMem);
-            opCodeTranslationDict.Add(0x36, ldHLMem);
-            opCodeTranslationDict.Add(0x37, highCarryFlag);
-            opCodeTranslationDict.Add(0x38, jumpIfCarryFlagSetPlusN);
-            opCodeTranslationDict.Add(0x39, addSPtoHL);
-            opCodeTranslationDict.Add(0x3A, lddAMemHL);
-            opCodeTranslationDict.Add(0x3B, decSP);
-            opCodeTranslationDict.Add(0x3C, incA);
-            opCodeTranslationDict.Add(0x3D, decA);
-            opCodeTranslationDict.Add(0x3E, ldA);
-            opCodeTranslationDict.Add(0x3F, complementCarryFlag);
-            opCodeTranslationDict.Add(0x40, ldrBB);
-            opCodeTranslationDict.Add(0x41, ldrBC);
-            opCodeTranslationDict.Add(0x42, ldrBD);
-            opCodeTranslationDict.Add(0x43, ldrBE);
-            opCodeTranslationDict.Add(0x44, ldrBH);
-            opCodeTranslationDict.Add(0x45, ldrBL);
-            opCodeTranslationDict.Add(0x46, ldrBFromMemHL);
-            opCodeTranslationDict.Add(0x47, ldrBA);
-            opCodeTranslationDict.Add(0x48, ldrCB);
-            opCodeTranslationDict.Add(0x49, ldrCC);
-            opCodeTranslationDict.Add(0x4A, ldrCD);
-            opCodeTranslationDict.Add(0x4B, ldrCE);
-            opCodeTranslationDict.Add(0x4C, ldrCH);
-            opCodeTranslationDict.Add(0x4D, ldrCL);
-            opCodeTranslationDict.Add(0x4E, ldrCFromMemHL);
-            opCodeTranslationDict.Add(0x4F, ldrCA);
-            opCodeTranslationDict.Add(0x50, ldrDB);
-            opCodeTranslationDict.Add(0x51, ldrDC);
-            opCodeTranslationDict.Add(0x52, ldrDD);
-            opCodeTranslationDict.Add(0x53, ldrDE);
-            opCodeTranslationDict.Add(0x54, ldrDH);
-            opCodeTranslationDict.Add(0x55, ldrDL);
-            opCodeTranslationDict.Add(0x56, ldrDFromMemHL);
-            opCodeTranslationDict.Add(0x57, ldrDA);
-            opCodeTranslationDict.Add(0x58, ldrEB);
-            opCodeTranslationDict.Add(0x59, ldrEC);
-            opCodeTranslationDict.Add(0x5A, ldrED);
-            opCodeTranslationDict.Add(0x5B, ldrEE);
-            opCodeTranslationDict.Add(0x5C, ldrEH);
-            opCodeTranslationDict.Add(0x5D, ldrEL);
-            opCodeTranslationDict.Add(0x5E, ldrEFromMemHL);
-            opCodeTranslationDict.Add(0x5F, ldrEA);
-            opCodeTranslationDict.Add(0x60, ldrHB);
-            opCodeTranslationDict.Add(0x61, ldrHC);
-            opCodeTranslationDict.Add(0x62, ldrHD);
-            opCodeTranslationDict.Add(0x63, ldrHE);
-            opCodeTranslationDict.Add(0x64, ldrHH);
-            opCodeTranslationDict.Add(0x65, ldrHL);
-            opCodeTranslationDict.Add(0x66, ldrHFromMemHL);
-            opCodeTranslationDict.Add(0x67, ldrHA);
-            opCodeTranslationDict.Add(0x68, ldrLB);
-            opCodeTranslationDict.Add(0x69, ldrLC);
-            opCodeTranslationDict.Add(0x6A, ldrLD);
-            opCodeTranslationDict.Add(0x6B, ldrLE);
-            opCodeTranslationDict.Add(0x6C, ldrLH);
-            opCodeTranslationDict.Add(0x6D, ldrLL);
-            opCodeTranslationDict.Add(0x6E, ldrLFromMemHL);
-            opCodeTranslationDict.Add(0x6F, ldrLA);
-            opCodeTranslationDict.Add(0x70, ldHLMemFromB);
-            opCodeTranslationDict.Add(0x71, ldHLMemFromC);
-            opCodeTranslationDict.Add(0x72, ldHLMemFromD);
-            opCodeTranslationDict.Add(0x73, ldHLMemFromE);
-            opCodeTranslationDict.Add(0x74, ldHLMemFromH);
-            opCodeTranslationDict.Add(0x75, ldHLMemFromL);
-            opCodeTranslationDict.Add(0x76, haltCPU);
-            opCodeTranslationDict.Add(0x77, ldAIntoMemHL16);
-            opCodeTranslationDict.Add(0x78, ldrAB);
-            opCodeTranslationDict.Add(0x79, ldrAC);
-            opCodeTranslationDict.Add(0x7A, ldrAD);
-            opCodeTranslationDict.Add(0x7B, ldrAE);
-            opCodeTranslationDict.Add(0x7C, ldrAH);
-            opCodeTranslationDict.Add(0x7D, ldrAL);
-            opCodeTranslationDict.Add(0x7E, ldrAFromMemHL);
-            opCodeTranslationDict.Add(0x7F, ldrAA);
-            opCodeTranslationDict.Add(0x80, addBtoA);
-            opCodeTranslationDict.Add(0x81, addCtoA);
-            opCodeTranslationDict.Add(0x82, addDtoA);
-            opCodeTranslationDict.Add(0x83, addEtoA);
-            opCodeTranslationDict.Add(0x84, addHtoA);
-            opCodeTranslationDict.Add(0x85, addLtoA);
-            opCodeTranslationDict.Add(0x86, addMemAtHLtoA);
-            opCodeTranslationDict.Add(0x87, addAtoA);
-            opCodeTranslationDict.Add(0x88, addCarryBtoA);
-            opCodeTranslationDict.Add(0x89, addCarryCtoA);
-            opCodeTranslationDict.Add(0x8A, addCarryDtoA);
-            opCodeTranslationDict.Add(0x8B, addCarryEtoA);
-            opCodeTranslationDict.Add(0x8C, addCarryHtoA);
-            opCodeTranslationDict.Add(0x8D, addCarryLtoA);
-            opCodeTranslationDict.Add(0x8E, addCarryBtoA);
-            opCodeTranslationDict.Add(0x8F, addCarryAtoA);
-            opCodeTranslationDict.Add(0x90, subBFromA);
-            opCodeTranslationDict.Add(0x91, subCFromA);
-            opCodeTranslationDict.Add(0x92, subDFromA);
-            opCodeTranslationDict.Add(0x93, subEFromA);
-            opCodeTranslationDict.Add(0x94, subHFromA);
-            opCodeTranslationDict.Add(0x95, subLFromA);
-            opCodeTranslationDict.Add(0x96, subMemAtHLFromA);
-            opCodeTranslationDict.Add(0x97, subAFromA);
-            opCodeTranslationDict.Add(0x98, subCarryBFromA);
-            opCodeTranslationDict.Add(0x99, subCarryCFromA);
-            opCodeTranslationDict.Add(0x9A, subCarryDFromA);
-            opCodeTranslationDict.Add(0x9B, subCarryEFromA);
-            opCodeTranslationDict.Add(0x9C, subCarryHFromA);
-            opCodeTranslationDict.Add(0x9D, subCarryLFromA);
-            opCodeTranslationDict.Add(0x9E, subCarryMemAtHLFromA);
-            opCodeTranslationDict.Add(0x9F, subCarryAFromA);
-            opCodeTranslationDict.Add(0xA0, andABinA);
-            opCodeTranslationDict.Add(0xA1, andACinA);
-            opCodeTranslationDict.Add(0xA2, andADinA);
-            opCodeTranslationDict.Add(0xA3, andAEinA);
-            opCodeTranslationDict.Add(0xA4, andAHinA);
-            opCodeTranslationDict.Add(0xA5, andALinA);
-            opCodeTranslationDict.Add(0xA6, andAMemHLinA);
-            opCodeTranslationDict.Add(0xA7, andAAinA);
-            opCodeTranslationDict.Add(0xA8, xorABinA);
-            opCodeTranslationDict.Add(0xA9, xorACinA);
-            opCodeTranslationDict.Add(0xAA, xorADinA);
-            opCodeTranslationDict.Add(0xAB, xorAEinA);
-            opCodeTranslationDict.Add(0xAC, xorAHinA);
-            opCodeTranslationDict.Add(0xAD, xorALinA);
-            opCodeTranslationDict.Add(0xAE, xorAMemHLinA);
-            opCodeTranslationDict.Add(0xAF, xorAAinA);
-            opCodeTranslationDict.Add(0xB0, orABinA);
-            opCodeTranslationDict.Add(0xB1, orACinA);
-            opCodeTranslationDict.Add(0xB2, orADinA);
-            opCodeTranslationDict.Add(0xB3, orAEinA);
-            opCodeTranslationDict.Add(0xB4, orAHinA);
-            opCodeTranslationDict.Add(0xB5, orALinA);
-            opCodeTranslationDict.Add(0xB6, orAMemHLinA);
-            opCodeTranslationDict.Add(0xB7, orAAinA);
-            opCodeTranslationDict.Add(0xB8, cmpAB);
-            opCodeTranslationDict.Add(0xB9, cmpAC);
-            opCodeTranslationDict.Add(0xBA, cmpAD);
-            opCodeTranslationDict.Add(0xBB, cmpAE);
-            opCodeTranslationDict.Add(0xBC, cmpAH);
-            opCodeTranslationDict.Add(0xBD, cmpAL);
-            opCodeTranslationDict.Add(0xBE, cmpAMemHL);
-            opCodeTranslationDict.Add(0xBF, cmpAA);
-            opCodeTranslationDict.Add(0xC0, retIfZReset);
-            opCodeTranslationDict.Add(0xC1, popIntoBC);
-            opCodeTranslationDict.Add(0xC2, jumpIfZeroFlagReset);
-            opCodeTranslationDict.Add(0xC3, jumpToNN);
-            opCodeTranslationDict.Add(0xC4, callNNIfZReset);
-            opCodeTranslationDict.Add(0xC5, pushBCToStack);
-            opCodeTranslationDict.Add(0xC6, addNtoA);
-            opCodeTranslationDict.Add(0xC7, rst00);
-            opCodeTranslationDict.Add(0xC8, retIfZSet);
-            opCodeTranslationDict.Add(0xC9, ret);
-            opCodeTranslationDict.Add(0xCA, jumpIfZeroFlagSet);
-            opCodeTranslationDict.Add(0xCB, executeCBPrefixedOpCode);
-            opCodeTranslationDict.Add(0xCC, callNNIfZSet);
-            opCodeTranslationDict.Add(0xCD, callNN);
-            opCodeTranslationDict.Add(0xCE, addCarryNtoA);
-            opCodeTranslationDict.Add(0xCF, rst08);
-            opCodeTranslationDict.Add(0xD0, retIfCarryReset);
-            opCodeTranslationDict.Add(0xD1, popIntoDE);
-            opCodeTranslationDict.Add(0xD2, jumpIfCarryFlagReset);
-            opCodeTranslationDict.Add(0xD3, unusedD3);
-            opCodeTranslationDict.Add(0xD4, callNNIfCReset);
-            opCodeTranslationDict.Add(0xD5, pushDEToStack);
-            opCodeTranslationDict.Add(0xD6, subNFromA);
-            opCodeTranslationDict.Add(0xD7, rst10);
-            opCodeTranslationDict.Add(0xD8, retIfCarrySet);
-            opCodeTranslationDict.Add(0xD9, retEnableInterrupts);
-            opCodeTranslationDict.Add(0xDA, jumpIfCarryFlagSet);
-            opCodeTranslationDict.Add(0xDB, unusedDB); 
-            opCodeTranslationDict.Add(0xDC, callNNIfCSet);
-            opCodeTranslationDict.Add(0xDD, unusedDD);
-            opCodeTranslationDict.Add(0xDE, subCarryNFromA);  // SBC A,n
-            opCodeTranslationDict.Add(0xDF, rst18);
-            opCodeTranslationDict.Add(0xE0, putAIntoIOPlusMem);
-            opCodeTranslationDict.Add(0xE1, popIntoHL);
-            opCodeTranslationDict.Add(0xE2, ldAIntoIOPlusC);
-            opCodeTranslationDict.Add(0xE3, unusedE3);
-            opCodeTranslationDict.Add(0xE4, unusedE4);
-            opCodeTranslationDict.Add(0xE5, pushHLToStack);
-            opCodeTranslationDict.Add(0xE6, andANinA);
-            opCodeTranslationDict.Add(0xE7, rst20);
-            opCodeTranslationDict.Add(0xE8, addNtoSP);
-            opCodeTranslationDict.Add(0xE9, jumpMemHL);
-            opCodeTranslationDict.Add(0xEA, ldAIntoNN16);
-            opCodeTranslationDict.Add(0xEB, unusedEB);
-            opCodeTranslationDict.Add(0xEC, unusedEC);
-            opCodeTranslationDict.Add(0xED, unusedED);
-            opCodeTranslationDict.Add(0xEE, xorANinA);
-            opCodeTranslationDict.Add(0xEF, rst28);
-            opCodeTranslationDict.Add(0xF0, putIOPlusMemIntoA);
-            opCodeTranslationDict.Add(0xF1, popIntoAF);
-            opCodeTranslationDict.Add(0xF2, ldIOPlusCToA);
-            opCodeTranslationDict.Add(0xF3, disableInterruptsAfterNextIns);
-            opCodeTranslationDict.Add(0xF4, unusedF4);
-            opCodeTranslationDict.Add(0xF5, pushAFToStack);
-            opCodeTranslationDict.Add(0xF6, orANinA);
-            opCodeTranslationDict.Add(0xF7, rst30);
-            opCodeTranslationDict.Add(0xF8, ldHLFromSPPlusN);
-            opCodeTranslationDict.Add(0xF9, ldSPFromHL);
-            opCodeTranslationDict.Add(0xFA, ld16A);
-            opCodeTranslationDict.Add(0xFB, enableInterruptsAfterNextIns);
-            opCodeTranslationDict.Add(0xFC, unusedFC);
-            opCodeTranslationDict.Add(0xFD, unusedFD);
-            opCodeTranslationDict.Add(0xFE, cmpAN);
-            opCodeTranslationDict.Add(0xFF, rst38);
+            opCodeTranslationDict.Add(0x00, new Instruction(0x00, 1, 4, opNOP));
+            opCodeTranslationDict.Add(0x01, new Instruction(0x01, 3, 12, ldBC16));
+            opCodeTranslationDict.Add(0x02, new Instruction(0x02, 1, 8, ldAToMemBC));
+            opCodeTranslationDict.Add(0x03, new Instruction(0x03, 1, 8, incBC));
+            opCodeTranslationDict.Add(0x04, new Instruction(0x04, 1, 4, incB));
+            opCodeTranslationDict.Add(0x05, new Instruction(0x05, 1, 4, decB));
+            opCodeTranslationDict.Add(0x06, new Instruction(0x06, 2, 8, ldB));
+            opCodeTranslationDict.Add(0x07, new Instruction(0x07, 1, 4, rlcA));
+            opCodeTranslationDict.Add(0x08, new Instruction(0x08, 3, 20, ldSPFromMem16));
+            opCodeTranslationDict.Add(0x09, new Instruction(0x09, 1, 8, addBCtoHL));
+            opCodeTranslationDict.Add(0x0A, new Instruction(0x0A, 1, 8, ldAMemBC));
+            opCodeTranslationDict.Add(0x0B, new Instruction(0x0B, 1, 8, decBC));
+            opCodeTranslationDict.Add(0x0C, new Instruction(0x0C, 1, 4, incC));
+            opCodeTranslationDict.Add(0x0D, new Instruction(0x0D, 1, 4, decC));
+            opCodeTranslationDict.Add(0x0E, new Instruction(0x0E, 2, 8, ldC));
+            opCodeTranslationDict.Add(0x0F, new Instruction(0x0F, 1, 4, rrcA));
+            opCodeTranslationDict.Add(0x10, new Instruction(0x10, 2, 4, stopCPU));
+            opCodeTranslationDict.Add(0x11, new Instruction(0x11, 3, 12, ldDE16));
+            opCodeTranslationDict.Add(0x12, new Instruction(0x12, 1, 8, ldAIntoMemDE16));
+            opCodeTranslationDict.Add(0x13, new Instruction(0x13, 1, 8, incDE));
+            opCodeTranslationDict.Add(0x14, new Instruction(0x14, 1, 4, incD));
+            opCodeTranslationDict.Add(0x15, new Instruction(0x15, 1, 4, decD));
+            opCodeTranslationDict.Add(0x16, new Instruction(0x16, 2, 8, ldD));
+            opCodeTranslationDict.Add(0x17, new Instruction(0x17, 1, 4, rlA));
+            opCodeTranslationDict.Add(0x18, new Instruction(0x18, 2, 12, jumpPCPlusN));
+            opCodeTranslationDict.Add(0x19, new Instruction(0x19, 1, 8, addDEtoHL));
+            opCodeTranslationDict.Add(0x1A, new Instruction(0x1A, 1, 8, ldAMemDE));
+            opCodeTranslationDict.Add(0x1B, new Instruction(0x1B, 1, 8, decDE));
+            opCodeTranslationDict.Add(0x1C, new Instruction(0x1C, 1, 4, incE));
+            opCodeTranslationDict.Add(0x1D, new Instruction(0x1D, 1, 4, decE));
+            opCodeTranslationDict.Add(0x1E, new Instruction(0x1E, 2, 8, ldE));
+            opCodeTranslationDict.Add(0x1F, new Instruction(0x1F, 1, 4, rrA));
+            opCodeTranslationDict.Add(0x20, new Instruction(0x20, 2, 12, jumpIfZeroFlagResetPlusN)); // 8 - 12 cycles
+            opCodeTranslationDict.Add(0x21, new Instruction(0x21, 3, 12, ldHL16));
+            opCodeTranslationDict.Add(0x22, new Instruction(0x22, 1, 8, ldiMemHLWithA));
+            opCodeTranslationDict.Add(0x23, new Instruction(0x23, 1, 8, incHL));
+            opCodeTranslationDict.Add(0x24, new Instruction(0x24, 1, 4, incH));
+            opCodeTranslationDict.Add(0x25, new Instruction(0x25, 1, 4, decH));
+            opCodeTranslationDict.Add(0x26, new Instruction(0x26, 2, 8, ldH));
+            opCodeTranslationDict.Add(0x27, new Instruction(0x27, 1, 4, daaRegA));
+            opCodeTranslationDict.Add(0x28, new Instruction(0x28, 2, 12, jumpIfZeroFlagSetPlusN)); // 8 - 12 cycles
+            opCodeTranslationDict.Add(0x29, new Instruction(0x29, 1, 8, addHLtoHL));
+            opCodeTranslationDict.Add(0x2A, new Instruction(0x2A, 1, 8, ldiAMemHL));
+            opCodeTranslationDict.Add(0x2B, new Instruction(0x2B, 1, 8, decHL));
+            opCodeTranslationDict.Add(0x2C, new Instruction(0x2C, 1, 4, incL));
+            opCodeTranslationDict.Add(0x2D, new Instruction(0x2D, 1, 4, decL));
+            opCodeTranslationDict.Add(0x2E, new Instruction(0x2E, 2, 8, ldL));
+            opCodeTranslationDict.Add(0x2F, new Instruction(0x2F, 1, 4, complementA));
+            opCodeTranslationDict.Add(0x30, new Instruction(0x30, 2, 12, jumpIfCarryFlagResetPlusN)); // 8-12
+            opCodeTranslationDict.Add(0x31, new Instruction(0x31, 3, 12, ldSP16));
+            opCodeTranslationDict.Add(0x32, new Instruction(0x32, 1, 8, lddMemHLWithA));
+            opCodeTranslationDict.Add(0x33, new Instruction(0x33, 1, 8, incSP));
+            opCodeTranslationDict.Add(0x34, new Instruction(0x34, 1, 12, incHLMem));
+            opCodeTranslationDict.Add(0x35, new Instruction(0x35, 1, 12, decHLMem));
+            opCodeTranslationDict.Add(0x36, new Instruction(0x36, 2, 12, ldHLMem));
+            opCodeTranslationDict.Add(0x37, new Instruction(0x37, 1, 4, highCarryFlag));
+            opCodeTranslationDict.Add(0x38, new Instruction(0x38, 2, 12, jumpIfCarryFlagSetPlusN)); // 8-12
+            opCodeTranslationDict.Add(0x39, new Instruction(0x39, 1, 8, addSPtoHL));
+            opCodeTranslationDict.Add(0x3A, new Instruction(0x3A, 1, 8, lddAMemHL));
+            opCodeTranslationDict.Add(0x3B, new Instruction(0x3B, 1, 8, decSP));
+            opCodeTranslationDict.Add(0x3C, new Instruction(0x3C, 1, 4, incA));
+            opCodeTranslationDict.Add(0x3D, new Instruction(0x3D, 1, 4, decA));
+            opCodeTranslationDict.Add(0x3E, new Instruction(0x3E, 2, 8, ldA));
+            opCodeTranslationDict.Add(0x3F, new Instruction(0x3F, 1, 4, complementCarryFlag));
+            opCodeTranslationDict.Add(0x40, new Instruction(0x40, 1, 4, ldrBB));
+            opCodeTranslationDict.Add(0x41, new Instruction(0x41, 1, 4, ldrBC));
+            opCodeTranslationDict.Add(0x42, new Instruction(0x42, 1, 4, ldrBD));
+            opCodeTranslationDict.Add(0x43, new Instruction(0x43, 1, 4, ldrBE));
+            opCodeTranslationDict.Add(0x44, new Instruction(0x44, 1, 4, ldrBH));
+            opCodeTranslationDict.Add(0x45, new Instruction(0x45, 1, 4, ldrBL));
+            opCodeTranslationDict.Add(0x46, new Instruction(0x46, 1, 8, ldrBFromMemHL));
+            opCodeTranslationDict.Add(0x47, new Instruction(0x47, 1, 4, ldrBA));
+            opCodeTranslationDict.Add(0x48, new Instruction(0x48, 1, 4, ldrCB));
+            opCodeTranslationDict.Add(0x49, new Instruction(0x49, 1, 4, ldrCC));
+            opCodeTranslationDict.Add(0x4A, new Instruction(0x4A, 1, 4, ldrCD));
+            opCodeTranslationDict.Add(0x4B, new Instruction(0x4B, 1, 4, ldrCE));
+            opCodeTranslationDict.Add(0x4C, new Instruction(0x4C, 1, 4, ldrCH));
+            opCodeTranslationDict.Add(0x4D, new Instruction(0x4D, 1, 4, ldrCL));
+            opCodeTranslationDict.Add(0x4E, new Instruction(0x4E, 1, 8, ldrCFromMemHL));
+            opCodeTranslationDict.Add(0x4F, new Instruction(0x4F, 1, 4, ldrCA));
+            opCodeTranslationDict.Add(0x50, new Instruction(0x50, 1, 4, ldrDB));
+            opCodeTranslationDict.Add(0x51, new Instruction(0x51, 1, 4, ldrDC));
+            opCodeTranslationDict.Add(0x52, new Instruction(0x52, 1, 4, ldrDD));
+            opCodeTranslationDict.Add(0x53, new Instruction(0x53, 1, 4, ldrDE));
+            opCodeTranslationDict.Add(0x54, new Instruction(0x54, 1, 4, ldrDH));
+            opCodeTranslationDict.Add(0x55, new Instruction(0x55, 1, 4, ldrDL));
+            opCodeTranslationDict.Add(0x56, new Instruction(0x56, 1, 8, ldrDFromMemHL));
+            opCodeTranslationDict.Add(0x57, new Instruction(0x57, 1, 4, ldrDA));
+            opCodeTranslationDict.Add(0x58, new Instruction(0x58, 1, 4, ldrEB));
+            opCodeTranslationDict.Add(0x59, new Instruction(0x59, 1, 4, ldrEC));
+            opCodeTranslationDict.Add(0x5A, new Instruction(0x5A, 1, 4, ldrED));
+            opCodeTranslationDict.Add(0x5B, new Instruction(0x5B, 1, 4, ldrEE));
+            opCodeTranslationDict.Add(0x5C, new Instruction(0x5C, 1, 4, ldrEH));
+            opCodeTranslationDict.Add(0x5D, new Instruction(0x5D, 1, 4, ldrEL));
+            opCodeTranslationDict.Add(0x5E, new Instruction(0x5E, 1, 8, ldrEFromMemHL));
+            opCodeTranslationDict.Add(0x5F, new Instruction(0x5F, 1, 4, ldrEA));
+            opCodeTranslationDict.Add(0x60, new Instruction(0x60, 1, 4, ldrHB));
+            opCodeTranslationDict.Add(0x61, new Instruction(0x61, 1, 4, ldrHC));
+            opCodeTranslationDict.Add(0x62, new Instruction(0x62, 1, 4, ldrHD));
+            opCodeTranslationDict.Add(0x63, new Instruction(0x63, 1, 4, ldrHE));
+            opCodeTranslationDict.Add(0x64, new Instruction(0x64, 1, 4, ldrHH));
+            opCodeTranslationDict.Add(0x65, new Instruction(0x65, 1, 4, ldrHL));
+            opCodeTranslationDict.Add(0x66, new Instruction(0x66, 1, 8, ldrHFromMemHL));
+            opCodeTranslationDict.Add(0x67, new Instruction(0x67, 1, 4, ldrHA));
+            opCodeTranslationDict.Add(0x68, new Instruction(0x68, 1, 4, ldrLB));
+            opCodeTranslationDict.Add(0x69, new Instruction(0x69, 1, 4, ldrLC));
+            opCodeTranslationDict.Add(0x6A, new Instruction(0x6A, 1, 4, ldrLD));
+            opCodeTranslationDict.Add(0x6B, new Instruction(0x6B, 1, 4, ldrLE));
+            opCodeTranslationDict.Add(0x6C, new Instruction(0x6C, 1, 4, ldrLH));
+            opCodeTranslationDict.Add(0x6D, new Instruction(0x6D, 1, 4, ldrLL));
+            opCodeTranslationDict.Add(0x6E, new Instruction(0x6E, 1, 8, ldrLFromMemHL));
+            opCodeTranslationDict.Add(0x6F, new Instruction(0x6F, 1, 4, ldrLA));
+            opCodeTranslationDict.Add(0x70, new Instruction(0x70, 1, 8, ldHLMemFromB));
+            opCodeTranslationDict.Add(0x71, new Instruction(0x71, 1, 8, ldHLMemFromC));
+            opCodeTranslationDict.Add(0x72, new Instruction(0x72, 1, 8, ldHLMemFromD));
+            opCodeTranslationDict.Add(0x73, new Instruction(0x73, 1, 8, ldHLMemFromE));
+            opCodeTranslationDict.Add(0x74, new Instruction(0x74, 1, 8, ldHLMemFromH));
+            opCodeTranslationDict.Add(0x75, new Instruction(0x75, 1, 8, ldHLMemFromL));
+            opCodeTranslationDict.Add(0x76, new Instruction(0x76, 1, 4, haltCPU));
+            opCodeTranslationDict.Add(0x77, new Instruction(0x77, 1, 8, ldAIntoMemHL16));
+            opCodeTranslationDict.Add(0x78, new Instruction(0x78, 1, 4, ldrAB));
+            opCodeTranslationDict.Add(0x79, new Instruction(0x79, 1, 4, ldrAC));
+            opCodeTranslationDict.Add(0x7A, new Instruction(0x7A, 1, 4, ldrAD));
+            opCodeTranslationDict.Add(0x7B, new Instruction(0x7B, 1, 4, ldrAE));
+            opCodeTranslationDict.Add(0x7C, new Instruction(0x7C, 1, 4, ldrAH));
+            opCodeTranslationDict.Add(0x7D, new Instruction(0x7D, 1, 4, ldrAL));
+            opCodeTranslationDict.Add(0x7E, new Instruction(0x7E, 1, 8, ldrAFromMemHL));
+            opCodeTranslationDict.Add(0x7F, new Instruction(0x7F, 1, 4, ldrAA));
+            opCodeTranslationDict.Add(0x80, new Instruction(0x80, 1, 4, addBtoA));
+            opCodeTranslationDict.Add(0x81, new Instruction(0x81, 1, 4, addCtoA));
+            opCodeTranslationDict.Add(0x82, new Instruction(0x82, 1, 4, addDtoA));
+            opCodeTranslationDict.Add(0x83, new Instruction(0x83, 1, 4, addEtoA));
+            opCodeTranslationDict.Add(0x84, new Instruction(0x84, 1, 4, addHtoA));
+            opCodeTranslationDict.Add(0x85, new Instruction(0x85, 1, 4, addLtoA));
+            opCodeTranslationDict.Add(0x86, new Instruction(0x86, 1, 8, addMemAtHLtoA));
+            opCodeTranslationDict.Add(0x87, new Instruction(0x87, 1, 4, addAtoA));
+            opCodeTranslationDict.Add(0x88, new Instruction(0x88, 1, 4, addCarryBtoA));
+            opCodeTranslationDict.Add(0x89, new Instruction(0x89, 1, 4, addCarryCtoA));
+            opCodeTranslationDict.Add(0x8A, new Instruction(0x8A, 1, 4, addCarryDtoA));
+            opCodeTranslationDict.Add(0x8B, new Instruction(0x8B, 1, 4, addCarryEtoA));
+            opCodeTranslationDict.Add(0x8C, new Instruction(0x8C, 1, 4, addCarryHtoA));
+            opCodeTranslationDict.Add(0x8D, new Instruction(0x8D, 1, 4, addCarryLtoA));
+            opCodeTranslationDict.Add(0x8E, new Instruction(0x8E, 1, 8, addCarryMemAtHLtoA));
+            opCodeTranslationDict.Add(0x8F, new Instruction(0x8F, 1, 4, addCarryAtoA));
+            opCodeTranslationDict.Add(0x90, new Instruction(0x90, 1, 4, subBFromA));
+            opCodeTranslationDict.Add(0x91, new Instruction(0x91, 1, 4, subCFromA));
+            opCodeTranslationDict.Add(0x92, new Instruction(0x92, 1, 4, subDFromA));
+            opCodeTranslationDict.Add(0x93, new Instruction(0x93, 1, 4, subEFromA));
+            opCodeTranslationDict.Add(0x94, new Instruction(0x94, 1, 4, subHFromA));
+            opCodeTranslationDict.Add(0x95, new Instruction(0x95, 1, 4, subLFromA));
+            opCodeTranslationDict.Add(0x96, new Instruction(0x96, 1, 8, subMemAtHLFromA));
+            opCodeTranslationDict.Add(0x97, new Instruction(0x97, 1, 4, subAFromA));
+            opCodeTranslationDict.Add(0x98, new Instruction(0x98, 1, 4, subCarryBFromA));
+            opCodeTranslationDict.Add(0x99, new Instruction(0x99, 1, 4, subCarryCFromA));
+            opCodeTranslationDict.Add(0x9A, new Instruction(0x9A, 1, 4, subCarryDFromA));
+            opCodeTranslationDict.Add(0x9B, new Instruction(0x9B, 1, 4, subCarryEFromA));
+            opCodeTranslationDict.Add(0x9C, new Instruction(0x9C, 1, 4, subCarryHFromA));
+            opCodeTranslationDict.Add(0x9D, new Instruction(0x9D, 1, 4, subCarryLFromA));
+            opCodeTranslationDict.Add(0x9E, new Instruction(0x9E, 1, 8, subCarryMemAtHLFromA));
+            opCodeTranslationDict.Add(0x9F, new Instruction(0x9F, 1, 4, subCarryAFromA));
+            opCodeTranslationDict.Add(0xA0, new Instruction(0xA0, 1, 4, andABinA));
+            opCodeTranslationDict.Add(0xA1, new Instruction(0xA1, 1, 4, andACinA));
+            opCodeTranslationDict.Add(0xA2, new Instruction(0xA2, 1, 4, andADinA));
+            opCodeTranslationDict.Add(0xA3, new Instruction(0xA3, 1, 4, andAEinA));
+            opCodeTranslationDict.Add(0xA4, new Instruction(0xA4, 1, 4, andAHinA));
+            opCodeTranslationDict.Add(0xA5, new Instruction(0xA5, 1, 4, andALinA));
+            opCodeTranslationDict.Add(0xA6, new Instruction(0xA6, 1, 8, andAMemHLinA));
+            opCodeTranslationDict.Add(0xA7, new Instruction(0xA7, 1, 4, andAAinA));
+            opCodeTranslationDict.Add(0xA8, new Instruction(0xA8, 1, 4, xorABinA));
+            opCodeTranslationDict.Add(0xA9, new Instruction(0xA9, 1, 4, xorACinA));
+            opCodeTranslationDict.Add(0xAA, new Instruction(0xAA, 1, 4, xorADinA));
+            opCodeTranslationDict.Add(0xAB, new Instruction(0xAB, 1, 4, xorAEinA));
+            opCodeTranslationDict.Add(0xAC, new Instruction(0xAC, 1, 4, xorAHinA));
+            opCodeTranslationDict.Add(0xAD, new Instruction(0xAD, 1, 4, xorALinA));
+            opCodeTranslationDict.Add(0xAE, new Instruction(0xAE, 1, 8, xorAMemHLinA));
+            opCodeTranslationDict.Add(0xAF, new Instruction(0xAF, 1, 4, xorAAinA));
+            opCodeTranslationDict.Add(0xB0, new Instruction(0xB0, 1, 4, orABinA));
+            opCodeTranslationDict.Add(0xB1, new Instruction(0xB1, 1, 4, orACinA));
+            opCodeTranslationDict.Add(0xB2, new Instruction(0xB2, 1, 4, orADinA));
+            opCodeTranslationDict.Add(0xB3, new Instruction(0xB3, 1, 4, orAEinA));
+            opCodeTranslationDict.Add(0xB4, new Instruction(0xB4, 1, 4, orAHinA));
+            opCodeTranslationDict.Add(0xB5, new Instruction(0xB5, 1, 4, orALinA));
+            opCodeTranslationDict.Add(0xB6, new Instruction(0xB6, 1, 8, orAMemHLinA));
+            opCodeTranslationDict.Add(0xB7, new Instruction(0xB7, 1, 4, orAAinA));
+            opCodeTranslationDict.Add(0xB8, new Instruction(0xB8, 1, 4, cmpAB));
+            opCodeTranslationDict.Add(0xB9, new Instruction(0xB9, 1, 4, cmpAC));
+            opCodeTranslationDict.Add(0xBA, new Instruction(0xBA, 1, 4, cmpAD));
+            opCodeTranslationDict.Add(0xBB, new Instruction(0xBB, 1, 4, cmpAE));
+            opCodeTranslationDict.Add(0xBC, new Instruction(0xBC, 1, 4, cmpAH));
+            opCodeTranslationDict.Add(0xBD, new Instruction(0xBD, 1, 4, cmpAL));
+            opCodeTranslationDict.Add(0xBE, new Instruction(0xBE, 1, 8, cmpAMemHL));
+            opCodeTranslationDict.Add(0xBF, new Instruction(0xBF, 1, 4, cmpAA));
+            opCodeTranslationDict.Add(0xC0, new Instruction(0xC0, 1, 20, retIfZReset)); // 8-20
+            opCodeTranslationDict.Add(0xC1, new Instruction(0xC1, 1, 12, popIntoBC));
+            opCodeTranslationDict.Add(0xC2, new Instruction(0xC2, 3, 16, jumpIfZeroFlagReset)); //12-16
+            opCodeTranslationDict.Add(0xC3, new Instruction(0xC3, 3, 16, jumpToNN));
+            opCodeTranslationDict.Add(0xC4, new Instruction(0xC4, 3, 24, callNNIfZReset)); //12-24
+            opCodeTranslationDict.Add(0xC5, new Instruction(0xC5, 1, 16, pushBCToStack));
+            opCodeTranslationDict.Add(0xC6, new Instruction(0xC6, 2, 8, addNtoA));
+            opCodeTranslationDict.Add(0xC7, new Instruction(0xC7, 1, 16, rst00));
+            opCodeTranslationDict.Add(0xC8, new Instruction(0xC8, 1, 20, retIfZSet)); // 8-20
+            opCodeTranslationDict.Add(0xC9, new Instruction(0xC9, 1, 16, ret));
+            opCodeTranslationDict.Add(0xCA, new Instruction(0xCA, 3, 16, jumpIfZeroFlagSet)); // 12-16
+            opCodeTranslationDict.Add(0xCB, new Instruction(0xCB, 1, 4, executeCBPrefixedOpCode)); // trent have to Add in CB Instructions length and cycles
+            opCodeTranslationDict.Add(0xCC, new Instruction(0xCC, 3, 24, callNNIfZSet)); //12-24
+            opCodeTranslationDict.Add(0xCD, new Instruction(0xCD, 3, 24, callNN));
+            opCodeTranslationDict.Add(0xCE, new Instruction(0xCE, 2, 8, addCarryNtoA));
+            opCodeTranslationDict.Add(0xCF, new Instruction(0xCF, 1, 16, rst08));
+            opCodeTranslationDict.Add(0xD0, new Instruction(0xD0, 1, 20, retIfCarryReset)); // 8-20
+            opCodeTranslationDict.Add(0xD1, new Instruction(0xD1, 1, 12, popIntoDE));
+            opCodeTranslationDict.Add(0xD2, new Instruction(0xD2, 3, 16, jumpIfCarryFlagReset)); // 12-16
+            opCodeTranslationDict.Add(0xD3, new Instruction(0xD3, 1, 4, unusedD3));
+            opCodeTranslationDict.Add(0xD4, new Instruction(0xD4, 3, 24, callNNIfCReset)); //12-24
+            opCodeTranslationDict.Add(0xD5, new Instruction(0xD5, 1, 16, pushDEToStack));
+            opCodeTranslationDict.Add(0xD6, new Instruction(0xD6, 2, 8, subNFromA));
+            opCodeTranslationDict.Add(0xD7, new Instruction(0xD7, 1, 16, rst10));
+            opCodeTranslationDict.Add(0xD8, new Instruction(0xD8, 1, 20, retIfCarrySet)); //8-20
+            opCodeTranslationDict.Add(0xD9, new Instruction(0xD9, 1, 16, retEnableInterrupts));
+            opCodeTranslationDict.Add(0xDA, new Instruction(0xDA, 3, 16, jumpIfCarryFlagSet)); // 12-16
+            opCodeTranslationDict.Add(0xDB, new Instruction(0xDB, 1, 4, unusedDB));
+            opCodeTranslationDict.Add(0xDC, new Instruction(0xDC, 3, 24, callNNIfCSet)); //12-24
+            opCodeTranslationDict.Add(0xDD, new Instruction(0xDD, 0, 0, unusedDD));
+            opCodeTranslationDict.Add(0xDE, new Instruction(0xDE, 2, 8, subCarryNFromA));  // SBC A,n
+            opCodeTranslationDict.Add(0xDF, new Instruction(0xDF, 1, 16, rst18));
+            opCodeTranslationDict.Add(0xE0, new Instruction(0xE0, 2, 12, putAIntoIOPlusMem));
+            opCodeTranslationDict.Add(0xE1, new Instruction(0xE1, 1, 12, popIntoHL));
+            opCodeTranslationDict.Add(0xE2, new Instruction(0xE2, 1, 8, ldAIntoIOPlusC));
+            opCodeTranslationDict.Add(0xE3, new Instruction(0xE3, 1, 4, unusedE3));
+            opCodeTranslationDict.Add(0xE4, new Instruction(0xE4, 1, 4, unusedE4));
+            opCodeTranslationDict.Add(0xE5, new Instruction(0xE5, 1, 16, pushHLToStack));
+            opCodeTranslationDict.Add(0xE6, new Instruction(0xE6, 2, 8, andANinA));
+            opCodeTranslationDict.Add(0xE7, new Instruction(0xE7, 1, 16, rst20));
+            opCodeTranslationDict.Add(0xE8, new Instruction(0xE8, 2, 16, addNtoSP));
+            opCodeTranslationDict.Add(0xE9, new Instruction(0xE9, 1, 4, jumpMemHL));
+            opCodeTranslationDict.Add(0xEA, new Instruction(0xEA, 3, 16, ldAIntoNN16));
+            opCodeTranslationDict.Add(0xEB, new Instruction(0xEB, 1, 4, unusedEB));
+            opCodeTranslationDict.Add(0xEC, new Instruction(0xEC, 1, 4, unusedEC));
+            opCodeTranslationDict.Add(0xED, new Instruction(0xED, 1, 4, unusedED));
+            opCodeTranslationDict.Add(0xEE, new Instruction(0xEE, 2, 8, xorANinA));
+            opCodeTranslationDict.Add(0xEF, new Instruction(0xEF, 1, 16, rst28));
+            opCodeTranslationDict.Add(0xF0, new Instruction(0xF0, 2, 12, putIOPlusMemIntoA));
+            opCodeTranslationDict.Add(0xF1, new Instruction(0xF1, 1, 12, popIntoAF));
+            opCodeTranslationDict.Add(0xF2, new Instruction(0xF2, 1, 8, ldIOPlusCToA));
+            opCodeTranslationDict.Add(0xF3, new Instruction(0xF3, 1, 4, disableInterruptsAfterNextIns));
+            opCodeTranslationDict.Add(0xF4, new Instruction(0xF4, 1, 4, unusedF4));
+            opCodeTranslationDict.Add(0xF5, new Instruction(0xF5, 1, 16, pushAFToStack));
+            opCodeTranslationDict.Add(0xF6, new Instruction(0xF6, 2, 8, orANinA));
+            opCodeTranslationDict.Add(0xF7, new Instruction(0xF7, 1, 16, rst30));
+            opCodeTranslationDict.Add(0xF8, new Instruction(0xF8, 2, 12, ldHLFromSPPlusN));
+            opCodeTranslationDict.Add(0xF9, new Instruction(0xF9, 1, 8, ldSPFromHL));
+            opCodeTranslationDict.Add(0xFA, new Instruction(0xFA, 3, 16, ld16A));
+            opCodeTranslationDict.Add(0xFB, new Instruction(0xFB, 1, 4, enableInterruptsAfterNextIns));
+            opCodeTranslationDict.Add(0xFC, new Instruction(0xFC, 1, 4, unusedFC));
+            opCodeTranslationDict.Add(0xFD, new Instruction(0xFD, 1, 4, unusedFD));
+            opCodeTranslationDict.Add(0xFE, new Instruction(0xFE, 2, 8, cmpAN));
+            opCodeTranslationDict.Add(0xFF, new Instruction(0xFF, 1, 16, rst38));
         }
         #endregion
 
