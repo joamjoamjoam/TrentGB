@@ -19,11 +19,14 @@ namespace trentGB
         private Dictionary<string, string> currentStatusDict = new Dictionary<String, String>();
         private Dictionary<string, string> oldStatusDict = new Dictionary<String, String>();
         private Dictionary<string, string> specialRegistersMap = new Dictionary<string, string>();
+        private List<Instruction> disRom = null;
+        private int currentAddress = 0;
+        public bool wait = true;
 
         private Color changedColor = Color.FromArgb(255, 255, 126, 94);
 
 
-        public CPUDebugger()
+        public CPUDebugger(List<Instruction> disassembledRom)
         {
             InitializeComponent();
             watchListBinded = new BindingList<ushort>(watchList);
@@ -34,12 +37,13 @@ namespace trentGB
             watchListBinded.ListChanged += new ListChangedEventHandler(watchListboxDataSourceChanged);
             watchAddrListBox.HeaderStyle = ColumnHeaderStyle.None;
             memoryListBox.HeaderStyle = ColumnHeaderStyle.None;
-
-
+            romView.HeaderStyle = ColumnHeaderStyle.None;
+            
 
             loadSpecialRegistersMap();
+            loadDisassembledRom(disassembledRom);
 
-            // Add IO/Special Registers
+            
         }
 
         private void loadSpecialRegistersMap()
@@ -117,20 +121,29 @@ namespace trentGB
             watchAddrListBox.EndUpdate();
         }
 
-        public void setDisplayText(String text)
-        {
-            displayBox.Text = "";
-            displayBox.AppendText(text, displayBox.ForeColor);
-        }
-
         private void continueBtn_Click(object sender, EventArgs e)
         {
+            wait = false;
 
+        }
+
+        private void loadDisassembledRom(List<Instruction> insList)
+        {
+            disRom = insList;
+            foreach (Instruction ins in insList)
+            {
+                Color textColor = romView.ForeColor;
+                
+                ListViewItem c = new ListViewItem(ins.ToString());
+                c.ForeColor = textColor;
+                //c.Font = new Font(c.Font, FontStyle.Bold);
+                romView.Items.Add(c);
+            }
         }
 
         private void addKeyToListView(ListView view, String key)
         {
-            Color textColor = (oldStatusDict.Keys.Count() == 0 || (currentStatusDict[key]) != (oldStatusDict[key])) ? changedColor : Color.White;
+            Color textColor = (oldStatusDict.Keys.Count() == 0 || (currentStatusDict[key]) != (oldStatusDict[key])) ? changedColor : romView.ForeColor;
             String specInfo = (specialRegistersMap.ContainsKey(key)) ? $" {specialRegistersMap[key]}" : "";
 
             String[] strArr = new String[] { $"{key}{specInfo}", $"{((currentStatusDict.Count >= 0xFFFF) ? currentStatusDict[key] : "NULL")}" };
@@ -170,6 +183,41 @@ namespace trentGB
             rv = Convert.ToUInt16(contAddrTxtBox.Text, 16);
 
             return rv;
+        }
+        
+        private void selectInstructionForRAMAddress(ushort PC)
+        {
+            for(int i = 0; i < disRom.Count; i++)
+            {
+                if (disRom[i].address == PC)
+                {
+                    romView.Items[i].Selected = true;
+                    romView.EnsureVisible(i);
+                    break;
+                }
+            }
+        }
+
+        public DialogResult ShowDialog(ushort PC)
+        {
+            // get Address for PC in AddressSpace from mapper
+            
+            this.DialogResult = DialogResult.None;
+
+            currentAddress = PC;
+
+            return ShowDialog();
+        }
+
+        public void Show(ushort PC)
+        {
+            // get Address for PC in AddressSpace from mapper
+
+            this.DialogResult = DialogResult.None;
+
+            currentAddress = PC;
+
+            Show();
         }
 
         public void addToWatchList(ushort addr)
@@ -227,6 +275,23 @@ namespace trentGB
             }
 
             watchListBinded.ResetBindings();
+        }
+
+        private void CPUDebugger_Shown(object sender, EventArgs e)
+        {
+            selectInstructionForRAMAddress((ushort)currentAddress);
+        }
+
+        private void yesBtn_Click(object sender, EventArgs e)
+        {
+            DialogResult = DialogResult.Yes;
+            wait = false;
+        }
+
+        private void noBtn_Click(object sender, EventArgs e)
+        {
+            DialogResult = DialogResult.No;
+            wait = false;
         }
     }
 

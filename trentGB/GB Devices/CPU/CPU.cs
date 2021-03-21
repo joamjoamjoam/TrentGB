@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 
@@ -10,29 +11,28 @@ namespace trentGB
 {
     // OP Code Dict is Below.
 
-    class Instruction
+    public class Instruction
     {
         public readonly byte cycles;
         public readonly byte opCode;
         public readonly byte length;
-        public ushort address;
+        public int address;
         public byte[] parameters = new byte[0];
         public readonly Action opFunc = null;
         public readonly String desc = "";
         
 
-        public Instruction(byte opCode, byte length, byte cycles , Action act, ushort PC, ROM rom)
+        public Instruction(byte opCode, byte length, byte cycles , Action act, int PC, ROM rom)
         {
             // PC is at the adress for the first parametr if applicable
 
             this.opCode = opCode;
             this.cycles = cycles;
             this.length = length;
-            this.address = (ushort)((PC - 1) & 0xFFFF);
+            this.address = PC;
             this.opFunc = act;
             desc = act.Method.Name;
-            parameters = new byte[length - 1];
-
+            
             if (opCode == 0xCB)
             {
                 length = getCBOpLength();
@@ -40,24 +40,25 @@ namespace trentGB
                 cycles = getCBCycles(rom.getByte(PC));
             }
 
+            parameters = new byte[length - 1];
 
             for (int i = 0; i < length; i++)
             {
-                parameters[i] = rom.getByte((ushort)((PC+i) & 0xFFFF));
+                parameters[i] = rom.getByte(PC + i);
             }
         }
 
-        public Instruction(Instruction model, ushort PC, ROM rom)
+        public Instruction(Instruction model, int PC, ROM rom)
         {
             // PC is at the adress for the first parametr if applicable
 
             this.opCode = model.opCode;
             this.cycles = model.cycles;
             this.length = model.length;
-            this.address = (ushort)((PC - 1) & 0xFFFF);
+            this.address = PC;
             this.opFunc = model.opFunc;
             desc = opFunc.Method.Name;
-            parameters = new byte[length - 1];
+            
 
             if (opCode == 0xCB && model.length == 1)
             {
@@ -66,9 +67,11 @@ namespace trentGB
                 cycles = getCBCycles(rom.getByte(PC));
             }
 
-            for (int i = 0; i < length; i++)
+            parameters = new byte[length - 1];
+
+            for (int i = 0; i < (length-1); i++)
             {
-                parameters[i] = rom.getByte((ushort)((PC + i) & 0xFFFF));
+                parameters[i] = rom.getByte(PC + i);
             }
         }
 
@@ -96,26 +99,26 @@ namespace trentGB
             {
                 if (length == 3) // 8 bit Operand
                 {
-                    paramRealValue = $" ({parameters[1]})";
+                    paramRealValue = $" ({parameters[1].ToString("X2")} = )";
                 }
                 else if (length == 4) // 16 Bit Operand
                 {
-                    paramRealValue = $" ({CPU.getUInt16ForBytes(parameters[2], parameters[3])})";
+                    paramRealValue = $" ({CPU.getUInt16ForBytes(parameters[2], parameters[3]).ToString("X4")})";
                 }
             }
             else
             {
                 if (length == 2) // 8 bit Operand
                 {
-                    paramRealValue = $" ({parameters[0]})";
+                    paramRealValue = $" ({parameters[0].ToString("X2")})";
                 }
                 else if (length == 3) // 16 Bit Operand
                 {
-                    paramRealValue = $" ({CPU.getUInt16ForBytes(parameters)})";
+                    paramRealValue = $" ({CPU.getUInt16ForBytes(parameters).ToString("X4")})";
                 }
             }
 
-            return $"{address.ToString("X4")}: {desc} 0x{String.Join(", 0x", parameters)}{paramRealValue}";
+            return $"{address.ToString("X4")}: {desc} {((parameters.Length > 0) ? "0x" : "")}{String.Join(", 0x", parameters.Select(b => b.ToString("X2")))}{paramRealValue}";
         }
 
         public Byte getCBOpLength()
@@ -254,7 +257,7 @@ namespace trentGB
             this.rom = rom;
             loadOpCodeMap();
             this.clock = clock;
-            debuggerForm = new CPUDebugger();
+            debuggerForm = new CPUDebugger(this.rom.disassemble(opCodeTranslationDict));
         }
 
         public Dictionary<String, String> getStateDict()
@@ -463,11 +466,17 @@ namespace trentGB
             if (breakAtInstruction == (getPC() - 1))
             {
                 clock.Stop();
-
-                debuggerForm.setDisplayText(beforeText);
+                rom.disassemble(opCodeTranslationDict);
                 debuggerForm.updateMemoryWindow(getStateDict());
                 debuggerForm.setContinueAddr(getPC());
-                DialogResult res = debuggerForm.ShowDialog();
+
+                debuggerForm.Show((ushort)((getPC() - 1) & 0xFFFF));
+
+                while (debuggerForm.wait)
+                {
+                    Thread.Sleep(200);
+                }
+                DialogResult res = debuggerForm.DialogResult;
                 if (res == DialogResult.No)
                 {
                     showAfterText = false;
@@ -483,6 +492,7 @@ namespace trentGB
                     showAfterText = true;
 
                 }
+                debuggerForm.wait = showAfterText;
                 clock.Start();
             }
 
@@ -509,24 +519,28 @@ namespace trentGB
                 breakAtInstruction = getPC();
 
                 String afterText = $"After: \nOP [0x{(getPC() - 1).ToString("X4")}] 0x{opCode.ToString("X2")} -> {getOpCodeDesc(opCode)}\nPossible Params = 0x{peekBytes[0].ToString("X2")} 0x{peekBytes[1].ToString("X2")}\nAs UI16 0x{peek16.ToString("X4")}\n\n(0x{peek16.ToString("X4")}) = 0x{mem.peekByte(peek16).ToString("X2")}\n\nNext OP: 0x{mem.peekByte(getPC())} -> {getOpCodeDesc(mem.peekByte(getPC()))}\n\nContinue Debugging??";
-                debuggerForm.setDisplayText(afterText);
                 debuggerForm.updateMemoryWindow(getStateDict());
-                DialogResult res = debuggerForm.ShowDialog();
+                //DialogResult res = debuggerForm.Show(getPC());
 
-                if (res == DialogResult.No)
-                {
-                    showAfterText = false;
-                }
-                else if (res == DialogResult.Ignore)
-                {
-                    // Continue Pressed
-                    breakAtInstruction = debuggerForm.getContinueAddr();
-                }
-                else
-                {
-                    // yes Pressed
-                    showAfterText = true;
-                }
+                //while (debuggerForm.wait)
+                //{
+                //    Thread.Sleep(200);
+                //}
+
+                //if (res == DialogResult.No)
+                //{
+                //    showAfterText = false;
+                //}
+                //else if (res == DialogResult.Ignore)
+                //{
+                //    // Continue Pressed
+                //    breakAtInstruction = debuggerForm.getContinueAddr();
+                //}
+                //else
+                //{
+                //    // yes Pressed
+                //    showAfterText = true;
+                //}
                 clock.Start();
             }
 
@@ -756,7 +770,7 @@ namespace trentGB
             opCodeTranslationDict.Add(0xDA, new Instruction(0xDA, 3, 16, jumpIfCarryFlagSet)); // 12-16
             opCodeTranslationDict.Add(0xDB, new Instruction(0xDB, 1, 4, unusedDB));
             opCodeTranslationDict.Add(0xDC, new Instruction(0xDC, 3, 24, callNNIfCSet)); //12-24
-            opCodeTranslationDict.Add(0xDD, new Instruction(0xDD, 0, 0, unusedDD));
+            opCodeTranslationDict.Add(0xDD, new Instruction(0xDD, 1, 4, unusedDD));
             opCodeTranslationDict.Add(0xDE, new Instruction(0xDE, 2, 8, subCarryNFromA));  // SBC A,n
             opCodeTranslationDict.Add(0xDF, new Instruction(0xDF, 1, 16, rst18));
             opCodeTranslationDict.Add(0xE0, new Instruction(0xE0, 2, 12, putAIntoIOPlusMem));

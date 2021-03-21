@@ -29,7 +29,6 @@
         private void InitializeComponent()
         {
             this.components = new System.ComponentModel.Container();
-            this.displayBox = new System.Windows.Forms.RichTextBox();
             this.yesBtn = new System.Windows.Forms.Button();
             this.noBtn = new System.Windows.Forms.Button();
             this.continueBtn = new System.Windows.Forms.Button();
@@ -44,21 +43,10 @@
             this.columnHeader3 = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
             this.watchViewContextMenu = new System.Windows.Forms.ContextMenuStrip(this.components);
             this.removeSelectedToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
+            this.romView = new System.Windows.Forms.ListView();
+            this.columnHeader5 = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
             this.watchViewContextMenu.SuspendLayout();
             this.SuspendLayout();
-            // 
-            // displayBox
-            // 
-            this.displayBox.Anchor = ((System.Windows.Forms.AnchorStyles)(((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
-            | System.Windows.Forms.AnchorStyles.Left)));
-            this.displayBox.BackColor = System.Drawing.SystemColors.ControlDarkDark;
-            this.displayBox.ForeColor = System.Drawing.Color.White;
-            this.displayBox.Location = new System.Drawing.Point(13, 13);
-            this.displayBox.Name = "displayBox";
-            this.displayBox.ReadOnly = true;
-            this.displayBox.Size = new System.Drawing.Size(254, 672);
-            this.displayBox.TabIndex = 0;
-            this.displayBox.Text = "";
             // 
             // yesBtn
             // 
@@ -72,6 +60,7 @@
             this.yesBtn.TabIndex = 1;
             this.yesBtn.Text = "Yes";
             this.yesBtn.UseVisualStyleBackColor = false;
+            this.yesBtn.Click += new System.EventHandler(this.yesBtn_Click);
             // 
             // noBtn
             // 
@@ -85,6 +74,7 @@
             this.noBtn.TabIndex = 2;
             this.noBtn.Text = "No";
             this.noBtn.UseVisualStyleBackColor = false;
+            this.noBtn.Click += new System.EventHandler(this.noBtn_Click);
             // 
             // continueBtn
             // 
@@ -202,9 +192,29 @@
             // removeSelectedToolStripMenuItem
             // 
             this.removeSelectedToolStripMenuItem.Name = "removeSelectedToolStripMenuItem";
-            this.removeSelectedToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
+            this.removeSelectedToolStripMenuItem.Size = new System.Drawing.Size(164, 22);
             this.removeSelectedToolStripMenuItem.Text = "Remove Selected";
             this.removeSelectedToolStripMenuItem.Click += new System.EventHandler(this.removeSelectedToolStripMenuItem_Click);
+            // 
+            // romView
+            // 
+            this.romView.BackColor = System.Drawing.SystemColors.ControlDarkDark;
+            this.romView.Columns.AddRange(new System.Windows.Forms.ColumnHeader[] {
+            this.columnHeader5});
+            this.romView.ForeColor = System.Drawing.Color.White;
+            this.romView.FullRowSelect = true;
+            this.romView.HideSelection = false;
+            this.romView.Location = new System.Drawing.Point(13, 13);
+            this.romView.MultiSelect = false;
+            this.romView.Name = "romView";
+            this.romView.Size = new System.Drawing.Size(255, 672);
+            this.romView.TabIndex = 12;
+            this.romView.UseCompatibleStateImageBehavior = false;
+            this.romView.View = System.Windows.Forms.View.Details;
+            // 
+            // columnHeader5
+            // 
+            this.columnHeader5.Width = 237;
             // 
             // CPUDebugger
             // 
@@ -212,6 +222,7 @@
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(64)))), ((int)(((byte)(64)))), ((int)(((byte)(64)))));
             this.ClientSize = new System.Drawing.Size(794, 771);
+            this.Controls.Add(this.romView);
             this.Controls.Add(this.memoryListBox);
             this.Controls.Add(this.watchAddrListBox);
             this.Controls.Add(this.watchAddrTxtBox);
@@ -220,12 +231,12 @@
             this.Controls.Add(this.continueBtn);
             this.Controls.Add(this.noBtn);
             this.Controls.Add(this.yesBtn);
-            this.Controls.Add(this.displayBox);
             this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedSingle;
             this.MinimumSize = new System.Drawing.Size(292, 492);
             this.Name = "CPUDebugger";
             this.StartPosition = System.Windows.Forms.FormStartPosition.CenterParent;
             this.Text = "CPUDebugger";
+            this.Shown += new System.EventHandler(this.CPUDebugger_Shown);
             this.watchViewContextMenu.ResumeLayout(false);
             this.ResumeLayout(false);
             this.PerformLayout();
@@ -233,8 +244,6 @@
         }
 
         #endregion
-
-        private System.Windows.Forms.RichTextBox displayBox;
         private System.Windows.Forms.Button yesBtn;
         private System.Windows.Forms.Button noBtn;
         private System.Windows.Forms.Button continueBtn;
@@ -249,5 +258,7 @@
         private System.Windows.Forms.ColumnHeader columnHeader3;
         private System.Windows.Forms.ContextMenuStrip watchViewContextMenu;
         private System.Windows.Forms.ToolStripMenuItem removeSelectedToolStripMenuItem;
+        private System.Windows.Forms.ListView romView;
+        private System.Windows.Forms.ColumnHeader columnHeader5;
     }
 }

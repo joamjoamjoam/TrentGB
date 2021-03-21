@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 
 namespace trentGB
 {
-    class ROM
+    public class ROM
     {
         public enum CartridgeType
         {
@@ -144,7 +144,7 @@ namespace trentGB
         {
             return bytes;
         }
-        public byte getByte(ushort address)
+        public byte getByte(int address)
         {
             return bytes[address];
         }
@@ -462,6 +462,21 @@ namespace trentGB
             else
             {
                 rv = $"ROM[{bytes.Length}]";
+            }
+
+            return rv;
+        }
+
+        public List<Instruction> disassemble(Dictionary<Byte, Instruction> model)
+        {
+            List<Instruction> rv = new List<Instruction>();
+            for (int i = 0; i < bytes.Length; i++)
+            {
+                Byte opCode = bytes[i];
+                Instruction tmp = new Instruction(model[opCode], i, this);
+                rv.Add(tmp);
+
+                i += tmp.length - 1;
             }
 
             return rv;
