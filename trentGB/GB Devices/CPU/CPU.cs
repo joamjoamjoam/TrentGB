@@ -10,6 +10,82 @@ namespace trentGB
 {
     // OP Code Dict is Below.
 
+    class Instruction
+    {
+        byte cycles;
+        byte opCode;
+        byte length;
+        ushort address;
+        byte[] parameters = new byte[0];
+        Action opFunc = null;
+        String desc = "";
+        
+
+        public Instruction(byte opCode, byte cycles, byte length, Action act, ushort PC, ROM rom)
+        {
+            // PC is at the adress for the first parametr if applicable
+
+            this.opCode = opCode;
+            this.cycles = cycles;
+            this.length = length;
+            this.address = (ushort)((PC - 1) & 0xFFFF);
+            this.opFunc = act;
+            desc = act.Method.Name;
+            parameters = new byte[length - 1];
+            for (int i = 0; i < length; i++)
+            {
+                parameters[i] = rom.getByte((ushort)((PC+i) & 0xFFFF));
+            }
+        }
+
+        public Instruction(byte opCode, byte cycles, byte length, Action act)
+        {
+            // PC is at the adress for the first parametr if applicable
+
+            this.opCode = opCode;
+            this.cycles = cycles;
+            this.length = length;
+            this.opFunc = act;
+            desc = act.Method.Name;
+        }
+
+        public void execute()
+        {
+            opFunc.Invoke();
+        }
+
+        public new String ToString()
+        {
+            String paramRealValue = "";
+
+            if (opCode == 0xCB)
+            {
+                if (length == 3) // 8 bit Operand
+                {
+                    paramRealValue = $" ({parameters[1]})";
+                }
+                else if (length == 4) // 16 Bit Operand
+                {
+                    paramRealValue = $" ({CPU.getUInt16ForBytes(parameters[2], parameters[3])})";
+                }
+            }
+            else
+            {
+                if (length == 2) // 8 bit Operand
+                {
+                    paramRealValue = $" ({parameters[0]})";
+                }
+                else if (length == 3) // 16 Bit Operand
+                {
+                    paramRealValue = $" ({CPU.getUInt16ForBytes(parameters)})";
+                }
+            }
+
+            return $"{address.ToString("X4")}: {desc} 0x{String.Join(", 0x", parameters)}{paramRealValue}";
+        }
+    }
+
+
     class CPU
     {
         enum Add16Type
@@ -72,14 +148,13 @@ namespace trentGB
         public bool shouldEnableInterrupts = false;
         private long ticksSinceLastCycle = 0;
 
-        public bool debugModeEnabled = true;
 
 
         public ROM rom = null;
 
         // Debug
         Stopwatch clock = null;
-
+        ushort breakAtInstruction = 0x0100;
         CPUDebugger debuggerForm = null;
 
 
@@ -90,6 +165,38 @@ namespace trentGB
             loadOpCodeMap();
             this.clock = clock;
             debuggerForm = new CPUDebugger();
+        }
+
+        public Dictionary<String, String> getStateDict()
+        {
+            Dictionary<String, String> rv = new Dictionary<string, string>();
+
+            rv.Add("AF", $"{getAF().ToString("X4")}");
+            rv.Add("BC", $"{getBC().ToString("X4")}");
+            rv.Add("DE", $"{getDE().ToString("X4")}");
+            rv.Add("HL", $"{getHL().ToString("X4")}");
+            rv.Add("SP", $"{getSP().ToString("X4")}");
+            rv.Add("PC", $"{getPC().ToString("X4")}");
+            rv.Add("A", $"{getA().ToString("X2")}");
+            rv.Add("B", $"{getB().ToString("X2")}");
+            rv.Add("C", $"{getC().ToString("X2")}");
+            rv.Add("D", $"{getD().ToString("X2")}");
+            rv.Add("E", $"{getE().ToString("X2")}");
+            rv.Add("H", $"{getH().ToString("X2")}");
+            rv.Add("L", $"{getL().ToString("X2")}");
+            rv.Add("F", $"{getF().ToString("X2")} ({generateFlagsStr()})");
+            rv.Add("(BC)", $"{mem.peekByte(getBC()).ToString("X2")}");
+            rv.Add("(DE)", $"{mem.peekByte(getDE()).ToString("X2")}");
+            rv.Add("(HL)", $"{mem.peekByte(getHL()).ToString("X2")}");
+
+            Dictionary<String, String> memDict = mem.getState();
+
+            foreach (KeyValuePair<String, String> kp in memDict)
+            {
+                rv.Add(kp.Key, kp.Value);
+            }
+
+            return rv;
         }
 
         public SpeedMode getSpeedMode()
@@ -195,8 +302,6 @@ namespace trentGB
                 {
                     decodeAndExecute(nextInstruction);
                 }
-
-                
             }
         }
 
@@ -255,22 +360,38 @@ namespace trentGB
             bool enableInterrupts = shouldEnableInterrupts;
             bool disableInterrupts = shouldDisableInterrupts;
 
+            
 
             // Debug Window
             Byte[] peekBytes = new byte[2];
             peekBytes[0] = mem.peekByte(getPC());
             peekBytes[1] = mem.peekByte((ushort)((getPC() + 1) & 0xFFFF));
             ushort peek16 = getUInt16ForBytes(peekBytes);
-            String beforeText = $"Before:\nOP 0x{opCode.ToString("X2")} -> {getOpCodeDesc(opCode)}\nPossible Params = 0x{peekBytes[0].ToString("X2")} 0x{peekBytes[1].ToString("X2")}\nAs UI16 0x{peek16.ToString("X4")}\n\n{this.ToString().Replace(", ", "\n")}\n(0x{peek16.ToString("X4")}) = 0x{mem.peekByte(peek16).ToString("X2")}\n\nContinue Debugging??";
-            if (debugModeEnabled)
+            String beforeText = $"Before:\nOP[0x{(getPC() - 1).ToString("X4")}] 0x{opCode.ToString("X2")} -> {getOpCodeDesc(opCode)}\nPossible Params = 0x{peekBytes[0].ToString("X2")} 0x{peekBytes[1].ToString("X2")}\nAs UI16 0x{peek16.ToString("X4")}\n\n(0x{peek16.ToString("X4")}) = 0x{mem.peekByte(peek16).ToString("X2")}\n\nContinue Debugging??";
+            bool showAfterText = false;
+
+            if (breakAtInstruction == (getPC() - 1))
             {
                 clock.Stop();
 
                 debuggerForm.setDisplayText(beforeText);
+                debuggerForm.updateMemoryWindow(getStateDict());
+                debuggerForm.setContinueAddr(getPC());
                 DialogResult res = debuggerForm.ShowDialog();
                 if (res == DialogResult.No)
                 {
-                    debugModeEnabled = false;
+                    showAfterText = false;
+                }
+                else if(res == DialogResult.Ignore)
+                {
+                    // Continue Pressed
+                    breakAtInstruction = debuggerForm.getContinueAddr();
+                }
+                else
+                {
+                    // yes Pressed
+                    showAfterText = true;
+
                 }
                 clock.Start();
             }
@@ -291,17 +412,30 @@ namespace trentGB
                 shouldDisableInterrupts = false;
             }
 
-            if (debugModeEnabled)
+            if (showAfterText)
             {
                 clock.Stop();
-                String afterText = $"After: \nOP 0x{opCode.ToString("X2")} -> {getOpCodeDesc(opCode)}\nPossible Params = 0x{peekBytes[0].ToString("X2")} 0x{peekBytes[1].ToString("X2")}\nAs UI16 0x{peek16.ToString("X4")}\n\n{this.ToString().Replace(", ", "\n")}\n(0x{peek16.ToString("X4")}) = 0x{mem.peekByte(peek16).ToString("X2")}\n\nNext OP: 0x{mem.peekByte(getPC())} -> {getOpCodeDesc(mem.peekByte(getPC()))}\n\nContinue Debugging??";
-                debuggerForm.setDisplayText(beforeText, afterText);
+                debuggerForm.setContinueAddr(getPC());
+                breakAtInstruction = getPC();
 
+                String afterText = $"After: \nOP [0x{(getPC() - 1).ToString("X4")}] 0x{opCode.ToString("X2")} -> {getOpCodeDesc(opCode)}\nPossible Params = 0x{peekBytes[0].ToString("X2")} 0x{peekBytes[1].ToString("X2")}\nAs UI16 0x{peek16.ToString("X4")}\n\n(0x{peek16.ToString("X4")}) = 0x{mem.peekByte(peek16).ToString("X2")}\n\nNext OP: 0x{mem.peekByte(getPC())} -> {getOpCodeDesc(mem.peekByte(getPC()))}\n\nContinue Debugging??";
+                debuggerForm.setDisplayText(afterText);
+                debuggerForm.updateMemoryWindow(getStateDict());
                 DialogResult res = debuggerForm.ShowDialog();
 
                 if (res == DialogResult.No)
                 {
-                    debugModeEnabled = false;
+                    showAfterText = false;
+                }
+                else if (res == DialogResult.Ignore)
+                {
+                    // Continue Pressed
+                    breakAtInstruction = debuggerForm.getContinueAddr();
+                }
+                else
+                {
+                    // yes Pressed
+                    showAfterText = true;
                 }
                 clock.Start();
             }
@@ -1980,6 +2114,10 @@ namespace trentGB
             if (!getZeroFlag())
             {
                 setPC(value);
+            }
+            else
+            {
+
             }
         }
         private void ldHL16() // 0x21
@@ -4093,12 +4231,12 @@ namespace trentGB
             return rv;
         }
 
-        public ushort getUInt16ForBytes(Byte lsb, Byte msb)
+        public static ushort getUInt16ForBytes(Byte lsb, Byte msb)
         {
             return (ushort) (((msb << 8) + lsb) & 0xFFFF);
         }
 
-        public ushort getUInt16ForBytes(byte[] arr)
+        public static ushort getUInt16ForBytes(byte[] arr)
         {
             return getUInt16ForBytes(arr[0], arr[1]);
         }

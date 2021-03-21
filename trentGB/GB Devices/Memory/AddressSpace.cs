@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -41,6 +42,9 @@ namespace trentGB
     {
         private byte[] bytes = new byte[0xFFFF+1];
         ushort echoOffset = (0xE000 - 0xC000);
+
+        // Test Rom Ascii byte (No Graphics). Store ASCII encoded Byte at FF01. Print to console when 0x81 is written to 0xFF02
+        public Char testChar;
 
         public AddressSpace()
         {
@@ -96,6 +100,18 @@ namespace trentGB
             {
                 bytes[address - echoOffset] = value;
             }
+
+            // No Graphics test Mode for Blargg Test Roms
+            if (address == 0xFF01)
+            {
+                testChar = (char)value;
+            }
+            else if (address == 0xFF02 && value == 0x81)
+            {
+                Debug.Write(testChar);
+            }
+
+
         }
 
         public void requestInterrupt(CPU.InterruptType type)
@@ -132,13 +148,25 @@ namespace trentGB
 
             for (ushort i = 0; i < end1; i++)
             {
-                setByte(i, rom.getByte(i)); // Copy 1st Rom bank to RAM
+                setByte(i, rom.getByte(i)); // Copy 1st Rom bank to RAM. This is alwasy ROM Bank 0 for evry cart type
             }
 
             for (ushort i = 0x4000; i < end2; i++)
             {
-                setByte(i, rom.getByte(i)); // Copy 2nd Rom bank to RAM
+                setByte(i, rom.getByte(i)); // Copy 2nd Rom bank to RAM. This is only for ROM_ONLY ROMs. This is the swappable bank for other 
             }
+        }
+
+        public Dictionary<String, String> getState()
+        {
+            Dictionary<string, String> rv = new Dictionary<string, string>();
+
+            for (int addr = 0; addr <= 0xFFFF; addr++)
+            {
+                rv.Add(addr.ToString("X4"), bytes[addr].ToString("X2"));
+            }
+
+            return rv;
         }
     }
 }
