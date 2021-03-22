@@ -192,7 +192,8 @@ namespace trentGB
             currentStatusDict = dict;
             if (dict != null && dict.Count >= 17)
             {
-                for (int i = 0; i < 17; i++)
+                int cpuStateDictLength = 16;
+                for (int i = 0; i <= cpuStateDictLength; i++)
                 {
                     KeyValuePair<String, String> kp = dict.GetEntry<String, String>(dict.Keys.ToList()[i]);
                     addKeyToListView(memoryListBox, kp.Key);
@@ -201,6 +202,13 @@ namespace trentGB
                 foreach (KeyValuePair<String, String> addr in specialRegistersMap)
                 {
                     addKeyToListView(memoryListBox, addr.Key);
+                }
+
+                // get Everything after memory
+                for (int i = cpuStateDictLength + 0xFFFF; i < dict.Count; i++)
+                {
+                    KeyValuePair<String, String> kp = dict.GetEntry<String, String>(dict.Keys.ToList()[i]);
+                    addKeyToListView(memoryListBox, kp.Key);
                 }
             }
             memoryListBox.EndUpdate();
@@ -329,6 +337,11 @@ namespace trentGB
         private void CPUDebugger_Load(object sender, EventArgs e)
         {
             loadDisassembledRom(disRom);
+        }
+
+        private void CPUDebugger_SizeChanged(object sender, EventArgs e)
+        {
+            // Format All Boxes 1/3 the screen
         }
     }
 

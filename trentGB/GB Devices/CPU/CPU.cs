@@ -290,6 +290,12 @@ namespace trentGB
                 rv.Add(kp.Key, kp.Value);
             }
 
+            Dictionary<String, String> romState = rom.getState();
+            foreach (KeyValuePair<String, String> kp in romState)
+            {
+                rv.Add(kp.Key, kp.Value);
+            }
+
             return rv;
         }
 

@@ -56,7 +56,7 @@
             this.yesBtn.ForeColor = System.Drawing.Color.White;
             this.yesBtn.Location = new System.Drawing.Point(20, 734);
             this.yesBtn.Name = "yesBtn";
-            this.yesBtn.Size = new System.Drawing.Size(75, 28);
+            this.yesBtn.Size = new System.Drawing.Size(123, 28);
             this.yesBtn.TabIndex = 1;
             this.yesBtn.Text = "Yes";
             this.yesBtn.UseVisualStyleBackColor = false;
@@ -68,9 +68,9 @@
             this.noBtn.BackColor = System.Drawing.SystemColors.ControlDarkDark;
             this.noBtn.DialogResult = System.Windows.Forms.DialogResult.No;
             this.noBtn.ForeColor = System.Drawing.Color.White;
-            this.noBtn.Location = new System.Drawing.Point(105, 734);
+            this.noBtn.Location = new System.Drawing.Point(149, 734);
             this.noBtn.Name = "noBtn";
-            this.noBtn.Size = new System.Drawing.Size(75, 28);
+            this.noBtn.Size = new System.Drawing.Size(106, 28);
             this.noBtn.TabIndex = 2;
             this.noBtn.Text = "No";
             this.noBtn.UseVisualStyleBackColor = false;
@@ -82,9 +82,9 @@
             this.continueBtn.BackColor = System.Drawing.SystemColors.ControlDarkDark;
             this.continueBtn.DialogResult = System.Windows.Forms.DialogResult.Ignore;
             this.continueBtn.ForeColor = System.Drawing.Color.White;
-            this.continueBtn.Location = new System.Drawing.Point(20, 700);
+            this.continueBtn.Location = new System.Drawing.Point(20, 690);
             this.continueBtn.Name = "continueBtn";
-            this.continueBtn.Size = new System.Drawing.Size(75, 28);
+            this.continueBtn.Size = new System.Drawing.Size(123, 38);
             this.continueBtn.TabIndex = 3;
             this.continueBtn.Text = "Continue";
             this.continueBtn.UseVisualStyleBackColor = false;
@@ -96,7 +96,7 @@
             this.contAddrTxtBox.BackColor = System.Drawing.SystemColors.ControlDarkDark;
             this.contAddrTxtBox.CharacterCasing = System.Windows.Forms.CharacterCasing.Upper;
             this.contAddrTxtBox.ForeColor = System.Drawing.Color.White;
-            this.contAddrTxtBox.Location = new System.Drawing.Point(105, 705);
+            this.contAddrTxtBox.Location = new System.Drawing.Point(149, 700);
             this.contAddrTxtBox.MaxLength = 4;
             this.contAddrTxtBox.Name = "contAddrTxtBox";
             this.contAddrTxtBox.Size = new System.Drawing.Size(75, 20);
@@ -105,9 +105,10 @@
             // 
             // Watch
             // 
+            this.Watch.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
             this.Watch.BackColor = System.Drawing.SystemColors.ControlDarkDark;
             this.Watch.ForeColor = System.Drawing.Color.White;
-            this.Watch.Location = new System.Drawing.Point(652, 699);
+            this.Watch.Location = new System.Drawing.Point(974, 690);
             this.Watch.Name = "Watch";
             this.Watch.Size = new System.Drawing.Size(88, 26);
             this.Watch.TabIndex = 7;
@@ -117,10 +118,11 @@
             // 
             // watchAddrTxtBox
             // 
+            this.watchAddrTxtBox.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
             this.watchAddrTxtBox.BackColor = System.Drawing.SystemColors.ControlDarkDark;
             this.watchAddrTxtBox.CharacterCasing = System.Windows.Forms.CharacterCasing.Upper;
             this.watchAddrTxtBox.ForeColor = System.Drawing.Color.White;
-            this.watchAddrTxtBox.Location = new System.Drawing.Point(533, 700);
+            this.watchAddrTxtBox.Location = new System.Drawing.Point(845, 694);
             this.watchAddrTxtBox.MaxLength = 4;
             this.watchAddrTxtBox.Name = "watchAddrTxtBox";
             this.watchAddrTxtBox.Size = new System.Drawing.Size(113, 20);
@@ -129,6 +131,7 @@
             // 
             // watchAddrListBox
             // 
+            this.watchAddrListBox.Anchor = System.Windows.Forms.AnchorStyles.None;
             this.watchAddrListBox.BackColor = System.Drawing.SystemColors.ControlDarkDark;
             this.watchAddrListBox.Columns.AddRange(new System.Windows.Forms.ColumnHeader[] {
             this.columnHeader1,
@@ -137,7 +140,7 @@
             this.watchAddrListBox.ForeColor = System.Drawing.Color.White;
             this.watchAddrListBox.FullRowSelect = true;
             this.watchAddrListBox.HideSelection = false;
-            this.watchAddrListBox.Location = new System.Drawing.Point(533, 13);
+            this.watchAddrListBox.Location = new System.Drawing.Point(832, 12);
             this.watchAddrListBox.Name = "watchAddrListBox";
             this.watchAddrListBox.ShowGroups = false;
             this.watchAddrListBox.Size = new System.Drawing.Size(230, 672);
@@ -171,6 +174,7 @@
             // 
             // memoryListBox
             // 
+            this.memoryListBox.Anchor = System.Windows.Forms.AnchorStyles.None;
             this.memoryListBox.BackColor = System.Drawing.SystemColors.ControlDarkDark;
             this.memoryListBox.Columns.AddRange(new System.Windows.Forms.ColumnHeader[] {
             this.columnHeader2,
@@ -178,10 +182,10 @@
             this.memoryListBox.ForeColor = System.Drawing.Color.White;
             this.memoryListBox.FullRowSelect = true;
             this.memoryListBox.HideSelection = false;
-            this.memoryListBox.Location = new System.Drawing.Point(274, 13);
+            this.memoryListBox.Location = new System.Drawing.Point(414, 13);
             this.memoryListBox.MultiSelect = false;
             this.memoryListBox.Name = "memoryListBox";
-            this.memoryListBox.Size = new System.Drawing.Size(253, 672);
+            this.memoryListBox.Size = new System.Drawing.Size(412, 672);
             this.memoryListBox.TabIndex = 10;
             this.memoryListBox.UseCompatibleStateImageBehavior = false;
             this.memoryListBox.View = System.Windows.Forms.View.Details;
@@ -189,25 +193,27 @@
             // columnHeader2
             // 
             this.columnHeader2.Text = "Key";
-            this.columnHeader2.Width = 104;
+            this.columnHeader2.Width = 213;
             // 
             // columnHeader3
             // 
             this.columnHeader3.Text = "Value";
-            this.columnHeader3.Width = 113;
+            this.columnHeader3.Width = 228;
             // 
             // romView
             // 
+            this.romView.Anchor = System.Windows.Forms.AnchorStyles.None;
             this.romView.BackColor = System.Drawing.SystemColors.ControlDarkDark;
             this.romView.Columns.AddRange(new System.Windows.Forms.ColumnHeader[] {
             this.columnHeader5});
             this.romView.ForeColor = System.Drawing.Color.White;
             this.romView.FullRowSelect = true;
             this.romView.HideSelection = false;
-            this.romView.Location = new System.Drawing.Point(13, 13);
+            this.romView.Location = new System.Drawing.Point(20, 12);
+            this.romView.MinimumSize = new System.Drawing.Size(255, 672);
             this.romView.MultiSelect = false;
             this.romView.Name = "romView";
-            this.romView.Size = new System.Drawing.Size(255, 672);
+            this.romView.Size = new System.Drawing.Size(388, 672);
             this.romView.TabIndex = 12;
             this.romView.UseCompatibleStateImageBehavior = false;
             this.romView.View = System.Windows.Forms.View.Details;
@@ -221,7 +227,7 @@
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(64)))), ((int)(((byte)(64)))), ((int)(((byte)(64)))));
-            this.ClientSize = new System.Drawing.Size(794, 771);
+            this.ClientSize = new System.Drawing.Size(1074, 771);
             this.Controls.Add(this.romView);
             this.Controls.Add(this.memoryListBox);
             this.Controls.Add(this.watchAddrListBox);
@@ -232,12 +238,13 @@
             this.Controls.Add(this.noBtn);
             this.Controls.Add(this.yesBtn);
             this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedSingle;
-            this.MinimumSize = new System.Drawing.Size(292, 492);
+            this.MinimumSize = new System.Drawing.Size(810, 810);
             this.Name = "CPUDebugger";
             this.StartPosition = System.Windows.Forms.FormStartPosition.CenterParent;
             this.Text = "CPUDebugger";
             this.Load += new System.EventHandler(this.CPUDebugger_Load);
             this.Shown += new System.EventHandler(this.CPUDebugger_Shown);
+            this.SizeChanged += new System.EventHandler(this.CPUDebugger_SizeChanged);
             this.watchViewContextMenu.ResumeLayout(false);
             this.ResumeLayout(false);
             this.PerformLayout();

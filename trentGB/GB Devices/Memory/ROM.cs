@@ -113,6 +113,33 @@ namespace trentGB
                 return $"{description}: {rv} -> {((bytes == null) ? "NULL" :  String.Join(" ", bytes.Select(b => "0x" + b.ToString("X2"))))}";
                 
             }
+
+            public String ToStringState()
+            {
+                String rv = "";
+                if (valueType != null && valueType != typeof(Byte) && value != null)
+                {
+                    rv = value.ToString();
+                }
+                else
+                {
+                    // Dump Raw Bytes
+                    if (bytes != null)
+                    {
+                        rv = String.Join(" ", bytes.Select(b => "0x" + b.ToString("X2")));
+                    }
+                    else
+                    {
+                        rv = "NULL";
+                    }
+
+                }
+
+
+
+                return $"{((rv != "") ? $"{rv} -> " : "")}{((bytes == null) ? "NULL" : String.Join(" ", bytes.Select(b => "0x" + b.ToString("X2"))))}";
+
+            }
         }
 
         public readonly int size = 0;
@@ -180,6 +207,24 @@ namespace trentGB
             }
 
             return rv;
+        }
+
+        public Dictionary<String, String> getState()
+        {
+            Dictionary<String, String> state = new Dictionary<string, string>();
+
+            foreach (ROMHeaderInfo kp in headerInfoDict)
+            {
+                state.Add(kp.description, kp.ToStringState());
+            }
+
+            state.Add("MBC1 Mode Selected", memContMode.ToString());
+            state.Add("ROM Banks", banks.Count.ToString());
+            state.Add("ROM Bank Selected", selectedRomBank.ToString());
+            state.Add("RAM Bank Selected", selectedRamBank.ToString());
+
+            return state;
+
         }
 
         public void setByte(ushort address, Byte Value)
