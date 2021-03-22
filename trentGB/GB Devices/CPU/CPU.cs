@@ -470,13 +470,9 @@ namespace trentGB
                 debuggerForm.updateMemoryWindow(getStateDict());
                 debuggerForm.setContinueAddr(getPC());
 
-                debuggerForm.Show((ushort)((getPC() - 1) & 0xFFFF));
+                debuggerForm.currentAddress = (ushort)((getPC() - 1) & 0xFFFF);
 
-                while (debuggerForm.wait)
-                {
-                    Thread.Sleep(200);
-                }
-                DialogResult res = debuggerForm.DialogResult;
+                DialogResult res = debuggerForm.ShowDialog();
                 if (res == DialogResult.No)
                 {
                     showAfterText = false;
@@ -520,27 +516,27 @@ namespace trentGB
 
                 String afterText = $"After: \nOP [0x{(getPC() - 1).ToString("X4")}] 0x{opCode.ToString("X2")} -> {getOpCodeDesc(opCode)}\nPossible Params = 0x{peekBytes[0].ToString("X2")} 0x{peekBytes[1].ToString("X2")}\nAs UI16 0x{peek16.ToString("X4")}\n\n(0x{peek16.ToString("X4")}) = 0x{mem.peekByte(peek16).ToString("X2")}\n\nNext OP: 0x{mem.peekByte(getPC())} -> {getOpCodeDesc(mem.peekByte(getPC()))}\n\nContinue Debugging??";
                 debuggerForm.updateMemoryWindow(getStateDict());
-                //DialogResult res = debuggerForm.Show(getPC());
+                DialogResult res = debuggerForm.ShowDialog(getPC());
 
-                //while (debuggerForm.wait)
-                //{
-                //    Thread.Sleep(200);
-                //}
+                while (debuggerForm.wait)
+                {
+                    Thread.Sleep(200);
+                }
 
-                //if (res == DialogResult.No)
-                //{
-                //    showAfterText = false;
-                //}
-                //else if (res == DialogResult.Ignore)
-                //{
-                //    // Continue Pressed
-                //    breakAtInstruction = debuggerForm.getContinueAddr();
-                //}
-                //else
-                //{
-                //    // yes Pressed
-                //    showAfterText = true;
-                //}
+                if (res == DialogResult.No)
+                {
+                    showAfterText = false;
+                }
+                else if (res == DialogResult.Ignore)
+                {
+                    // Continue Pressed
+                    breakAtInstruction = debuggerForm.getContinueAddr();
+                }
+                else
+                {
+                    // yes Pressed
+                    showAfterText = true;
+                }
                 clock.Start();
             }
 

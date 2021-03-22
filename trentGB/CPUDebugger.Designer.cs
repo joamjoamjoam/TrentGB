@@ -38,11 +38,11 @@
             this.watchAddrListBox = new System.Windows.Forms.ListView();
             this.columnHeader1 = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
             this.columnHeader4 = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
+            this.watchViewContextMenu = new System.Windows.Forms.ContextMenuStrip(this.components);
+            this.removeSelectedToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.memoryListBox = new System.Windows.Forms.ListView();
             this.columnHeader2 = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
             this.columnHeader3 = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
-            this.watchViewContextMenu = new System.Windows.Forms.ContextMenuStrip(this.components);
-            this.removeSelectedToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.romView = new System.Windows.Forms.ListView();
             this.columnHeader5 = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
             this.watchViewContextMenu.SuspendLayout();
@@ -155,6 +155,20 @@
             this.columnHeader4.Text = "Value";
             this.columnHeader4.Width = 103;
             // 
+            // watchViewContextMenu
+            // 
+            this.watchViewContextMenu.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
+            this.removeSelectedToolStripMenuItem});
+            this.watchViewContextMenu.Name = "watchViewContextMenu";
+            this.watchViewContextMenu.Size = new System.Drawing.Size(165, 26);
+            // 
+            // removeSelectedToolStripMenuItem
+            // 
+            this.removeSelectedToolStripMenuItem.Name = "removeSelectedToolStripMenuItem";
+            this.removeSelectedToolStripMenuItem.Size = new System.Drawing.Size(164, 22);
+            this.removeSelectedToolStripMenuItem.Text = "Remove Selected";
+            this.removeSelectedToolStripMenuItem.Click += new System.EventHandler(this.removeSelectedToolStripMenuItem_Click);
+            // 
             // memoryListBox
             // 
             this.memoryListBox.BackColor = System.Drawing.SystemColors.ControlDarkDark;
@@ -182,23 +196,10 @@
             this.columnHeader3.Text = "Value";
             this.columnHeader3.Width = 113;
             // 
-            // watchViewContextMenu
-            // 
-            this.watchViewContextMenu.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
-            this.removeSelectedToolStripMenuItem});
-            this.watchViewContextMenu.Name = "watchViewContextMenu";
-            this.watchViewContextMenu.Size = new System.Drawing.Size(165, 26);
-            // 
-            // removeSelectedToolStripMenuItem
-            // 
-            this.removeSelectedToolStripMenuItem.Name = "removeSelectedToolStripMenuItem";
-            this.removeSelectedToolStripMenuItem.Size = new System.Drawing.Size(164, 22);
-            this.removeSelectedToolStripMenuItem.Text = "Remove Selected";
-            this.removeSelectedToolStripMenuItem.Click += new System.EventHandler(this.removeSelectedToolStripMenuItem_Click);
-            // 
             // romView
             // 
             this.romView.BackColor = System.Drawing.SystemColors.ControlDarkDark;
+            this.romView.CheckBoxes = true;
             this.romView.Columns.AddRange(new System.Windows.Forms.ColumnHeader[] {
             this.columnHeader5});
             this.romView.ForeColor = System.Drawing.Color.White;
@@ -236,6 +237,7 @@
             this.Name = "CPUDebugger";
             this.StartPosition = System.Windows.Forms.FormStartPosition.CenterParent;
             this.Text = "CPUDebugger";
+            this.Load += new System.EventHandler(this.CPUDebugger_Load);
             this.Shown += new System.EventHandler(this.CPUDebugger_Shown);
             this.watchViewContextMenu.ResumeLayout(false);
             this.ResumeLayout(false);

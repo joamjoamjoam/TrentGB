@@ -20,7 +20,7 @@ namespace trentGB
         private Dictionary<string, string> oldStatusDict = new Dictionary<String, String>();
         private Dictionary<string, string> specialRegistersMap = new Dictionary<string, string>();
         private List<Instruction> disRom = null;
-        private int currentAddress = 0;
+        public int currentAddress = 0;
         public bool wait = true;
 
         private Color changedColor = Color.FromArgb(255, 255, 126, 94);
@@ -41,9 +41,7 @@ namespace trentGB
             
 
             loadSpecialRegistersMap();
-            loadDisassembledRom(disassembledRom);
-
-            
+            disRom = disassembledRom;
         }
 
         private void loadSpecialRegistersMap()
@@ -124,21 +122,25 @@ namespace trentGB
         private void continueBtn_Click(object sender, EventArgs e)
         {
             wait = false;
-
         }
 
         private void loadDisassembledRom(List<Instruction> insList)
         {
-            disRom = insList;
+            romView.Items.Clear();
+            
             foreach (Instruction ins in insList)
             {
-                Color textColor = romView.ForeColor;
-                
-                ListViewItem c = new ListViewItem(ins.ToString());
-                c.ForeColor = textColor;
-                //c.Font = new Font(c.Font, FontStyle.Bold);
-                romView.Items.Add(c);
+                if (ins.address >= currentAddress && (ins.address < (currentAddress + 20) && ((ins.address+20) <= 0xFFFF)))
+                {
+                    Color textColor = romView.ForeColor;
+
+                    ListViewItem c = new ListViewItem(ins.ToString());
+                    c.ForeColor = (ins.address == currentAddress) ? Color.LightGreen : romView.ForeColor;
+                    //c.Font = new Font(c.Font, FontStyle.Bold);
+                    romView.Items.Add(c);
+                }
             }
+            romView.Items[0].EnsureVisible();
         }
 
         private void addKeyToListView(ListView view, String key)
@@ -262,7 +264,6 @@ namespace trentGB
         {
             foreach (ListViewItem item in watchAddrListBox.SelectedItems)
             {
-                
                 try
                 {
                     ushort key = Convert.ToUInt16(Regex.Match(item.Text, $"^[0-9A-F][0-9A-F][0-9A-F][0-9A-F]").Value, 16);
@@ -279,7 +280,9 @@ namespace trentGB
 
         private void CPUDebugger_Shown(object sender, EventArgs e)
         {
-            selectInstructionForRAMAddress((ushort)currentAddress);
+            
+            //selectInstructionForRAMAddress((ushort)currentAddress);
+            
         }
 
         private void yesBtn_Click(object sender, EventArgs e)
@@ -292,6 +295,11 @@ namespace trentGB
         {
             DialogResult = DialogResult.No;
             wait = false;
+        }
+
+        private void CPUDebugger_Load(object sender, EventArgs e)
+        {
+            loadDisassembledRom(disRom);
         }
     }
 
