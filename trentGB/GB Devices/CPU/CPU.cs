@@ -37,14 +37,14 @@ namespace trentGB
             {
                 length = getCBOpLength();
                 // Append CB Instruction Length and Cycles
-                cycles = getCBCycles(rom.getByte(PC));
+                cycles = getCBCycles(rom.getByteDirect(PC));
             }
 
             parameters = new byte[length - 1];
 
             for (int i = 0; i < length; i++)
             {
-                parameters[i] = rom.getByte(PC + i);
+                parameters[i] = rom.getByteDirect(PC + i);
             }
         }
 
@@ -64,14 +64,14 @@ namespace trentGB
             {
                 length = getCBOpLength();
                 // Append CB Instruction Length and Cycles
-                cycles = getCBCycles(rom.getByte(PC));
+                cycles = getCBCycles(rom.getByteDirect(PC));
             }
 
             parameters = new byte[length - 1];
 
             for (int i = 0; i < (length-1); i++)
             {
-                parameters[i] = rom.getByte(PC + i);
+                parameters[i] = rom.getByteDirect(PC + i);
             }
         }
 
@@ -249,6 +249,7 @@ namespace trentGB
         Stopwatch clock = null;
         ushort breakAtInstruction = 0x0100;
         CPUDebugger debuggerForm = null;
+        bool debuggerRequested = false;
 
 
         public CPU(AddressSpace m, ROM rom, Stopwatch clock)
@@ -325,6 +326,11 @@ namespace trentGB
             }
 
             return rv;
+        }
+
+        public void enableDebugger()
+        {
+            debuggerRequested = true;
         }
 
         public new String ToString()
@@ -463,19 +469,21 @@ namespace trentGB
             String beforeText = $"Before:\nOP[0x{(getPC() - 1).ToString("X4")}] 0x{opCode.ToString("X2")} -> {getOpCodeDesc(opCode)}\nPossible Params = 0x{peekBytes[0].ToString("X2")} 0x{peekBytes[1].ToString("X2")}\nAs UI16 0x{peek16.ToString("X4")}\n\n(0x{peek16.ToString("X4")}) = 0x{mem.peekByte(peek16).ToString("X2")}\n\nContinue Debugging??";
             bool showAfterText = false;
 
-            if (breakAtInstruction == (getPC() - 1))
+            if (breakAtInstruction == (getPC() - 1) || debuggerRequested)
             {
                 clock.Stop();
+                debuggerRequested = false;
                 rom.disassemble(opCodeTranslationDict);
                 debuggerForm.updateMemoryWindow(getStateDict());
                 debuggerForm.setContinueAddr(getPC());
 
                 debuggerForm.currentAddress = (ushort)((getPC() - 1) & 0xFFFF);
-
+                debuggerForm.printText(beforeText);
                 DialogResult res = debuggerForm.ShowDialog();
                 if (res == DialogResult.No)
                 {
                     showAfterText = false;
+                    breakAtInstruction = 0xFFFF;
                 }
                 else if(res == DialogResult.Ignore)
                 {

@@ -199,7 +199,6 @@
             // romView
             // 
             this.romView.BackColor = System.Drawing.SystemColors.ControlDarkDark;
-            this.romView.CheckBoxes = true;
             this.romView.Columns.AddRange(new System.Windows.Forms.ColumnHeader[] {
             this.columnHeader5});
             this.romView.ForeColor = System.Drawing.Color.White;

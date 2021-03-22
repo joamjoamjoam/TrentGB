@@ -48,7 +48,12 @@ namespace trentGB
             KB8 = 0x02,
             KB32 = 0x03,
             KB128 = 0x04
-
+        }
+        
+        public enum MBC1_Mode
+        {
+            ROM_MODE,
+            RAM_MODE
         }
 
 
@@ -114,6 +119,10 @@ namespace trentGB
         private byte[] bytes = null;
         private readonly byte[] validBootLogo = null;
         private List<ROMHeaderInfo> headerInfoDict = new List<ROMHeaderInfo>();
+        private List<byte[]> banks = new List<byte[]>();
+        private ushort selectedRomBank = 1;
+        private Byte selectedRamBank = 0;
+        private MBC1_Mode memContMode = MBC1_Mode.ROM_MODE;
 
         public ROM(String filePath)
         {
@@ -137,30 +146,123 @@ namespace trentGB
                 // Load Rom Header Info
                 loadRomHeaderData();
 
+                // load Banks
+                loadBanks();
             }
         }
 
-        public byte[] getBytes()
+        public byte[] getBytesDirect()
         {
             return bytes;
         }
-        public byte getByte(int address)
+        public byte getByteDirect(int address)
         {
             return bytes[address];
         }
-        public byte[] getBytes(ushort address, ushort count)
+
+        public Byte getByte(ushort address)
         {
-            byte[] rv = new Byte[count];
-            if (((UInt32)address + (UInt32)count) <= 0xFFFF)
+            Byte rv = 0;
+
+            if (address >= 0x0000 && address <= 0x3FFF)
             {
-                Array.ConstrainedCopy(bytes, address, rv, 0, (int)count);
+                // ROM Bank 0
+                rv = banks[0][address];
+            }
+            else if (address >= 0x4000 && address <= 0x7FFF)
+            {
+                rv = banks[selectedRomBank][(address - 0x4000)];
             }
             else
             {
-                rv = null;
+                // Invalid Access Reading Past ROM Space
+                throw new ArgumentException($"Attempted to read Address 0x{address.ToString("X4")} from ROM Space. Address is not in ROM Space");
             }
 
             return rv;
+        }
+
+        public void setByte(ushort address, Byte Value)
+        {
+            CartridgeType type = (CartridgeType)this.headerInfoDict.Where(fi => fi.description == "Cartridge Type").First().value;
+            switch (type)
+            {
+                case CartridgeType.ROM_ONLY:
+                    break;
+                case CartridgeType.ROM_MBC1:
+                case CartridgeType.ROM_MBC1_RAM:
+                case CartridgeType.ROM_MBC1_RAM_BATT:
+                    if (address >= 0x0000 && address <= 0x1FFF)
+                    {
+                        // RAM Enable
+
+                    }
+                    else if (address >= 0x2000 && address <= 0x3FFF)
+                    {
+
+                        // ROM Select
+                        Byte romBankNum = Value;
+
+                        // ROM Address MBC1 Bug
+                        if ((romBankNum & 0x1F) == 0)
+                        {
+                            romBankNum += 1;
+                        }
+                        romBankNum = (Byte)(romBankNum & 0x1F);
+
+                        // Set ROM Bank Num
+                        if (memContMode == MBC1_Mode.ROM_MODE)
+                        {
+                            // Set only 5 lsb bits
+                            selectedRomBank = (ushort)((selectedRomBank & 0xC0) | (romBankNum & 0x1F));
+                        }
+
+                    }
+                    else if (address >= 0x4000 && address <= 0x5FFF)
+                    {
+                        Byte tmp = (Byte)(Value & 0x03);
+
+                        if (memContMode == MBC1_Mode.ROM_MODE)
+                        {
+                            // Upper ROM Select (Set upper 2 bits 5-6)
+                            selectedRomBank = (ushort)((selectedRomBank & 0x1F) | (tmp << 5));
+                        }
+                        else
+                        {
+                            // RAM Mode
+                            selectedRamBank = tmp;
+                        }
+
+
+                    }
+                    else if (address >= 0x6000 && address <= 0x7FFF)
+                    {
+                        // ROM/RAM mode select
+                        if (Value == 0)
+                        {
+                            memContMode = MBC1_Mode.ROM_MODE;
+                        }
+                        else if (Value == 1)
+                        {
+                            memContMode = MBC1_Mode.RAM_MODE;
+                        }
+                        else
+                        {
+                            throw new ArgumentException($"Invalid Write to ROM Address 0x{address.ToString("X4")} value 0x{Value.ToString("X2")}");
+                        }
+                    }
+                    else
+                    {
+                        throw new ArgumentException($"Attempted Write to Address Which is in ROM Space");
+                    }
+                    break;
+
+
+                default:
+                    throw new NotImplementedException($"Cartridge Type {type.ToString()} MMC Operation write at {address.ToString("X4")} not Implemented");
+
+            }
+            
         }
 
         private bool validateROMFile(byte[] fileBytes)
@@ -195,6 +297,19 @@ namespace trentGB
             Debug.WriteLine($"ROM Validation {((isValid) ? "was Successful" : "Failed")}");
 
             return isValid;
+        }
+
+        private void loadBanks()
+        {
+            // Every Rom is a Multiple of 16kB Rom Banks
+
+            for (int i = 0; i < bytes.Length-1; i+=0x4000)
+            {
+                byte[] arr = new byte[0x3FFF];
+                Array.ConstrainedCopy(bytes, i, arr, 0, 0x3FFF);
+                banks.Add(arr);
+            }
+
         }
 
         private String getLicensee(byte[] licenseeCodeArr)

@@ -32,6 +32,7 @@
             this.fileToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.loadRomToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.pictureBox1 = new System.Windows.Forms.PictureBox();
+            this.enableDebuggerToolStripMenuItem = new System.Windows.Forms.ToolStripMenuItem();
             this.menuStrip1.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.pictureBox1)).BeginInit();
             this.SuspendLayout();
@@ -49,7 +50,8 @@
             // fileToolStripMenuItem
             // 
             this.fileToolStripMenuItem.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
-            this.loadRomToolStripMenuItem});
+            this.loadRomToolStripMenuItem,
+            this.enableDebuggerToolStripMenuItem});
             this.fileToolStripMenuItem.Name = "fileToolStripMenuItem";
             this.fileToolStripMenuItem.Size = new System.Drawing.Size(37, 20);
             this.fileToolStripMenuItem.Text = "File";
@@ -57,7 +59,7 @@
             // loadRomToolStripMenuItem
             // 
             this.loadRomToolStripMenuItem.Name = "loadRomToolStripMenuItem";
-            this.loadRomToolStripMenuItem.Size = new System.Drawing.Size(140, 22);
+            this.loadRomToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
             this.loadRomToolStripMenuItem.Text = "Load Rom ...";
             this.loadRomToolStripMenuItem.Click += new System.EventHandler(this.loadRomToolStripMenuItem_Click);
             // 
@@ -68,6 +70,13 @@
             this.pictureBox1.Size = new System.Drawing.Size(160, 144);
             this.pictureBox1.TabIndex = 1;
             this.pictureBox1.TabStop = false;
+            // 
+            // enableDebuggerToolStripMenuItem
+            // 
+            this.enableDebuggerToolStripMenuItem.Name = "enableDebuggerToolStripMenuItem";
+            this.enableDebuggerToolStripMenuItem.Size = new System.Drawing.Size(180, 22);
+            this.enableDebuggerToolStripMenuItem.Text = "Enable Debugger ...";
+            this.enableDebuggerToolStripMenuItem.Click += new System.EventHandler(this.enableDebuggerToolStripMenuItem_Click);
             // 
             // Form1
             // 
@@ -94,6 +103,7 @@
         private System.Windows.Forms.ToolStripMenuItem fileToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem loadRomToolStripMenuItem;
         private System.Windows.Forms.PictureBox pictureBox1;
+        private System.Windows.Forms.ToolStripMenuItem enableDebuggerToolStripMenuItem;
     }
 }
 

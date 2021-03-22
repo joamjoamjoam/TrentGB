@@ -45,10 +45,12 @@ namespace trentGB
 
         // Test Rom Ascii byte (No Graphics). Store ASCII encoded Byte at FF01. Print to console when 0x81 is written to 0xFF02
         public Char testChar;
+        public ROM rom;
 
-        public AddressSpace()
+        public AddressSpace(ROM rom)
         {
             Array.Clear(bytes, 0, bytes.Length);
+            this.rom = rom;
 
             // TODO: Copy Internal GB Boot Rom to 0x0000 - 0x1000
 
@@ -61,8 +63,20 @@ namespace trentGB
         }
         public byte getByte(ushort address)
         {
-            return bytes[address];
-        
+            Byte rv = 0;
+            // ROM Space
+            if (address >= 0x0000 && address <= 0x7FFF)
+            {
+                // get Byte From ROM
+                rv = rom.getByte(address);
+            }
+            else
+            {
+                rv = bytes[address];
+            }
+
+
+            return rv;
         }
 
         public byte peekByte(ushort address)
@@ -90,21 +104,19 @@ namespace trentGB
         {
             bytes[address] = value;
 
-            // On Set Byte Make Sure we maintain the Memory Echo Space
-
-            if (address >= 0xC000 && address <= 0xDE00)
+            if (address > 0x0000 && address <= 0x8000)
             {
-                bytes[address + echoOffset] = value;
-            }
-            else if (address >= 0xE000 && address <= 0xFE00)
-            {
-                bytes[address - echoOffset] = value;
+                rom.setByte(address, value);
             }
 
             // No Graphics test Mode for Blargg Test Roms
             if (address == 0xFF01)
             {
                 testChar = (char)value;
+            }
+            else if (address == 0xFF02)
+            {
+
             }
             else if (address == 0xFF02 && value == 0x81)
             {
@@ -141,21 +153,21 @@ namespace trentGB
             }
         }
 
-        public void loadRom(ROM rom)
-        {
-            int end1 = (rom.size > 0x4000) ? 0x4000 : rom.size;
-            int end2 = (rom.size > 0x8000) ? 0x8000 : rom.size;
+        //public void loadRom(ROM rom)
+        //{
+        //    int end1 = (rom.size > 0x4000) ? 0x4000 : rom.size;
+        //    int end2 = (rom.size > 0x8000) ? 0x8000 : rom.size;
 
-            for (ushort i = 0; i < end1; i++)
-            {
-                setByte(i, rom.getByte(i)); // Copy 1st Rom bank to RAM. This is alwasy ROM Bank 0 for evry cart type
-            }
+        //    for (ushort i = 0; i < end1; i++)
+        //    {
+        //        setByte(i, rom.getByte(i)); // Copy 1st Rom bank to RAM. This is alwasy ROM Bank 0 for evry cart type
+        //    }
 
-            for (ushort i = 0x4000; i < end2; i++)
-            {
-                setByte(i, rom.getByte(i)); // Copy 2nd Rom bank to RAM. This is only for ROM_ONLY ROMs. This is the swappable bank for other 
-            }
-        }
+        //    for (ushort i = 0x4000; i < end2; i++)
+        //    {
+        //        setByte(i, rom.getByte(i)); // Copy 2nd Rom bank to RAM. This is only for ROM_ONLY ROMs. This is the swappable bank for other 
+        //    }
+        //}
 
         public Dictionary<String, String> getState()
         {

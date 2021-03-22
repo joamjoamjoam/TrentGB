@@ -126,21 +126,50 @@ namespace trentGB
 
         private void loadDisassembledRom(List<Instruction> insList)
         {
-            romView.Items.Clear();
-            
-            foreach (Instruction ins in insList)
-            {
-                if (ins.address >= currentAddress && (ins.address < (currentAddress + 20) && ((ins.address+20) <= 0xFFFF)))
-                {
-                    Color textColor = romView.ForeColor;
+            //romView.Items.Clear();
 
-                    ListViewItem c = new ListViewItem(ins.ToString());
-                    c.ForeColor = (ins.address == currentAddress) ? Color.LightGreen : romView.ForeColor;
-                    //c.Font = new Font(c.Font, FontStyle.Bold);
-                    romView.Items.Add(c);
-                }
+            //foreach (Instruction ins in insList)
+            //{
+            //    if (ins.address >= currentAddress && (ins.address < (currentAddress + 20) && ((ins.address+20) <= 0xFFFF)))
+            //    {
+            //        Color textColor = romView.ForeColor;
+
+            //        ListViewItem c = new ListViewItem(ins.ToString());
+            //        c.ForeColor = (ins.address == currentAddress) ? Color.LightGreen : romView.ForeColor;
+            //        //c.Font = new Font(c.Font, FontStyle.Bold);
+            //        romView.Items.Add(c);
+            //    }
+            //}
+
+            //romView.Items[0].EnsureVisible();
+
+            // Decode current Instruction
+
+        }
+
+        public void printText(String text)
+        {
+            romView.Items.Clear();
+
+            Color textColor = romView.ForeColor;
+
+            List<String> arr = text.Split(new char[] { '\n' }).ToList();
+
+            foreach (String str in arr)
+            {
+                ListViewItem c = new ListViewItem(str);
+                c.ForeColor = romView.ForeColor;
+                //c.Font = new Font(c.Font, FontStyle.Bold);
+                romView.Items.Add(c);
             }
-            romView.Items[0].EnsureVisible();
+            if (romView.Items.Count > 0)
+            {
+                romView.Items[0].EnsureVisible();
+            }
+            
+
+
+
         }
 
         private void addKeyToListView(ListView view, String key)

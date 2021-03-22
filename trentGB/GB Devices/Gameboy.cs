@@ -29,16 +29,17 @@ namespace trentGB
         public Gameboy(ROM romToPlay, PictureBox display)
         {
             rom = romToPlay;
-            memory = new AddressSpace();
+            memory = new AddressSpace(romToPlay);
             cpu = new CPU(memory, romToPlay, clock);
             lcd = new LCD(display);
             lcdController = new LCDController(lcd, memory);
-
-            memory.loadRom(romToPlay);
         }
 
 
-
+        public void enableDebugger()
+        {
+            cpu.enableDebugger();
+        }
 
         public void Start()
         {
