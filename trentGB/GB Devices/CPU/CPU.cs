@@ -3298,12 +3298,8 @@ namespace trentGB
         }
         private void popIntoBC() //0xC1
         {
-            Byte lsb = mem.getByte(getSP());
-            incrementSP();
-            Byte msb = mem.getByte(getSP());
-            incrementSP();
 
-            ushort value = (ushort)((msb << 8) + lsb);
+            ushort value = pop16OffStack();
 
             setBC(value);
         }
@@ -3330,7 +3326,8 @@ namespace trentGB
             Byte msb = fetch();
             if (!getZeroFlag())
             {
-                pushOnStack(getUInt16ForBytes(lsb, msb));
+                pushOnStack(getPC());
+                setPC(getUInt16ForBytes(lsb, msb));
             }
         }
         private void pushBCToStack() //0xC5
@@ -3383,14 +3380,16 @@ namespace trentGB
             Byte msb = fetch();
             if (getZeroFlag())
             {
-                pushOnStack(getUInt16ForBytes(lsb, msb));
+                pushOnStack(getPC());
+                setPC(getUInt16ForBytes(lsb, msb));
             }
         }
         private void callNN() //0xCD
         {
             Byte lsb = fetch();
             Byte msb = fetch();
-            pushOnStack(getUInt16ForBytes(lsb, msb));
+            pushOnStack(getPC());
+            setPC(getUInt16ForBytes(lsb,msb));
         }
         private void addCarryNtoA() // 0xCE
         {
@@ -3414,12 +3413,7 @@ namespace trentGB
         }
         private void popIntoDE() //0xD1
         {
-            Byte lsb = mem.getByte(getSP());
-            incrementSP();
-            Byte msb = mem.getByte(getSP());
-            incrementSP();
-
-            ushort value = (ushort)((msb << 8) + lsb);
+            ushort value = pop16OffStack();
 
             setDE(value);
         }
@@ -3443,7 +3437,8 @@ namespace trentGB
             Byte msb = fetch();
             if (!getCarryFlag())
             {
-                pushOnStack(getUInt16ForBytes(lsb, msb));
+                pushOnStack(getPC());
+                setPC(getUInt16ForBytes(lsb, msb));
             }
         }
         private void pushDEToStack() //0xD5
@@ -3497,7 +3492,8 @@ namespace trentGB
             Byte msb = fetch();
             if (getCarryFlag())
             {
-                pushOnStack(getUInt16ForBytes(lsb, msb));
+                pushOnStack(getPC());
+                setPC(getUInt16ForBytes(lsb, msb));
             }
         }
         private void unusedDD() // 0xDD
@@ -3526,12 +3522,7 @@ namespace trentGB
         }
         private void popIntoHL() //0xE1
         {
-            Byte lsb = mem.getByte(getSP());
-            incrementSP();
-            Byte msb = mem.getByte(getSP());
-            incrementSP();
-
-            ushort value = (ushort)((msb << 8) + lsb);
+            ushort value = pop16OffStack();
 
             setHL(value);
         }
@@ -3619,12 +3610,7 @@ namespace trentGB
         }
         private void popIntoAF() //0xF1
         {
-            Byte lsb = mem.getByte(getSP());
-            incrementSP();
-            Byte msb = mem.getByte(getSP());
-            incrementSP();
-
-            ushort value = (ushort)((msb << 8) + lsb);
+            ushort value = pop16OffStack();
 
             setAF(value);
         }
@@ -4237,8 +4223,8 @@ namespace trentGB
 
         private void pushOnStack(Byte value)
         {
-            mem.setByte(getSP(), value);
             decrementSP();
+            mem.setByte(getSP(), value);
         }
 
         private void pushOnStack(ushort value)

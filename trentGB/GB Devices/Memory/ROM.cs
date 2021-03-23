@@ -350,7 +350,7 @@ namespace trentGB
 
             for (int i = 0; i < bytes.Length-1; i+=0x4000)
             {
-                byte[] arr = new byte[0x3FFF];
+                byte[] arr = new byte[0x3FFF + 1];
                 Array.ConstrainedCopy(bytes, i, arr, 0, 0x3FFF);
                 banks.Add(arr);
             }

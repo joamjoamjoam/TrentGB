@@ -118,7 +118,8 @@ namespace trentGB
             {
 
             }
-            else if (address == 0xFF02 && value == 0x81)
+
+            if (address == 0xFF02 && value == 0x81)
             {
                 Debug.Write(testChar);
             }
