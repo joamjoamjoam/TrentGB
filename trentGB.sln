@@ -1,9 +1,16 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 15
-VisualStudioVersion = 15.0.28307.168
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.31129.286
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "trentGB", "trentGB\trentGB.csproj", "{0B37A1E6-136A-4A1F-9869-B65579C20FD6}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TrentGBTestProject", "UnitTestProject\TrentGBTestProject.csproj", "{9152DA17-C792-4432-9439-06923CD9A163}"
+	ProjectSection(ProjectDependencies) = postProject
+		{0B37A1E6-136A-4A1F-9869-B65579C20FD6} = {0B37A1E6-136A-4A1F-9869-B65579C20FD6}
+	EndProjectSection
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "EntryProject", "EntryProject\EntryProject.csproj", "{FDD3E4FC-9D93-416C-9814-1F06B10F2119}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -15,6 +22,14 @@ Global
 		{0B37A1E6-136A-4A1F-9869-B65579C20FD6}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{0B37A1E6-136A-4A1F-9869-B65579C20FD6}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{0B37A1E6-136A-4A1F-9869-B65579C20FD6}.Release|Any CPU.Build.0 = Release|Any CPU
+		{9152DA17-C792-4432-9439-06923CD9A163}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{9152DA17-C792-4432-9439-06923CD9A163}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{9152DA17-C792-4432-9439-06923CD9A163}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{9152DA17-C792-4432-9439-06923CD9A163}.Release|Any CPU.Build.0 = Release|Any CPU
+		{FDD3E4FC-9D93-416C-9814-1F06B10F2119}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{FDD3E4FC-9D93-416C-9814-1F06B10F2119}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{FDD3E4FC-9D93-416C-9814-1F06B10F2119}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{FDD3E4FC-9D93-416C-9814-1F06B10F2119}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

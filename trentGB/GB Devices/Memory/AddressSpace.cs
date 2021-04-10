@@ -38,7 +38,7 @@ namespace trentGB
     /// </remarks> 
 
 
-    class AddressSpace
+    public class AddressSpace
     {
         private byte[] bytes = new byte[0xFFFF+1];
         ushort echoOffset = (0xE000 - 0xC000);

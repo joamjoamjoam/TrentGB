@@ -21,6 +21,7 @@ namespace trentGB
         public readonly Action opFunc = null;
         public readonly String desc = "";
         
+        
 
         public Instruction(byte opCode, byte length, byte cycles , Action act, int PC, ROM rom)
         {
@@ -179,7 +180,7 @@ namespace trentGB
     }
 
 
-    class CPU
+    public class CPU
     {
         enum Add16Type
         {
@@ -234,12 +235,15 @@ namespace trentGB
         private bool IME = false;
         private CPUState state = CPUState.Running;
 
-        private AddressSpace mem = null;
+        public AddressSpace mem = null;
         private Dictionary<Byte, Instruction> opCodeTranslationDict = new Dictionary<byte, Instruction>();
 
         public bool shouldDisableInterrupts = false;
         public bool shouldEnableInterrupts = false;
         private long ticksSinceLastCycle = 0;
+
+        public delegate void DebugFormHandler();
+        public event EventHandler ShowDebugForm;
 
 
 
@@ -337,6 +341,11 @@ namespace trentGB
         public void enableDebugger()
         {
             debuggerRequested = true;
+        }
+
+        public void disableDebugger()
+        {
+            debuggerRequested = false;
         }
 
         public new String ToString()
@@ -460,6 +469,11 @@ namespace trentGB
             return mem.getByte(PC++);
         }
 
+        public void setNextBreak(ushort addr)
+        {
+            breakAtInstruction = addr;
+        }
+
         public void decodeAndExecute(Byte opCode)
         {
             bool enableInterrupts = shouldEnableInterrupts;
@@ -503,6 +517,7 @@ namespace trentGB
 
                 }
                 debuggerForm.wait = showAfterText;
+
                 clock.Start();
             }
 

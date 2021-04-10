@@ -35,7 +35,6 @@ namespace trentGB
             lcdController = new LCDController(lcd, memory);
         }
 
-
         public void enableDebugger()
         {
             cpu.enableDebugger();

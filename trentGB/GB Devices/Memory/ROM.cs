@@ -164,6 +164,11 @@ namespace trentGB
             Array.Copy(tmpBytes, bytes, tmpBytes.Length);
             size = tmpBytes.Length;
 
+            byte[] headerInfo = new byte[0x14F - 0x100 + 1];
+            Array.ConstrainedCopy(tmpBytes, 0x130, headerInfo, 0, headerInfo.Length);
+
+            Debug.WriteLine($"Byte[] headerInfo = new byte [] {{{String.Join(", ", headerInfo.Select(by => "0x" + by.ToString("X2")))}}}");
+
             if (!validateROMFile(bytes))
             {
                 throw new Exception($"{filePath} is not a Valid GB ROM File. Failed Boot Logo Check.");
@@ -177,6 +182,29 @@ namespace trentGB
                 loadBanks();
             }
         }
+
+        // Used for Unit Testing
+        public ROM()
+        {
+            // Load New Rom
+
+            validBootLogo = new Byte[48] { 0xCE, 0xED, 0x66, 0x66, 0xCC, 0x0D, 0x00, 0x0B, 0x03, 0x73, 0x00, 0x83, 0x00, 0x0C, 0x00, 0x0D, 0x00, 0x08, 0x11, 0x1F, 0x88, 0x89, 0x00, 0x0E, 0xDC, 0xCC, 0x6E, 0xE6, 0xDD, 0xDD, 0xD9, 0x99, 0xBB, 0xBB, 0x67, 0x63, 0x6E, 0x0E, 0xEC, 0xCC, 0xDD, 0xDC, 0x99, 0x9F, 0xBB, 0xB9, 0x33, 0x3E };
+
+            // Validate File is a GB Rom (Check for GB Header at 0x100)
+
+            bytes = new byte[0x8000+ 1];
+            size = bytes.Length-1;
+
+            // set up dummy header info
+            Byte[] headerInfo = new byte[] { 0xBB, 0xB9, 0x33, 0x3E, 0x54, 0x45, 0x54, 0x52, 0x49, 0x53, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01, 0x01, 0x0A, 0x16, 0xBF, 0xC3, 0x0C, 0x02, 0xCD, 0xE3, 0x29, 0xF0, 0x41, 0xE6, 0x03, 0x20, 0xFA, 0x46, 0xF0, 0x41, 0xE6, 0x03, 0x20, 0xFA, 0x7E, 0xA0, 0xC9, 0x7B, 0x86, 0x27, 0x22, 0x7A, 0x8E, 0x27, 0x22, 0x3E, 0x00, 0x8E, 0x27, 0x77, 0x3E, 0x01, 0xE0, 0xE0, 0xD0, 0x3E, 0x99, 0x32, 0x32, 0x77, 0xC9, 0xF5, 0xC5 };
+            Array.ConstrainedCopy(headerInfo, 0, bytes, 0x130, headerInfo.Length);
+
+            // Load Rom Header Info
+            loadRomHeaderData();
+
+            // load Banks
+            loadBanks();
+       }
 
         public byte[] getBytesDirect()
         {
@@ -603,7 +631,7 @@ namespace trentGB
 
             headerInfoDict.Add(new ROMHeaderInfo("Supports SGB Functions", null, typeof(bool), ((bytes[0x0146] == 0x03) && (bytes[0x014B] == 0x33))));
 
-            headerInfoDict.Add(new ROMHeaderInfo("Cartridge Type", new byte[] { bytes[0x0147] }, typeof(CartridgeType), Enum.GetName(typeof(CartridgeType), bytes[0x0147])));
+            headerInfoDict.Add(new ROMHeaderInfo("Cartridge Type", new byte[] { bytes[0x0147] }, typeof(CartridgeType), (CartridgeType)bytes[0x0147]));
             headerInfoDict.Add(new ROMHeaderInfo("ROM Size", new byte[] { bytes[0x0148] }, typeof(ROMSize), Enum.GetName(typeof(ROMSize), bytes[0x0148])));
             headerInfoDict.Add(new ROMHeaderInfo("RAM Size", new byte[] { bytes[0x0149] }, typeof(RAMSize), Enum.GetName(typeof(RAMSize), bytes[0x0149])));
             headerInfoDict.Add(new ROMHeaderInfo("Destination Code", new byte[] { bytes[0x014A] }, typeof(String), (bytes[0x014A] == 0) ? "Japanese" : "Non - Japanese"));
