@@ -182,7 +182,7 @@ namespace trentGB
 
     public class CPU
     {
-        enum Add16Type
+        public enum Add16Type
         {
             Normal,
             HL
@@ -430,7 +430,7 @@ namespace trentGB
             setPC(0x0100); // Skip Internal Boot ROM at 0x0000
 
             // Set These Faux Registers from HardCodes for now. In the future load these from Inter Boot ROM at 0x0000
-
+             
             mem.setByte(0xFF05, 0x00); // TIMA
             mem.setByte(0xFF06, 0x00); // TMA
             mem.setByte(0xFF07, 0x00); // TAC
@@ -569,6 +569,11 @@ namespace trentGB
                 clock.Start();
             }
 
+        }
+
+        public Instruction getInstructionForOpCode(Byte opCode)
+        {
+            return opCodeTranslationDict[opCode];
         }
 
         #region CPU Instruction Map
@@ -3714,7 +3719,7 @@ namespace trentGB
         #region Instruction Helper Functions
 
         #region 8-Bit Math Functions
-        private Byte increment(Byte value)
+        public Byte increment(Byte value)
         {
             byte result = (byte)((((int)value) + 1) & 0xFF);
 
@@ -3739,7 +3744,7 @@ namespace trentGB
             return result;
         }
 
-        private Byte decrement(Byte value)
+        public Byte decrement(Byte value)
         {
             byte result = (byte)((((int)value) - 1) & 0xFF);
 
@@ -3761,7 +3766,7 @@ namespace trentGB
             return result;
         }
 
-        private Byte add(Byte op1, Byte op2)
+        public Byte add(Byte op1, Byte op2)
         {
             Byte value = (Byte)(((int)op1 + (int)op2) & 0xFF);
             setZeroFlag(false);
@@ -3787,7 +3792,7 @@ namespace trentGB
             return value;
         }
 
-        private Byte addCarry(Byte op1, Byte op2)
+        public Byte addCarry(Byte op1, Byte op2)
         {
             int carryFlag = (getCarryFlag()) ? 1 : 0;
             Byte value = (Byte)(((int)op1 + (int)op2 + carryFlag) & 0xFF);
@@ -3814,7 +3819,7 @@ namespace trentGB
             return value;
         }
 
-        private Byte subtract(Byte op1, Byte op2)
+        public Byte subtract(Byte op1, Byte op2)
         {
             int result = (int)op2 - (int)op1;
             Byte value = (byte)((result & 0xFF));
@@ -3839,7 +3844,7 @@ namespace trentGB
             return value;
         }
         
-        private Byte subtractCarry(Byte op1, Byte op2)
+        public Byte subtractCarry(Byte op1, Byte op2)
         {
             int carryFlag = (getCarryFlag()) ? 1 : 0;
             int result = (int)op2 - (int)op1 - carryFlag;
@@ -3865,7 +3870,7 @@ namespace trentGB
             return value;
         }
 
-        private Byte and(Byte op1, Byte op2)
+        public Byte and(Byte op1, Byte op2)
         {
             setHalfCarryFlag(true);
             setSubtractFlag(false);
@@ -3882,7 +3887,7 @@ namespace trentGB
             return value;
         }
 
-        private Byte or(Byte op1, Byte op2)
+        public Byte or(Byte op1, Byte op2)
         {
             setHalfCarryFlag(false);
             setSubtractFlag(false);
@@ -3899,7 +3904,7 @@ namespace trentGB
             return value;
         }
 
-        private Byte xor(Byte op1, Byte op2)
+        public Byte xor(Byte op1, Byte op2)
         {
             setHalfCarryFlag(false);
             setSubtractFlag(false);
@@ -3916,7 +3921,7 @@ namespace trentGB
             return value;
         }
 
-        private Byte cmp(Byte op1, Byte op2)
+        public Byte cmp(Byte op1, Byte op2)
         {
             int result = (int)op2 - (int)op1;
             Byte value = (byte)((result & 0xFF));
@@ -3941,7 +3946,7 @@ namespace trentGB
             return value;
         }
 
-        private Byte daa(byte arg)
+        public Byte daa(byte arg)
         {
             int result = arg;
             Byte rv = 0;
@@ -3989,7 +3994,7 @@ namespace trentGB
             return rv;
         }
 
-        private Byte rotateLeftCarry(Byte op1)
+        public Byte rotateLeftCarry(Byte op1)
         {
             Byte result = (byte) ((op1 << 1) & 0xFF);
             if ((op1 & 0x80) != 0)
@@ -4009,7 +4014,7 @@ namespace trentGB
             return result;
         }
 
-        private Byte rotateLeft(Byte op1)
+        public Byte rotateLeft(Byte op1)
         {
             int carryFlag = (getCarryFlag()) ? 1 : 0;
             Byte result = (byte)((op1 << 1) & 0xFF);
@@ -4022,7 +4027,7 @@ namespace trentGB
             return result;
         }
 
-        private Byte rotateRightCarry(Byte op1)
+        public Byte rotateRightCarry(Byte op1)
         {
             Byte result = (byte)((op1 >> 1));
             if ((op1 & 0x01) == 1)
@@ -4042,7 +4047,7 @@ namespace trentGB
             return result;
         }
 
-        private Byte rotateRight(Byte op1)
+        public Byte rotateRight(Byte op1)
         {
             Byte carryFlagAdj =(Byte) ((getCarryFlag()) ? 0x80 : 0);
             Byte result = (byte)((op1 >> 1));
@@ -4055,7 +4060,7 @@ namespace trentGB
             return result;
         }
 
-        private Byte swapNibbles(byte value)
+        public Byte swapNibbles(byte value)
         {
             Byte msn =(Byte) ((value & 0x0F) << 4);
             Byte lsn = (Byte) ((value & 0xF0) >> 4);
@@ -4063,7 +4068,7 @@ namespace trentGB
             return ((Byte) (msn | lsn));
         }
 
-        private Byte sla(byte value)
+        public Byte sla(byte value)
         {
             Byte rv = (byte)((((int)value) << 1) & 0xFF);
 
@@ -4077,7 +4082,7 @@ namespace trentGB
             return rv;
         }
 
-        private Byte sra(byte value)
+        public Byte sra(byte value)
         {
             Byte rv = (Byte)(((((int)value) >> 1) | (((int)value) & 0x80)) & 0xFF);
 
@@ -4090,7 +4095,7 @@ namespace trentGB
             return rv;
         }
 
-        private Byte srl(byte value)
+        public Byte srl(byte value)
         {
             Byte rv = (Byte)((((int)value) >> 1) & 0xFF);
 
@@ -4108,7 +4113,7 @@ namespace trentGB
 
         #region 16-Bit Math Fucntions
 
-        private ushort add16(ushort op1, ushort op2, Add16Type type)
+        public ushort add16(ushort op1, ushort op2, Add16Type type)
         {
             ushort value = (ushort)(((int)op1 + (int)op2) & 0xFFFF);
 
@@ -4138,7 +4143,7 @@ namespace trentGB
             return value;
         }
 
-        private ushort addSP(ushort sp, Byte n)
+        public ushort addSP(ushort sp, Byte n)
         {
             ushort value = (ushort)(((int)sp + (int)n) & 0xFFFF);
             setZeroFlag(false);
@@ -4161,7 +4166,7 @@ namespace trentGB
             return value;
         }
 
-        private ushort addSP(ushort sp, SByte n)
+        public ushort addSP(ushort sp, SByte n)
         {
             ushort value = (ushort)(((int)sp + (int)n) & 0xFFFF);
             setZeroFlag(false);
@@ -4185,7 +4190,7 @@ namespace trentGB
         }
 
 
-        private ushort increment16(ushort value)
+        public ushort increment16(ushort value)
         {
             // Ignore All Flags
             if (value == 0xFFFF)
@@ -4203,7 +4208,7 @@ namespace trentGB
 
 
 
-        private ushort decrement16(ushort value)
+        public ushort decrement16(ushort value)
         {
             // Ignore All Flags
             if (value == 0)
@@ -4222,47 +4227,47 @@ namespace trentGB
 
         #region Misc Arithmatic functions
 
-        private void decrementHL()
+        public void decrementHL()
         {
             ushort valueToDecrement = getHL();
             valueToDecrement = decrement16(valueToDecrement);
             setHL(valueToDecrement);
         }
 
-        private void incrementHL()
+        public void incrementHL()
         {
             ushort valueToIncrement = getHL();
             valueToIncrement = increment16(valueToIncrement);
             setHL(valueToIncrement);
         }
 
-        private void pushOnStack(Byte value)
+        public void pushOnStack(Byte value)
         {
             decrementSP();
             mem.setByte(getSP(), value);
         }
 
-        private void pushOnStack(ushort value)
+        public void pushOnStack(ushort value)
         {
             byte[] tmp = getByteArrayForUInt16(value);
             pushOnStack(tmp[1]);
             pushOnStack(tmp[0]);
             
         }
-        private void pushOnStack(byte[] value)
+        public void pushOnStack(byte[] value)
         {
             pushOnStack(value[1]);
             pushOnStack(value[0]);
         }
 
-        private Byte popOffStack()
+        public Byte popOffStack()
         {
             Byte value = mem.getByte(getSP());
             incrementSP();
 
             return value;
         }
-        private ushort pop16OffStack()
+        public ushort pop16OffStack()
         {
             Byte lsb = popOffStack();
             Byte msb = popOffStack();
@@ -4274,7 +4279,7 @@ namespace trentGB
 
         // Essentially same as CPU Helpers above but no flags are affected
 
-        private Byte decrementIgnoreFlags(Byte value)
+        public Byte decrementIgnoreFlags(Byte value)
         {
             if (value == 0)
             {
@@ -4292,7 +4297,7 @@ namespace trentGB
             return value;
         }
 
-        private Byte incrementIgnoreFlags(Byte value)
+        public Byte incrementIgnoreFlags(Byte value)
         {
             if (value == 0xFF)
             {
@@ -4311,27 +4316,27 @@ namespace trentGB
             return value;
         }
 
-        private Byte addIgnoreFlags(Byte value1, Byte value2)
+        public Byte addIgnoreFlags(Byte value1, Byte value2)
         {
             return (Byte)((value1 + value2) & 0xFF);
         }
 
-        private ushort add16IgnoreFlags(Byte value1, ushort value2)
+        public ushort add16IgnoreFlags(Byte value1, ushort value2)
         {
             return add16IgnoreFlags((ushort)value1, value2);
         }
 
-        private ushort add16IgnoreFlags(ushort value1, Byte value2)
+        public ushort add16IgnoreFlags(ushort value1, Byte value2)
         {
             return add16IgnoreFlags(value1, (ushort) value2);
         }
 
-        private ushort add16IgnoreFlags(ushort value1, SByte value2)
+        public ushort add16IgnoreFlags(ushort value1, SByte value2)
         {
             return (ushort)((value1 + value2) & 0xFFFF);
         }
 
-        private ushort add16IgnoreFlags(ushort value1, ushort value2)
+        public ushort add16IgnoreFlags(ushort value1, ushort value2)
         {
             return (ushort)((value1 + value2) & 0xFFFF);
         }
