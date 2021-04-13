@@ -14,9 +14,24 @@ namespace trentGB.Tests
 
         // Assert override
 
-        public CPU setupOpCode(byte opCode, String testName, byte param1 = 0x00, byte param2 = 0x00)
+        public CPU setupOpCode(byte opCode, String testName, byte param1 = 0x00, byte param2 = 0x00, byte[] extraParams = null)
         {
-            ROM blankRom = new ROM(opCode, param1, param2);
+            int count = 3;
+            if (extraParams != null)
+            {
+                count += extraParams.Length;
+            }
+
+            byte[] arr = new byte [count];
+            arr[0] = opCode;
+            arr[1] = param1;
+            arr[2] = param2;
+            if (extraParams != null)
+            {
+                Array.Copy(extraParams, 0, arr, 3, extraParams.Length);
+            }
+            
+            ROM blankRom = new ROM(arr);
             AddressSpace addrSpace = new AddressSpace(blankRom);
             CPU cpu = new CPU(addrSpace, blankRom, clock);
             cpu.disableDebugger();
@@ -39,17 +54,37 @@ namespace trentGB.Tests
         public void executeCurrentInstruction(CPU cpu)
         {
             cpu.decodeAndExecute();
-            Assert.IsNotNull(cpu.getCurrentInstruction());
-            Byte opCode = cpu.getCurrentInstruction().opCode;
             while (cpu.getCurrentInstruction() != null)
             {
                 cpu.decodeAndExecute();
             }
+            Assert.IsNull(cpu.getCurrentInstruction());
+            Assert.IsTrue(cpu.getLastExecutedInstruction().isCompleted());
+            Assert.IsNotNull(cpu.getLastExecutedInstruction());
+        }
 
+        public void assertInstructionFinished(CPU cpu, byte opCode)
+        {
             Assert.IsTrue(cpu.getLastExecutedInstruction().isCompleted());
             Assert.IsNotNull(cpu.getLastExecutedInstruction());
             logMessage("Checking that Scheduled Opcode is same as Executed OpCode");
             Assert.That.AreEqual(opCode, cpu.getLastExecutedInstruction().opCode);
+        }
+
+        public void fetchAndLoadInstruction(CPU cpu, byte opCode)
+        {
+            Assert.IsNull(cpu.getCurrentInstruction());
+            cpu.decodeAndExecute();
+            if (cpu.getInstructionForOpCode(opCode).cycles == 4)
+            {
+                Assert.IsNull(cpu.getCurrentInstruction());
+            }
+            else
+            {
+                Assert.IsNotNull(cpu.getCurrentInstruction());
+            }
+            logMessage("Check fetched Instruction is correct.");
+            Assert.That.AreEqual(opCode, cpu.getCurrentInstruction().opCode);
         }
 
         private void logMessage(String message)
@@ -465,9 +500,9 @@ namespace trentGB.Tests
             byte opCode = 0x00;
             CPU cpu = setupOpCode(opCode, MethodBase.GetCurrentMethod().Name);
             Byte flagsByte = cpu.getF();
-            executeCurrentInstruction(cpu);
 
-            Assert.That.AreEqual(cpu.getInstructionForOpCode(opCode).length, cpu.getLastExecutedInstruction().getFetchCount());
+            cpu.decodeAndExecute();
+            assertInstructionFinished(cpu, opCode);
 
             Assert.That.FlagsEqual(cpu, flagsByte);
         }
@@ -485,12 +520,52 @@ namespace trentGB.Tests
 
             CPU cpu = setupOpCode(opCode, MethodBase.GetCurrentMethod().Name, op1, op2);
             Byte flagsByte = cpu.getF();
-            // First arg Byte at 0x0101
+
+            fetchAndLoadInstruction(cpu, opCode);
+            Byte b = cpu.getB();
+            cpu.decodeAndExecute();
+            Assert.That.AreEqual(b, cpu.getB());
+            Assert.That.AreEqual(op1, cpu.getC());
+            cpu.decodeAndExecute();
+            Assert.That.AreEqual(op2, cpu.getB());
+            Assert.That.AreEqual(op1, cpu.getC());
+            Assert.That.AreEqual(CPU.getUInt16ForBytes(op1, op2), cpu.getBC());
+            assertInstructionFinished(cpu, opCode);
+            Assert.That.FlagsEqual(cpu, flagsByte);
+
+        }
+
+        [DataRow((ushort)0xFFFF)]
+        [DataRow((ushort)0xFFFE)]
+        [DataTestMethod]
+        [TestCategory("OP Codes")]
+        [TestCategory("OP Code 0x03 - Increment BC")]
+        public void decodeAndExecute_incBC(ushort bc)
+        {
+            byte opCode = 0x03;
+            byte loadBCOpCode = 0x01;
+
+            // Setup CPU and Load BC with Data
+            CPU cpu = setupOpCode(loadBCOpCode, MethodBase.GetCurrentMethod().Name, CPU.getLSB(bc), CPU.getMSB(bc), new byte[] { opCode});
             executeCurrentInstruction(cpu);
+            Assert.That.AreEqual(bc, cpu.getBC());
+            Assert.That.AreEqual(0x100 + cpu.getInstructionForOpCode(loadBCOpCode).length, cpu.getPC());
 
-            Assert.That.AreEqual(0x100 + cpu.getInstructionForOpCode(opCode).length, cpu.getPC());
-            Assert.That.AreEqual((((op2 << 8) + op1) & 0xFFFF), cpu.getBC());
 
+            // BC is loaded Increment it
+            ushort expectedResult = cpu.add16IgnoreFlags(1, bc);
+            Byte flagsByte = cpu.getF();
+
+            Assert.That.AreEqual(opCode, cpu.peek());
+            Byte b = cpu.getB();
+            fetchAndLoadInstruction(cpu, opCode);
+            Assert.That.AreEqual(b, cpu.getB());
+            Assert.That.AreEqual(CPU.getLSB(expectedResult), cpu.getC());
+            cpu.decodeAndExecute();
+            Assert.That.AreEqual(CPU.getMSB(expectedResult), cpu.getB());
+            Assert.That.AreEqual(CPU.getLSB(expectedResult), cpu.getC());
+            Assert.That.AreEqual(expectedResult, cpu.getBC());
+            assertInstructionFinished(cpu, opCode);
             Assert.That.FlagsEqual(cpu, flagsByte);
 
         }

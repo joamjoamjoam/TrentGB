@@ -80,6 +80,8 @@ namespace trentGB
         public int executedCycles = 0;
         public int fetches = 0;
         public bool earlyCompletionRequested = false; // Some Commands skip cycles if conditions are unmet see opCodeTranslatioDict for a list
+        public ushort storage = 0;
+
 
         public Instruction(byte opCode, byte length, byte cycles , Action act, int PC, ROM rom)
         {
@@ -119,7 +121,7 @@ namespace trentGB
             desc = opFunc.Method.Name;
             
 
-            if (opCode == 0xCB && model.length == 1)
+            if (opCode == 0xCB && model.length == 2)
             {
                 length = getCBOpLength();
                 // Append CB Instruction Length and Cycles
@@ -131,6 +133,39 @@ namespace trentGB
             for (int i = 0; i < (length-1); i++)
             {
                 parameters[i] = rom.getByteDirect(PC + i);
+            }
+        }
+
+        public Instruction(Instruction model, int PC, Byte param1 = 0, Byte param2 = 0)
+        {
+            // PC is at the adress for the first parametr if applicable
+
+            this.opCode = model.opCode;
+            this.cycles = model.cycles;
+            this.length = model.length;
+            this.address = PC;
+            this.opFunc = model.opFunc;
+            desc = opFunc.Method.Name;
+
+
+            if (opCode == 0xCB && model.length == 2)
+            {
+                length = getCBOpLength();
+                // Append CB Instruction Length and Cycles
+                cycles = getCBCycles(param1);
+            }
+
+            parameters = new byte[length - 1];
+
+            switch (model.length)
+            {
+                case 2:
+                    parameters[0] = param1;
+                    break;
+                case 3:
+                    parameters[0] = param1;
+                    parameters[1] = param2;
+                    break;
             }
         }
 
@@ -238,7 +273,7 @@ namespace trentGB
 
         public void incrementExecutedCycles()
         {
-            executedCycles++;
+            executedCycles += 4;
         }
 
         public void incrementFetches()
@@ -257,7 +292,7 @@ namespace trentGB
 
         public bool isCompleted()
         {
-            return (executedCycles == cycles) || earlyCompletionRequested;
+            return (executedCycles >= cycles) || earlyCompletionRequested;
         }
     }
 
@@ -346,7 +381,7 @@ namespace trentGB
         bool debuggerRequested = false;
 
         // Tsting/Cycle Accurate Counters
-        private Instruction currentInstruction;
+        private Instruction currentInstruction = null;
 
         public CPU(AddressSpace m, ROM rom, Stopwatch clock)
         {
@@ -598,9 +633,10 @@ namespace trentGB
             return mem.getByte(PC++);
         }
 
-        public Byte peek()
+        public Byte peek(ushort n = 0)
         {
-            return mem.getByte(PC);
+            ushort address = add16IgnoreFlags(getPC(), n);
+            return mem.getByte(address);
         }
 
         public void setNextBreak(ushort addr)
@@ -617,14 +653,17 @@ namespace trentGB
             if (currentInstruction == null) // Everything is one cycle right now
             {
                 // Is New Command
-                currentInstruction = opCodeTranslationDict[peek()];
+                currentInstruction = new Instruction(opCodeTranslationDict[peek()], peek(1), peek(2));
                 opCode = fetch();
                 currentInstruction.incrementExecutedCycles();
+                currentInstruction.execute();
+
 
                 // return; // First Cycle is always a fetch of the opcode
             }
             else
             {
+                opCode = currentInstruction.opCode;
                 // Continue Execution
                 currentInstruction.incrementExecutedCycles(); // first cycle
 
@@ -717,24 +756,22 @@ namespace trentGB
                 }
 
                 // HACK: All Commands are 2 cycle for now when they are all fixed for cycle accuraccy removw this.
-                currentInstruction.earlyCompletionRequested = true;
+                if (((opCode >> 4) == 0))
+                {
+                    // Command is cycle accurate do Nothing
+                }
+                else
+                {
+                    // Command is not cycle accurate
+                    currentInstruction.earlyCompletionRequested = true;
+                }
             }
 
 
             if (currentInstruction.isCompleted())
             {
                 // Store it and reset for a new instruction
-                if (currentInstruction != null)
-                {
-                    commandHistoryList.Push(currentInstruction);
-                }
-                else
-                {
-                    // Current Instruction SHould not be null
-                    throw new NullReferenceException("current Instruction was NULL at the end of decodeAndExecute()");
-                }
-                
-
+                commandHistoryList.Push(currentInstruction);
                 currentInstruction = null;
             }
 
@@ -2202,34 +2239,53 @@ namespace trentGB
 
         private void ldBC16() // 0x01
         {
-            int value = fetch();
-            int value2 = fetch();
-            ushort rv = (ushort)((value2 << 8) + value);
-
-            setBC(rv);
+            if (currentInstruction.getCycleCount() == 8)
+            {
+                // load C
+                Byte value = fetch();
+                setC(value);
+            }
+            else if (currentInstruction.getCycleCount() == 12)
+            {
+                // load B
+                Byte value = fetch();
+                setB(value);
+            }
         }
         private void ldAToMemBC() //0x02
         {
-            ushort addr = getBC();
-            byte value = getA();
-
-            mem.setByte(addr, value);
+            if (currentInstruction.getCycleCount() == 8)
+            {
+                Byte value = getA();
+                mem.setByte(getBC(), value);
+            }
         }
         private void incBC() //0x03
         {
-            ushort value = getBC();
+            if (currentInstruction.getCycleCount() == 4)
+            {
+                ushort value = getBC();
 
-            value = increment16(value);
+                currentInstruction.storage = increment16(value);
 
-            setBC(value);
+                setC(getLSB((ushort)currentInstruction.storage));
+            }
+            else if (currentInstruction.getCycleCount() == 8)
+            {
+                setB(getMSB((ushort)currentInstruction.storage));
+            }
         }
         private void incB() // 0x04
         {
-            Byte value = getB();
+            if (currentInstruction.getCycleCount() == 4)
+            {
+                Byte value = getB();
 
-            value = increment(value);
+                value = increment(value);
 
-            setB(value);
+                setB(value);
+            }
+
         }
         private void decB() // 0x05
         {
@@ -2241,8 +2297,11 @@ namespace trentGB
         }
         private void ldB() // 0x06
         {
-            Byte value = fetch();
-            setB(value);
+            if (currentInstruction.getCycleCount() == 8)
+            {
+                Byte value = fetch();
+                setB(value);
+            }
         }
         private void rlcA() // 0x07
         {
@@ -2250,54 +2309,99 @@ namespace trentGB
         }
         private void ldSPFromMem16() // 0x08
         {
-            Byte value1 = fetch(); // lower
-            Byte value2 = fetch(); // upper
-            ushort value = (ushort) ((value2 << 8) + value1);
 
-            setSP(value);
+            if (currentInstruction.getCycleCount() == 8)
+            {
+                currentInstruction.storage = (ushort)(fetch()); // lower
+            }
+            else if (currentInstruction.getCycleCount() == 12)
+            {
+                currentInstruction.storage = getUInt16ForBytes(getLSB((ushort)currentInstruction.storage), fetch());
+            }
+            else if (currentInstruction.getCycleCount() == 16)
+            {
+                ushort value = getUInt16ForBytes(getLSB((ushort)currentInstruction.storage), getMSB(getSP()));
+                setSP(value);
+            }
+            else if (currentInstruction.getCycleCount() == 20)
+            {
+                setSP((ushort)currentInstruction.storage);
+            }           
         }
         private void addBCtoHL() //0x09
         {
-            setHL(add16(getHL(), getBC(), Add16Type.HL));
+            if (currentInstruction.getCycleCount() == 4)
+            {
+                currentInstruction.storage = add16(getHL(), getBC(), Add16Type.HL);
+                setL(getLSB((ushort)currentInstruction.storage)); 
+            }
+            else if (currentInstruction.getCycleCount() == 8)
+            {
+                setH(getMSB((ushort)currentInstruction.storage));
+            }
         }
         private void ldAMemBC() // 0x0A
         {
-            Byte value = mem.getByte(getBC());
-            setA(value);
+            if (currentInstruction.getCycleCount() == 8)
+            {
+                Byte value = mem.getByte(getBC());
+                setA(value);
+            }
         }
         private void decBC() //0x0B
         {
-            ushort value = getBC();
+            if (currentInstruction.getCycleCount() == 4)
+            {
+                ushort value = getBC();
 
-            value = decrement16(value);
+                currentInstruction.storage = decrement16(value);
 
-            setBC(value);
+                setC(getLSB((ushort)currentInstruction.storage));
+            }
+            else if (currentInstruction.getCycleCount() == 8)
+            {
+                setB(getMSB((ushort)currentInstruction.storage));
+            }
         }
         private void incC() // 0x0C
         {
-            Byte value = getC();
+            if (currentInstruction.getCycleCount() == 4)
+            {
+                Byte value = getC();
 
-            value = increment(value);
+                value = increment(value);
 
-            setC(value);
+                setC(value);
+            }
         }
         private void decC() // 0x0D
         {
-            Byte value = getC();
+            if (currentInstruction.getCycleCount() == 4)
+            {
+                Byte value = getC();
 
-            value = decrement(value);
+                value = decrement(value);
 
-            setC(value);
+                setC(value);
+            }
         }
         private void ldC() // 0x0E
         {
-            Byte value = fetch();
-            setC(value);
+            if (currentInstruction.getCycleCount() == 8)
+            {
+                Byte value = fetch();
+                setB(value);
+            }
         }
         private void rrcA() // 0x0F
         {
-            setA(rotateRightCarry(getA()));
+            if (currentInstruction.getCycleCount() == 4)
+            {
+                setA(rotateRightCarry(getA()));
+            }
         }
+        // TODO: Trent You Stopped here. Do unit Tests. Yes Do them.
+
         private void stopCPU() // 0x10
         {
             Byte command = fetch();
@@ -4532,6 +4636,17 @@ namespace trentGB
         }
 
         #endregion
+
+        public static Byte getMSB(ushort value)
+        {
+            return (Byte)((value >> 8) & 0xFF);
+        }
+
+        public static Byte getLSB(ushort value)
+        {
+            return (Byte)((value) & 0x00FF);
+        }
+
 
         #endregion
     }
