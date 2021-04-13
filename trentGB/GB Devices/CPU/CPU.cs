@@ -11,6 +11,62 @@ namespace trentGB
 {
     // OP Code Dict is Below.
 
+    public class CPUInstructionStack
+    {
+        public int capacity = 0;
+        private List<Instruction> stack = new List<Instruction>();
+
+        public CPUInstructionStack(int capacity)
+        {
+            this.capacity = capacity;
+            stack = new List<Instruction>();
+        }
+        
+        public void Push(Instruction inst)
+        {
+            if (inst != null)
+            {
+                stack.Insert(0, inst);
+
+                if (stack.Count > capacity)
+                {
+                    // Dropout all items after capacity
+                    for (int i = stack.Count - 1; i > capacity - 1; i--)
+                    {
+                        stack.RemoveAt(i);
+                    }
+                }
+            }
+            else
+            {
+                throw new NullReferenceException("Attempted to Push a null Instruction on to the Command Stack");
+            }
+
+        }
+
+        public Instruction Pop()
+        {
+            Instruction ins = (stack.Count > 0) ? stack[0] : null;
+
+            if (ins != null)
+            {
+                stack.RemoveAt(0);
+            }
+
+            return ins;
+        }
+
+        public Instruction Peek()
+        {
+            return (stack.Count > 0) ? stack[0] : null;
+        }
+
+        public List<Instruction> getStackCopy()
+        {
+            return stack.ConvertAll(ins => ins.Copy<Instruction>());
+        }
+    }
+
     public class Instruction
     {
         public readonly byte cycles;
@@ -20,8 +76,10 @@ namespace trentGB
         public byte[] parameters = new byte[0];
         public readonly Action opFunc = null;
         public readonly String desc = "";
-        
-        
+
+        public int executedCycles = 0;
+        public int fetches = 0;
+        public bool earlyCompletionRequested = false; // Some Commands skip cycles if conditions are unmet see opCodeTranslatioDict for a list
 
         public Instruction(byte opCode, byte length, byte cycles , Action act, int PC, ROM rom)
         {
@@ -124,7 +182,7 @@ namespace trentGB
 
         public Byte getCBOpLength()
         {
-            return 3;
+            return 2;
         }
 
         public Byte getCBCycles(Byte cbOpCode)
@@ -177,6 +235,30 @@ namespace trentGB
 
             return rv;
         }
+
+        public void incrementExecutedCycles()
+        {
+            executedCycles++;
+        }
+
+        public void incrementFetches()
+        {
+            fetches++;
+        }
+
+        public int getFetchCount()
+        {
+            return fetches;
+        }
+        public int getCycleCount()
+        {
+            return executedCycles;
+        }
+
+        public bool isCompleted()
+        {
+            return (executedCycles == cycles) || earlyCompletionRequested;
+        }
     }
 
 
@@ -219,6 +301,14 @@ namespace trentGB
             Joypad = 0x10
         }
 
+        public enum CPUFlagsMask
+        {
+            Carry = 0x10,
+            HalfCarry = 0x20,
+            Subtract = 0x40,
+            Zero = 0x80
+        }
+
 
         private Byte A = 0;
         private Byte B = 0;
@@ -245,7 +335,7 @@ namespace trentGB
         public delegate void DebugFormHandler();
         public event EventHandler ShowDebugForm;
 
-
+        public CPUInstructionStack commandHistoryList = new CPUInstructionStack(500);
 
         public ROM rom = null;
 
@@ -255,6 +345,8 @@ namespace trentGB
         CPUDebugger debuggerForm = null;
         bool debuggerRequested = false;
 
+        // Tsting/Cycle Accurate Counters
+        private Instruction currentInstruction;
 
         public CPU(AddressSpace m, ROM rom, Stopwatch clock)
         {
@@ -263,6 +355,16 @@ namespace trentGB
             loadOpCodeMap();
             this.clock = clock;
             debuggerForm = new CPUDebugger(this.rom.disassemble(opCodeTranslationDict));
+        }
+
+        public Instruction getCurrentInstruction()
+        {
+            return currentInstruction;
+        }
+
+        public Instruction getLastExecutedInstruction()
+        {
+            return commandHistoryList.Peek();
         }
 
         public Dictionary<String, String> getStateDict()
@@ -319,9 +421,32 @@ namespace trentGB
             return rv;
         }
 
-        public String generateFlagsStr()
+        public String generateFlagsStr(short flags = -1)
         {
-            String rv = $"{((getZeroFlag()) ? "Z" : "-")}{((getSubtractFlag()) ? "N" : "-")}{((getHalfCarryFlag()) ? "H" : "-")}{((getCarryFlag()) ? "C" : "-")}";
+            Byte flagsByte = 0;
+            bool carryFlag = false;
+            bool halfCarry = false;
+            bool zero = false;
+            bool subtract = false;
+
+            if (flags == -1)
+            {
+                flagsByte = getF();
+                carryFlag = getCarryFlag();
+                halfCarry = getHalfCarryFlag();
+                zero = getZeroFlag();
+                subtract = getSubtractFlag();
+            }
+            else
+            {
+                flagsByte = (byte)(flags & 0xFF);
+                carryFlag = (flagsByte & (byte)CPUFlagsMask.Carry) > 0;
+                zero = (flagsByte & (byte)CPUFlagsMask.Zero) > 0;
+                halfCarry = (flagsByte & (byte)CPUFlagsMask.HalfCarry) > 0;
+                subtract = (flagsByte & (byte)CPUFlagsMask.Subtract) > 0;
+            }
+
+            String rv = $"{((zero) ? "Z" : "-")}{((subtract) ? "N" : "-")}{((halfCarry) ? "H" : "-")}{((carryFlag) ? "C" : "-")}";
 
             return rv;
         }
@@ -378,13 +503,12 @@ namespace trentGB
 
             if (shouldPerformCycle)
             {
-                Byte nextInstruction = fetch();
-                if (nextInstruction == 0x10)
-                {
-                    // Halt CPU and LCD
+                //if (nextInstruction == 0x10)
+                //{
+                //    // Halt CPU and LCD
 
-                    // lcd.stop();
-                }
+                //    // lcd.stop();
+                //}
 
                 // Check For Interrupts
 
@@ -414,7 +538,8 @@ namespace trentGB
                 }
                 else
                 {
-                    decodeAndExecute(nextInstruction);
+                    // Keep on Keepin On
+                    decodeAndExecute();
                 }
             }
         }
@@ -466,7 +591,16 @@ namespace trentGB
 
         public Byte fetch()
         {
+            if (currentInstruction != null)
+            {
+                currentInstruction.incrementFetches();
+            }
             return mem.getByte(PC++);
+        }
+
+        public Byte peek()
+        {
+            return mem.getByte(PC);
         }
 
         public void setNextBreak(ushort addr)
@@ -474,99 +608,134 @@ namespace trentGB
             breakAtInstruction = addr;
         }
 
-        public void decodeAndExecute(Byte opCode)
+        public void decodeAndExecute()
         {
+            Byte opCode = 0x00;
             bool enableInterrupts = shouldEnableInterrupts;
             bool disableInterrupts = shouldDisableInterrupts;
 
-            
-
-            // Debug Window
-            Byte[] peekBytes = new byte[2];
-            peekBytes[0] = mem.peekByte(getPC());
-            peekBytes[1] = mem.peekByte((ushort)((getPC() + 1) & 0xFFFF));
-            ushort peek16 = getUInt16ForBytes(peekBytes);
-            String beforeText = $"Before:\nOP[0x{(getPC() - 1).ToString("X4")}] 0x{opCode.ToString("X2")} -> {getOpCodeDesc(opCode)}\nPossible Params = 0x{peekBytes[0].ToString("X2")} 0x{peekBytes[1].ToString("X2")}\nAs UI16 0x{peek16.ToString("X4")}\n\n(0x{peek16.ToString("X4")}) = 0x{mem.peekByte(peek16).ToString("X2")}\n\nContinue Debugging??";
-            bool showAfterText = false;
-
-            if (breakAtInstruction == (getPC() - 1) || debuggerRequested)
+            if (currentInstruction == null) // Everything is one cycle right now
             {
-                clock.Stop();
-                debuggerRequested = false;
-                rom.disassemble(opCodeTranslationDict);
-                debuggerForm.updateMemoryWindow(getStateDict());
-                debuggerForm.setContinueAddr(getPC());
+                // Is New Command
+                currentInstruction = opCodeTranslationDict[peek()];
+                opCode = fetch();
+                currentInstruction.incrementExecutedCycles();
 
-                debuggerForm.currentAddress = (ushort)((getPC() - 1) & 0xFFFF);
-                debuggerForm.printText(beforeText);
-                DialogResult res = debuggerForm.ShowDialog();
-                if (res == DialogResult.No)
+                // return; // First Cycle is always a fetch of the opcode
+            }
+            else
+            {
+                // Continue Execution
+                currentInstruction.incrementExecutedCycles(); // first cycle
+
+                // Debug Window
+                Byte[] peekBytes = new byte[2];
+                peekBytes[0] = mem.peekByte(getPC());
+                peekBytes[1] = mem.peekByte((ushort)((getPC() + 1) & 0xFFFF));
+                ushort peek16 = getUInt16ForBytes(peekBytes);
+                String beforeText = $"Before:\nOP[0x{(getPC() - 1).ToString("X4")}] 0x{opCode.ToString("X2")} -> {getOpCodeDesc(opCode)}\nPossible Params = 0x{peekBytes[0].ToString("X2")} 0x{peekBytes[1].ToString("X2")}\nAs UI16 0x{peek16.ToString("X4")}\n\n(0x{peek16.ToString("X4")}) = 0x{mem.peekByte(peek16).ToString("X2")}\n\nContinue Debugging??";
+                bool showAfterText = false;
+
+                if (breakAtInstruction == (getPC() - 1) || debuggerRequested)
                 {
-                    showAfterText = false;
-                    breakAtInstruction = 0xFFFF;
+                    clock.Stop();
+                    debuggerRequested = false;
+                    rom.disassemble(opCodeTranslationDict);
+                    debuggerForm.updateMemoryWindow(getStateDict());
+                    debuggerForm.setContinueAddr(getPC());
+
+                    debuggerForm.currentAddress = (ushort)((getPC() - 1) & 0xFFFF);
+                    debuggerForm.printText(beforeText);
+                    DialogResult res = debuggerForm.ShowDialog();
+                    if (res == DialogResult.No)
+                    {
+                        showAfterText = false;
+                        breakAtInstruction = 0xFFFF;
+                    }
+                    else if (res == DialogResult.Ignore)
+                    {
+                        // Continue Pressed
+                        breakAtInstruction = debuggerForm.getContinueAddr();
+                    }
+                    else
+                    {
+                        // yes Pressed
+                        showAfterText = true;
+
+                    }
+                    debuggerForm.wait = showAfterText;
+
+                    clock.Start();
                 }
-                else if(res == DialogResult.Ignore)
+
+
+               currentInstruction.execute();
+
+
+
+                if (enableInterrupts)
                 {
-                    // Continue Pressed
-                    breakAtInstruction = debuggerForm.getContinueAddr();
+                    IME = true;
+                    shouldEnableInterrupts = false;
+                }
+                if (disableInterrupts)
+                {
+                    IME = false;
+                    shouldDisableInterrupts = false;
+                }
+
+                if (showAfterText)
+                {
+                    clock.Stop();
+                    debuggerForm.setContinueAddr(getPC());
+                    breakAtInstruction = getPC();
+
+                    String afterText = $"After: \nOP [0x{(getPC() - 1).ToString("X4")}] 0x{opCode.ToString("X2")} -> {getOpCodeDesc(opCode)}\nPossible Params = 0x{peekBytes[0].ToString("X2")} 0x{peekBytes[1].ToString("X2")}\nAs UI16 0x{peek16.ToString("X4")}\n\n(0x{peek16.ToString("X4")}) = 0x{mem.peekByte(peek16).ToString("X2")}\n\nNext OP: 0x{mem.peekByte(getPC())} -> {getOpCodeDesc(mem.peekByte(getPC()))}\n\nContinue Debugging??";
+                    debuggerForm.updateMemoryWindow(getStateDict());
+                    DialogResult res = debuggerForm.ShowDialog(getPC());
+
+                    while (debuggerForm.wait)
+                    {
+                        Thread.Sleep(200);
+                    }
+
+                    if (res == DialogResult.No)
+                    {
+                        showAfterText = false;
+                    }
+                    else if (res == DialogResult.Ignore)
+                    {
+                        // Continue Pressed
+                        breakAtInstruction = debuggerForm.getContinueAddr();
+                    }
+                    else
+                    {
+                        // yes Pressed
+                        showAfterText = true;
+                    }
+                    clock.Start();
+                }
+
+                // HACK: All Commands are 2 cycle for now when they are all fixed for cycle accuraccy removw this.
+                currentInstruction.earlyCompletionRequested = true;
+            }
+
+
+            if (currentInstruction.isCompleted())
+            {
+                // Store it and reset for a new instruction
+                if (currentInstruction != null)
+                {
+                    commandHistoryList.Push(currentInstruction);
                 }
                 else
                 {
-                    // yes Pressed
-                    showAfterText = true;
-
+                    // Current Instruction SHould not be null
+                    throw new NullReferenceException("current Instruction was NULL at the end of decodeAndExecute()");
                 }
-                debuggerForm.wait = showAfterText;
+                
 
-                clock.Start();
-            }
-
-
-            opCodeTranslationDict[opCode].execute();
-
-
-
-            if (enableInterrupts)
-            {
-                IME = true;
-                shouldEnableInterrupts = false;
-            }
-            if (disableInterrupts)
-            {
-                IME = false;
-                shouldDisableInterrupts = false;
-            }
-
-            if (showAfterText)
-            {
-                clock.Stop();
-                debuggerForm.setContinueAddr(getPC());
-                breakAtInstruction = getPC();
-
-                String afterText = $"After: \nOP [0x{(getPC() - 1).ToString("X4")}] 0x{opCode.ToString("X2")} -> {getOpCodeDesc(opCode)}\nPossible Params = 0x{peekBytes[0].ToString("X2")} 0x{peekBytes[1].ToString("X2")}\nAs UI16 0x{peek16.ToString("X4")}\n\n(0x{peek16.ToString("X4")}) = 0x{mem.peekByte(peek16).ToString("X2")}\n\nNext OP: 0x{mem.peekByte(getPC())} -> {getOpCodeDesc(mem.peekByte(getPC()))}\n\nContinue Debugging??";
-                debuggerForm.updateMemoryWindow(getStateDict());
-                DialogResult res = debuggerForm.ShowDialog(getPC());
-
-                while (debuggerForm.wait)
-                {
-                    Thread.Sleep(200);
-                }
-
-                if (res == DialogResult.No)
-                {
-                    showAfterText = false;
-                }
-                else if (res == DialogResult.Ignore)
-                {
-                    // Continue Pressed
-                    breakAtInstruction = debuggerForm.getContinueAddr();
-                }
-                else
-                {
-                    // yes Pressed
-                    showAfterText = true;
-                }
-                clock.Start();
+                currentInstruction = null;
             }
 
         }
@@ -782,7 +951,7 @@ namespace trentGB
             opCodeTranslationDict.Add(0xC8, new Instruction(0xC8, 1, 20, retIfZSet)); // 8-20
             opCodeTranslationDict.Add(0xC9, new Instruction(0xC9, 1, 16, ret));
             opCodeTranslationDict.Add(0xCA, new Instruction(0xCA, 3, 16, jumpIfZeroFlagSet)); // 12-16
-            opCodeTranslationDict.Add(0xCB, new Instruction(0xCB, 1, 4, executeCBPrefixedOpCode)); // trent have to Add in CB Instructions length and cycles
+            opCodeTranslationDict.Add(0xCB, new Instruction(0xCB, 2, 4, executeCBPrefixedOpCode)); // trent have to Add in CB Instructions length and cycles
             opCodeTranslationDict.Add(0xCC, new Instruction(0xCC, 3, 24, callNNIfZSet)); //12-24
             opCodeTranslationDict.Add(0xCD, new Instruction(0xCD, 3, 24, callNN));
             opCodeTranslationDict.Add(0xCE, new Instruction(0xCE, 2, 8, addCarryNtoA));
@@ -1854,10 +2023,11 @@ namespace trentGB
         {
             return F;
         }
-        private void setF(Byte value)
+        public void setF(Byte value)
         {
             F = value;
         }
+
 
         public ushort getSP()
         {
@@ -1952,18 +2122,18 @@ namespace trentGB
         public bool getCarryFlag()
         {
 
-            return ((F & 0x10) > 0);
+            return ((F & (Byte)CPUFlagsMask.Carry) > 0);
         }
 
         private void setCarryFlag(bool on)
         {
             if (on)
             {
-                F = (Byte)(F | 0x10);
+                F = (Byte)(F | (Byte)CPUFlagsMask.Carry);
             }
             else
             {
-                F = (Byte)(F & (~0x10));
+                F = (Byte)(F & (~(Byte)CPUFlagsMask.Carry));
             }
 
         }
@@ -1971,60 +2141,55 @@ namespace trentGB
         public bool getHalfCarryFlag()
         {
 
-            return ((F & 0x20) > 0);
+            return ((F & (Byte)CPUFlagsMask.HalfCarry) > 0);
         }
 
         private void setHalfCarryFlag(bool on)
         {
             if (on)
             {
-                F = (Byte)(F | 0x20);
+                F = (Byte)(F | (Byte)CPUFlagsMask.HalfCarry);
             }
             else
             {
-                F = (Byte)(F & (~0x20));
+                F = (Byte)(F & (~(Byte)CPUFlagsMask.HalfCarry));
             }
         }
 
         public bool getSubtractFlag()
         {
 
-            return ((F & 0x40) > 0);
+            return ((F & (Byte)CPUFlagsMask.Subtract) > 0);
         }
 
         private void setSubtractFlag(bool on)
         {
             if (on)
             {
-                F = (Byte)(F | 0x40);
+                F = (Byte)(F | (Byte)CPUFlagsMask.Subtract);
             }
             else
             {
-                F = (Byte)(F & (~0x40));
+                F = (Byte)(F & (~(Byte)CPUFlagsMask.Subtract));
             }
         }
 
         public bool getZeroFlag()
         {
 
-            return ((F & 0x80) > 0);
+            return ((F & (Byte)CPUFlagsMask.Zero) > 0);
         }
 
         private void setZeroFlag(bool on)
         {
             if (on)
             {
-                F = (Byte)(F | 0x80);
+                F = (Byte)(F | (Byte)CPUFlagsMask.Zero);
             }
             else
             {
-                F = (Byte)(F & (~0x80));
+                F = (Byte)(F & (~(Byte)CPUFlagsMask.Zero));
             }
-        }
-
-        private void resetFlagsNibble()
-        {
-            F = (Byte)(F & 0x0F);
         }
 
         #endregion

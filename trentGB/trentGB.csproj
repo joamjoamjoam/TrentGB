@@ -127,6 +127,7 @@
   </ItemGroup>
   <ItemGroup />
   <ItemGroup>
+    <Content Include="Licenses\net-object-deep-copy-license.txt" />
     <Content Include="Roms\Warning.txt" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

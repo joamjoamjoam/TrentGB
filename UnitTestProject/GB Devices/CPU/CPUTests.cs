@@ -3,6 +3,7 @@ using System.Diagnostics;
 using trentGB;
 using System.Collections.Generic;
 using System;
+using System.Reflection;
 
 namespace trentGB.Tests
 {
@@ -11,7 +12,9 @@ namespace trentGB.Tests
     {
         public Stopwatch clock = new Stopwatch();
 
-        public CPU setupOpCode(byte opCode, byte param1 = 0x00, byte param2 = 0x00)
+        // Assert override
+
+        public CPU setupOpCode(byte opCode, String testName, byte param1 = 0x00, byte param2 = 0x00)
         {
             ROM blankRom = new ROM(opCode, param1, param2);
             AddressSpace addrSpace = new AddressSpace(blankRom);
@@ -19,12 +22,39 @@ namespace trentGB.Tests
             cpu.disableDebugger();
             cpu.setNextBreak(0x0000);
             cpu.reset();
-            Assert.AreEqual(0x100, cpu.getPC());
-            Assert.AreEqual(opCode, cpu.mem.getByte(0x100));
-            Assert.AreEqual(param1, cpu.mem.getByte(0x101));
-            Assert.AreEqual(param2, cpu.mem.getByte(0x102));
+            logMessage("Checking PC = 0x100");
+            Assert.That.AreEqual(0x100, cpu.getPC(), "X4");
+            logMessage("Checking Loaded Op Code");
+            Assert.That.AreEqual(opCode, cpu.mem.getByte(0x100), "X2");
+            logMessage("Checking Loaded Param 1");
+            Assert.That.AreEqual(param1, cpu.mem.getByte(0x101), "X2");
+            logMessage("Checking Loaded Param 2");
+            Assert.That.AreEqual(param2, cpu.mem.getByte(0x102), "X2");
+
+            logMessage($"\nStarting Test: {testName}");
 
             return cpu;
+        }
+
+        public void executeCurrentInstruction(CPU cpu)
+        {
+            cpu.decodeAndExecute();
+            Assert.IsNotNull(cpu.getCurrentInstruction());
+            Byte opCode = cpu.getCurrentInstruction().opCode;
+            while (cpu.getCurrentInstruction() != null)
+            {
+                cpu.decodeAndExecute();
+            }
+
+            Assert.IsTrue(cpu.getLastExecutedInstruction().isCompleted());
+            Assert.IsNotNull(cpu.getLastExecutedInstruction());
+            logMessage("Checking that Scheduled Opcode is same as Executed OpCode");
+            Assert.That.AreEqual(opCode, cpu.getLastExecutedInstruction().opCode);
+        }
+
+        private void logMessage(String message)
+        {
+            Console.WriteLine(message);
         }
 
         #region Helper Functions
@@ -32,11 +62,16 @@ namespace trentGB.Tests
         [DataRow((ushort)1u, (ushort)100u)]
         [DataTestMethod]
         [TestCategory("Misc Functions")]
+        [TestCategory("16 Bit Math Functions")]
         public void add16_UShort(ushort op1, ushort op2)
         {
             byte opCode = 0x00;
-            CPU cpu = setupOpCode(opCode);
-            Assert.AreEqual((op1 + op2) & 0xFFFF, cpu.add16(op1, op2, CPU.Add16Type.Normal));
+
+            CPU cpu = setupOpCode(opCode, $"{MethodBase.GetCurrentMethod().Name}({op1.ToString("X4")}, {op2.ToString("X4")})");
+            Byte flagsByte = cpu.getF();
+
+            Assert.That.AreEqual((op1 + op2) & 0xFFFF, cpu.add16(op1, op2, CPU.Add16Type.Normal));
+            Assert.That.FlagsEqual(cpu, flagsByte);
 
         }
 
@@ -44,16 +79,79 @@ namespace trentGB.Tests
         [DataRow((byte)1u, (ushort)0x00FFu)]
         [DataTestMethod]
         [TestCategory("Misc Functions")]
+        [TestCategory("16 Bit Math Functions")]
         public void add16_ByteParams(byte op1, ushort op2)
         {
             byte opCode = 0x00;
-            CPU cpu = setupOpCode(opCode);
+            CPU cpu = setupOpCode(opCode, $"{MethodBase.GetCurrentMethod().Name}({op1.ToString("X2")}, {op2.ToString("X4")})");
             ushort shortOp = (ushort)(op2 & 0x00FF);
 
+            Byte flagsByte = cpu.getF();
+            Assert.That.AreEqual((op1 + op2) & 0xFFFF, cpu.add16(op1, op2, CPU.Add16Type.Normal));
+            Assert.That.FlagsEqual(cpu, flagsByte);
+            Assert.That.AreEqual((op1 + op2) & 0xFFFF, cpu.add16(op2, op1, CPU.Add16Type.Normal));
+            Assert.That.FlagsEqual(cpu, flagsByte);
+            Assert.That.AreEqual((op1 + shortOp) & 0xFFFF, cpu.add16(shortOp, op1, CPU.Add16Type.Normal));
+            Assert.That.FlagsEqual(cpu, flagsByte);
+        }
 
-            Assert.AreEqual((op1 + op2) & 0xFFFF, cpu.add16(op1, op2, CPU.Add16Type.Normal));
-            Assert.AreEqual((op1 + op2) & 0xFFFF, cpu.add16(op2, op1, CPU.Add16Type.Normal));
-            Assert.AreEqual((op1 + shortOp) & 0xFFFF, cpu.add16(shortOp, op1, CPU.Add16Type.Normal));
+        [DataTestMethod]
+        [DataRow((ushort)0xFFFFu)]
+        [DataRow((ushort)0u)]
+        [DataRow((ushort)0xFFu)]
+        [TestCategory("Misc Functions")]
+        [TestCategory("16 Bit Math Functions")]
+        public void increment16_Test(ushort op1)
+        {
+            byte opCode = 0x00;
+
+            CPU cpu = setupOpCode(opCode, $"{MethodBase.GetCurrentMethod().Name}({op1.ToString("X2")})");
+            Byte flagsByte = cpu.getF();
+
+            Assert.That.AreEqual(((op1 + 1) & 0xFFFF), cpu.increment16(op1));
+            Assert.That.FlagsEqual(cpu, flagsByte);
+        }
+
+        [DataTestMethod]
+        [DataRow((ushort)0xFFFFu)]
+        [DataRow((ushort)0u)]
+        [DataRow((ushort)0xFFu)]
+        [TestCategory("Misc Functions")]
+        [TestCategory("16 Bit Math Functions")]
+        public void decrement16_Test(ushort op1)
+        {
+            byte opCode = 0x00;
+
+            CPU cpu = setupOpCode(opCode, $"{MethodBase.GetCurrentMethod().Name}({op1.ToString("X2")})");
+            Byte flagsByte = cpu.getF();
+
+            Assert.That.AreEqual(((op1 - 1) & 0xFFFF), cpu.decrement16(op1));
+            Assert.That.FlagsEqual(cpu, flagsByte);
+
+        }
+
+        [TestMethod]
+        [TestCategory("Misc Functions")]
+        [TestCategory("16 Bit Math Functions")]
+        [TestCategory("addSP")]
+        public void addSP_UnsignedByte_NoCarry_Test()
+        {
+            byte opCode = 0x31;
+            byte lsb = 0x00;
+            byte msb = 0x00;
+            SByte addNum = 1;
+
+            CPU cpu = setupOpCode(opCode, MethodBase.GetCurrentMethod().Name, lsb, msb);
+            executeCurrentInstruction(cpu);
+            cpu.setF(0);
+            logMessage("Check Stack Pointer and Flags");
+            Assert.That.AreEqual(0, cpu.getF(), "X4");
+            Assert.That.AreEqual(0x0000, cpu.getSP(), "X4");
+
+            logMessage($"Check Result of {cpu.getSP()} + {addNum}");
+            Assert.That.AreEqual(1, cpu.addSP(cpu.getSP(), addNum));
+
+            Assert.That.FlagsEqual(cpu, halfCarrySet:false, carrySet:false, zeroSet:false, subSet:false);
 
         }
 
@@ -61,6 +159,300 @@ namespace trentGB.Tests
 
 
         // Test Cycle Counts in Intruction Dictionary matches lengths used
+        [DataTestMethod]
+        [Timeout(5000)]
+        #region Test Data Rows
+        [DataRow((byte)0x00u)]
+        [DataRow((byte)0x01u)]
+        [DataRow((byte)0x02u)]
+        [DataRow((byte)0x03u)]
+        [DataRow((byte)0x04u)]
+        [DataRow((byte)0x05u)]
+        [DataRow((byte)0x06u)]
+        [DataRow((byte)0x07u)]
+        [DataRow((byte)0x08u)]
+        [DataRow((byte)0x09u)]
+        [DataRow((byte)0x0Au)]
+        [DataRow((byte)0x0Bu)]
+        [DataRow((byte)0x0Cu)]
+        [DataRow((byte)0x0Du)]
+        [DataRow((byte)0x0Eu)]
+        [DataRow((byte)0x0Fu)]
+        [DataRow((byte)0x10u)]
+        [DataRow((byte)0x11u)]
+        [DataRow((byte)0x12u)]
+        [DataRow((byte)0x13u)]
+        [DataRow((byte)0x14u)]
+        [DataRow((byte)0x15u)]
+        [DataRow((byte)0x16u)]
+        [DataRow((byte)0x17u)]
+        [DataRow((byte)0x18u)]
+        [DataRow((byte)0x19u)]
+        [DataRow((byte)0x1Au)]
+        [DataRow((byte)0x1Bu)]
+        [DataRow((byte)0x1Cu)]
+        [DataRow((byte)0x1Du)]
+        [DataRow((byte)0x1Eu)]
+        [DataRow((byte)0x1Fu)]
+        [DataRow((byte)0x20u)]
+        [DataRow((byte)0x21u)]
+        [DataRow((byte)0x22u)]
+        [DataRow((byte)0x23u)]
+        [DataRow((byte)0x24u)]
+        [DataRow((byte)0x25u)]
+        [DataRow((byte)0x26u)]
+        [DataRow((byte)0x27u)]
+        [DataRow((byte)0x28u)]
+        [DataRow((byte)0x29u)]
+        [DataRow((byte)0x2Au)]
+        [DataRow((byte)0x2Bu)]
+        [DataRow((byte)0x2Cu)]
+        [DataRow((byte)0x2Du)]
+        [DataRow((byte)0x2Eu)]
+        [DataRow((byte)0x2Fu)]
+        [DataRow((byte)0x30u)]
+        [DataRow((byte)0x31u)]
+        [DataRow((byte)0x32u)]
+        [DataRow((byte)0x33u)]
+        [DataRow((byte)0x34u)]
+        [DataRow((byte)0x35u)]
+        [DataRow((byte)0x36u)]
+        [DataRow((byte)0x37u)]
+        [DataRow((byte)0x38u)]
+        [DataRow((byte)0x39u)]
+        [DataRow((byte)0x3Au)]
+        [DataRow((byte)0x3Bu)]
+        [DataRow((byte)0x3Cu)]
+        [DataRow((byte)0x3Du)]
+        [DataRow((byte)0x3Eu)]
+        [DataRow((byte)0x3Fu)]
+        [DataRow((byte)0x40u)]
+        [DataRow((byte)0x41u)]
+        [DataRow((byte)0x42u)]
+        [DataRow((byte)0x43u)]
+        [DataRow((byte)0x44u)]
+        [DataRow((byte)0x45u)]
+        [DataRow((byte)0x46u)]
+        [DataRow((byte)0x47u)]
+        [DataRow((byte)0x48u)]
+        [DataRow((byte)0x49u)]
+        [DataRow((byte)0x4Au)]
+        [DataRow((byte)0x4Bu)]
+        [DataRow((byte)0x4Cu)]
+        [DataRow((byte)0x4Du)]
+        [DataRow((byte)0x4Eu)]
+        [DataRow((byte)0x4Fu)]
+        [DataRow((byte)0x50u)]
+        [DataRow((byte)0x51u)]
+        [DataRow((byte)0x52u)]
+        [DataRow((byte)0x53u)]
+        [DataRow((byte)0x54u)]
+        [DataRow((byte)0x55u)]
+        [DataRow((byte)0x56u)]
+        [DataRow((byte)0x57u)]
+        [DataRow((byte)0x58u)]
+        [DataRow((byte)0x59u)]
+        [DataRow((byte)0x5Au)]
+        [DataRow((byte)0x5Bu)]
+        [DataRow((byte)0x5Cu)]
+        [DataRow((byte)0x5Du)]
+        [DataRow((byte)0x5Eu)]
+        [DataRow((byte)0x5Fu)]
+        [DataRow((byte)0x60u)]
+        [DataRow((byte)0x61u)]
+        [DataRow((byte)0x62u)]
+        [DataRow((byte)0x63u)]
+        [DataRow((byte)0x64u)]
+        [DataRow((byte)0x65u)]
+        [DataRow((byte)0x66u)]
+        [DataRow((byte)0x67u)]
+        [DataRow((byte)0x68u)]
+        [DataRow((byte)0x69u)]
+        [DataRow((byte)0x6Au)]
+        [DataRow((byte)0x6Bu)]
+        [DataRow((byte)0x6Cu)]
+        [DataRow((byte)0x6Du)]
+        [DataRow((byte)0x6Eu)]
+        [DataRow((byte)0x6Fu)]
+        [DataRow((byte)0x70u)]
+        [DataRow((byte)0x71u)]
+        [DataRow((byte)0x72u)]
+        [DataRow((byte)0x73u)]
+        [DataRow((byte)0x74u)]
+        [DataRow((byte)0x75u)]
+        [DataRow((byte)0x76u)]
+        [DataRow((byte)0x77u)]
+        [DataRow((byte)0x78u)]
+        [DataRow((byte)0x79u)]
+        [DataRow((byte)0x7Au)]
+        [DataRow((byte)0x7Bu)]
+        [DataRow((byte)0x7Cu)]
+        [DataRow((byte)0x7Du)]
+        [DataRow((byte)0x7Eu)]
+        [DataRow((byte)0x7Fu)]
+        [DataRow((byte)0x80u)]
+        [DataRow((byte)0x81u)]
+        [DataRow((byte)0x82u)]
+        [DataRow((byte)0x83u)]
+        [DataRow((byte)0x84u)]
+        [DataRow((byte)0x85u)]
+        [DataRow((byte)0x86u)]
+        [DataRow((byte)0x87u)]
+        [DataRow((byte)0x88u)]
+        [DataRow((byte)0x89u)]
+        [DataRow((byte)0x8Au)]
+        [DataRow((byte)0x8Bu)]
+        [DataRow((byte)0x8Cu)]
+        [DataRow((byte)0x8Du)]
+        [DataRow((byte)0x8Eu)]
+        [DataRow((byte)0x8Fu)]
+        [DataRow((byte)0x90u)]
+        [DataRow((byte)0x91u)]
+        [DataRow((byte)0x92u)]
+        [DataRow((byte)0x93u)]
+        [DataRow((byte)0x94u)]
+        [DataRow((byte)0x95u)]
+        [DataRow((byte)0x96u)]
+        [DataRow((byte)0x97u)]
+        [DataRow((byte)0x98u)]
+        [DataRow((byte)0x99u)]
+        [DataRow((byte)0x9Au)]
+        [DataRow((byte)0x9Bu)]
+        [DataRow((byte)0x9Cu)]
+        [DataRow((byte)0x9Du)]
+        [DataRow((byte)0x9Eu)]
+        [DataRow((byte)0x9Fu)]
+        [DataRow((byte)0xA0u)]
+        [DataRow((byte)0xA1u)]
+        [DataRow((byte)0xA2u)]
+        [DataRow((byte)0xA3u)]
+        [DataRow((byte)0xA4u)]
+        [DataRow((byte)0xA5u)]
+        [DataRow((byte)0xA6u)]
+        [DataRow((byte)0xA7u)]
+        [DataRow((byte)0xA8u)]
+        [DataRow((byte)0xA9u)]
+        [DataRow((byte)0xAAu)]
+        [DataRow((byte)0xABu)]
+        [DataRow((byte)0xACu)]
+        [DataRow((byte)0xADu)]
+        [DataRow((byte)0xAEu)]
+        [DataRow((byte)0xAFu)]
+        [DataRow((byte)0xB0u)]
+        [DataRow((byte)0xB1u)]
+        [DataRow((byte)0xB2u)]
+        [DataRow((byte)0xB3u)]
+        [DataRow((byte)0xB4u)]
+        [DataRow((byte)0xB5u)]
+        [DataRow((byte)0xB6u)]
+        [DataRow((byte)0xB7u)]
+        [DataRow((byte)0xB8u)]
+        [DataRow((byte)0xB9u)]
+        [DataRow((byte)0xBAu)]
+        [DataRow((byte)0xBBu)]
+        [DataRow((byte)0xBCu)]
+        [DataRow((byte)0xBDu)]
+        [DataRow((byte)0xBEu)]
+        [DataRow((byte)0xBFu)]
+        [DataRow((byte)0xC0u)]
+        [DataRow((byte)0xC1u)]
+        [DataRow((byte)0xC2u)]
+        [DataRow((byte)0xC3u)]
+        [DataRow((byte)0xC4u)]
+        [DataRow((byte)0xC5u)]
+        [DataRow((byte)0xC6u)]
+        [DataRow((byte)0xC7u)]
+        [DataRow((byte)0xC8u)]
+        [DataRow((byte)0xC9u)]
+        [DataRow((byte)0xCAu)]
+        [DataRow((byte)0xCBu)]
+        [DataRow((byte)0xCCu)]
+        [DataRow((byte)0xCDu)]
+        [DataRow((byte)0xCEu)]
+        [DataRow((byte)0xCFu)]
+        [DataRow((byte)0xD0u)]
+        [DataRow((byte)0xD1u)]
+        [DataRow((byte)0xD2u)]
+        [DataRow((byte)0xD3u)]
+        [DataRow((byte)0xD4u)]
+        [DataRow((byte)0xD5u)]
+        [DataRow((byte)0xD6u)]
+        [DataRow((byte)0xD7u)]
+        [DataRow((byte)0xD8u)]
+        [DataRow((byte)0xD9u)]
+        [DataRow((byte)0xDAu)]
+        [DataRow((byte)0xDBu)]
+        [DataRow((byte)0xDCu)]
+        [DataRow((byte)0xDDu)]
+        [DataRow((byte)0xDEu)]
+        [DataRow((byte)0xDFu)]
+        [DataRow((byte)0xE0u)]
+        [DataRow((byte)0xE1u)]
+        [DataRow((byte)0xE2u)]
+        [DataRow((byte)0xE3u)]
+        [DataRow((byte)0xE4u)]
+        [DataRow((byte)0xE5u)]
+        [DataRow((byte)0xE6u)]
+        [DataRow((byte)0xE7u)]
+        [DataRow((byte)0xE8u)]
+        [DataRow((byte)0xE9u)]
+        [DataRow((byte)0xEAu)]
+        [DataRow((byte)0xEBu)]
+        [DataRow((byte)0xECu)]
+        [DataRow((byte)0xEDu)]
+        [DataRow((byte)0xEEu)]
+        [DataRow((byte)0xEFu)]
+        [DataRow((byte)0xF0u)]
+        [DataRow((byte)0xF1u)]
+        [DataRow((byte)0xF2u)]
+        [DataRow((byte)0xF3u)]
+        [DataRow((byte)0xF4u)]
+        [DataRow((byte)0xF5u)]
+        [DataRow((byte)0xF6u)]
+        [DataRow((byte)0xF7u)]
+        [DataRow((byte)0xF8u)]
+        [DataRow((byte)0xF9u)]
+        [DataRow((byte)0xFAu)]
+        [DataRow((byte)0xFBu)]
+        [DataRow((byte)0xFCu)]
+        [DataRow((byte)0xFDu)]
+        [DataRow((byte)0xFEu)]
+        [DataRow((byte)0xFFu)]
+        #endregion
+        [TestCategory("CPU Data Tests")]
+        public void decodeAndExecute_Length_Test(Byte opCode)
+        {
+
+            List<Byte> notImplementedOpCodes = new List<byte>() { 0xD3, 0xDB, 0xDD, 0xE3, 0xE4, 0xEB, 0xEC, 0xED, 0xF4, 0xFC, 0xFD };
+            CPU cpu = setupOpCode(opCode, MethodBase.GetCurrentMethod().Name);
+            logMessage($"Testing OpCode 0x{opCode.ToString("X2")} - {cpu.getInstructionForOpCode(opCode).desc}");
+            if (notImplementedOpCodes.Contains(opCode))
+            {
+                try
+                {
+                    executeCurrentInstruction(cpu);
+                    Exception e = new Exception();
+                    logMessage($"Expected Exception Not Fired ({typeof(NotImplementedException).ToString()}, None)");
+                    Assert.IsInstanceOfType(e, typeof(NotImplementedException));
+                }
+                catch (AssertFailedException ex)
+                {
+                    throw;
+                }
+                catch(Exception ex)
+                {
+                    logMessage($"Excpetion Recieved ({typeof(NotImplementedException).ToString()}, {ex.GetType().ToString()})");
+                    Assert.IsInstanceOfType(ex, typeof(NotImplementedException));
+                }
+            }
+            else 
+            {
+                
+                executeCurrentInstruction(cpu);
+                logMessage("Executed Length:");
+                Assert.That.AreEqual(cpu.getLastExecutedInstruction().length, cpu.getLastExecutedInstruction().getFetchCount());
+            }
+        }
 
 
         #region Op Code Tests
@@ -71,11 +463,13 @@ namespace trentGB.Tests
         public void decodeAndExecute_OPCode_0x00_NOP()
         {
             byte opCode = 0x00;
-            CPU cpu = setupOpCode(opCode);
+            CPU cpu = setupOpCode(opCode, MethodBase.GetCurrentMethod().Name);
+            Byte flagsByte = cpu.getF();
+            executeCurrentInstruction(cpu);
 
-            cpu.decodeAndExecute(cpu.fetch());
+            Assert.That.AreEqual(cpu.getInstructionForOpCode(opCode).length, cpu.getLastExecutedInstruction().getFetchCount());
 
-            Assert.AreEqual(0x100 + cpu.getInstructionForOpCode(opCode).length, cpu.getPC());
+            Assert.That.FlagsEqual(cpu, flagsByte);
         }
 
         [DataRow((byte)0xFFu, (byte)0xFF)]
@@ -89,51 +483,77 @@ namespace trentGB.Tests
         {
             byte opCode = 0x01;
 
-            CPU cpu = setupOpCode(opCode, op1, op2);
-
+            CPU cpu = setupOpCode(opCode, MethodBase.GetCurrentMethod().Name, op1, op2);
+            Byte flagsByte = cpu.getF();
             // First arg Byte at 0x0101
-            cpu.decodeAndExecute(cpu.fetch());
+            executeCurrentInstruction(cpu);
 
-            Assert.AreEqual(0x100 + cpu.getInstructionForOpCode(opCode).length, cpu.getPC());
-            Assert.AreEqual((((op2 << 8) + op1) & 0xFFFF), cpu.getBC());
+            Assert.That.AreEqual(0x100 + cpu.getInstructionForOpCode(opCode).length, cpu.getPC());
+            Assert.That.AreEqual((((op2 << 8) + op1) & 0xFFFF), cpu.getBC());
+
+            Assert.That.FlagsEqual(cpu, flagsByte);
 
         }
 
         #endregion
 
-        [DataTestMethod]
-        [DataRow((ushort)0xFFFFu)]
-        [DataRow((ushort)0u)]
-        [DataRow((ushort)0xFFu)]
-        public void increment16_Test(ushort op1)
-        {
-            byte opCode = 0x01;
 
-            CPU cpu = setupOpCode(opCode);
+    }
+}
 
-            // First arg Byte at 0x0101
-            cpu.decodeAndExecute(cpu.fetch());
+public static class AssertExtensions
+{
+    public static void AreEqual(this Assert assert, int expected, int actual, String format = "")
+    {
+        Assert.AreEqual(expected, actual);
+        format = format.Trim();
+        // Successful Exception
+        String expectedStr = $"{((format.StartsWith("X")) ? "0x" : "")}{expected.ToString(format)}";
+        String actualStr = $"{((format.StartsWith("X")) ? "0x" : "")}{actual.ToString(format)}";
 
-            Assert.AreEqual(((op1 + 1) & 0xFFFF), cpu.increment16(op1));
-        }
-
-        [DataTestMethod]
-        [DataRow((ushort)0xFFFFu)]
-        [DataRow((ushort)0u)]
-        [DataRow((ushort)0xFFu)]
-        public void decrement16_Test(ushort op1)
-        {
-            byte opCode = 0x00;
-
-            CPU cpu = setupOpCode(opCode);
-
-            // First arg Byte at 0x0101
-            cpu.decodeAndExecute(cpu.fetch());
-            //Console.WriteLine("test Output");
-            Assert.AreEqual(((op1 - 1) & 0xFFFF), cpu.decrement16(op1));
-            
-        }
+        Console.WriteLine($"Match Found: ({expectedStr}, {actualStr})");
     }
 
+    public static void FlagsEqual(this Assert assert, CPU cpu, bool halfCarrySet, bool carrySet, bool subSet, bool zeroSet)
+    {
+        Byte flagsByte = 0x00;
 
+        if (halfCarrySet)
+        {
+            flagsByte = (Byte)(flagsByte | (Byte) CPU.CPUFlagsMask.HalfCarry);
+        }
+        if (carrySet)
+        {
+            flagsByte = (Byte)(flagsByte | (Byte)CPU.CPUFlagsMask.Carry);
+        }
+        if (zeroSet)
+        {
+            flagsByte = (Byte)(flagsByte | (Byte)CPU.CPUFlagsMask.Zero);
+        }
+        if (subSet)
+        {
+            flagsByte = (Byte)(flagsByte | (Byte)CPU.CPUFlagsMask.Subtract);
+        }
+
+        Assert.That.FlagsEqual(cpu, flagsByte);
+    }
+
+    public static void FlagsEqual(this Assert assert, CPU cpu, Byte flags)
+    {
+        Console.WriteLine($"Checking Flags State");
+        String expectedStr = $"{cpu.generateFlagsStr(flags)}";
+        String actualStr = $"{cpu.generateFlagsStr()}";
+
+        try
+        {
+            Assert.AreEqual(flags, cpu.getF());
+            Console.WriteLine($"Match Found: ({expectedStr}, {actualStr})");
+        }
+        catch
+        {
+            Console.WriteLine($"Mismatch Found: ({expectedStr}, {actualStr})");
+            throw;
+        }
+        
+    }
 }
