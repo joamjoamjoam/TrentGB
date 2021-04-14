@@ -653,13 +653,21 @@ namespace trentGB
             if (currentInstruction == null) // Everything is one cycle right now
             {
                 // Is New Command
-                currentInstruction = new Instruction(opCodeTranslationDict[peek()], peek(1), peek(2));
+                currentInstruction = new Instruction(opCodeTranslationDict[peek()], getPC(), peek(1), peek(2));
                 opCode = fetch();
                 currentInstruction.incrementExecutedCycles();
                 currentInstruction.execute();
 
-
-                // return; // First Cycle is always a fetch of the opcode
+                // HACK: All Commands are 2 cycle for now when they are all fixed for cycle accuraccy removw this.
+                if (((opCode >> 4) == 0))
+                {
+                    // Command is cycle accurate do Nothing
+                }
+                else
+                {
+                    // Command is not cycle accurate they only run once
+                    currentInstruction.earlyCompletionRequested = true;
+                }
             }
             else
             {
@@ -753,17 +761,6 @@ namespace trentGB
                         showAfterText = true;
                     }
                     clock.Start();
-                }
-
-                // HACK: All Commands are 2 cycle for now when they are all fixed for cycle accuraccy removw this.
-                if (((opCode >> 4) == 0))
-                {
-                    // Command is cycle accurate do Nothing
-                }
-                else
-                {
-                    // Command is not cycle accurate
-                    currentInstruction.earlyCompletionRequested = true;
                 }
             }
 
@@ -1997,7 +1994,7 @@ namespace trentGB
         {
             return A;
         }
-        private void setA(Byte value)
+        public void setA(Byte value)
         {
             A = value;
         }
@@ -2006,7 +2003,7 @@ namespace trentGB
         {
             return B;
         }
-        private void setB(Byte value)
+        public void setB(Byte value)
         {
             B = value;
         }
@@ -2015,7 +2012,7 @@ namespace trentGB
         {
             return C;
         }
-        private void setC(Byte value)
+        public void setC(Byte value)
         {
             C = value;
         }
@@ -2024,7 +2021,7 @@ namespace trentGB
         {
             return D;
         }
-        private void setD(Byte value)
+        public void setD(Byte value)
         {
             D = value;
         }
@@ -2033,7 +2030,7 @@ namespace trentGB
         {
             return E;
         }
-        private void setE(Byte value)
+        public void setE(Byte value)
         {
             E = value;
         }
@@ -2042,7 +2039,7 @@ namespace trentGB
         {
             return H;
         }
-        private void setH(Byte value)
+        public void setH(Byte value)
         {
             H = value;
         }
@@ -2051,7 +2048,7 @@ namespace trentGB
         {
             return L;
         }
-        private void setL(Byte value)
+        public void setL(Byte value)
         {
             L = value;
         }
@@ -2070,7 +2067,7 @@ namespace trentGB
         {
             return SP;
         }
-        private void setSP(ushort value)
+        public void setSP(ushort value)
         {
             SP = value;
         }
@@ -2079,7 +2076,7 @@ namespace trentGB
         {
             return PC;
         }
-        private void setPC(ushort value)
+        public void setPC(ushort value)
         {
             PC = value;
         }
@@ -2111,7 +2108,7 @@ namespace trentGB
             return rv;
         }
 
-        private void setAF(ushort value)
+        public void setAF(ushort value)
         {
             A = (Byte)((value & 0xFF00) >> 8);
             F = (Byte)(value & 0x00FF);
@@ -2124,7 +2121,7 @@ namespace trentGB
             return rv;
         }
 
-        private void setBC(ushort value)
+        public void setBC(ushort value)
         {
             B = (Byte)((value & 0xFF00) >> 8);
             C = (Byte)(value & 0x00FF);
@@ -2137,7 +2134,7 @@ namespace trentGB
             return rv;
         }
 
-        private void setDE(ushort value)
+        public void setDE(ushort value)
         {
             D = (Byte)((value & 0xFF00) >> 8);
             E = (Byte)(value & 0x00FF);
@@ -2150,7 +2147,7 @@ namespace trentGB
             return rv;
         }
 
-        private void setHL(ushort value)
+        public void setHL(ushort value)
         {
             H = (Byte)((value & 0xFF00) >> 8);
             L = (Byte)(value & 0x00FF);
@@ -2162,7 +2159,7 @@ namespace trentGB
             return ((F & (Byte)CPUFlagsMask.Carry) > 0);
         }
 
-        private void setCarryFlag(bool on)
+        public void setCarryFlag(bool on)
         {
             if (on)
             {
@@ -2172,7 +2169,6 @@ namespace trentGB
             {
                 F = (Byte)(F & (~(Byte)CPUFlagsMask.Carry));
             }
-
         }
 
         public bool getHalfCarryFlag()
