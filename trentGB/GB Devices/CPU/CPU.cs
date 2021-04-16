@@ -103,7 +103,7 @@ namespace trentGB
 
             parameters = new byte[length - 1];
 
-            for (int i = 0; i < length; i++)
+            for (int i = 1; i < length; i++)
             {
                 parameters[i] = rom.getByteDirect(PC + i);
             }
@@ -130,7 +130,7 @@ namespace trentGB
 
             parameters = new byte[length - 1];
 
-            for (int i = 0; i < (length-1); i++)
+            for (int i = 1; i < (length-1); i++)
             {
                 parameters[i] = rom.getByteDirect(PC + i);
             }
@@ -178,6 +178,8 @@ namespace trentGB
             this.length = length;
             this.opFunc = act;
             desc = act.Method.Name;
+
+            parameters = new byte[length-1];
         }
 
         public void execute()
@@ -197,7 +199,7 @@ namespace trentGB
                 }
                 else if (length == 4) // 16 Bit Operand
                 {
-                    paramRealValue = $" ({CPU.getUInt16ForBytes(parameters[2], parameters[3]).ToString("X4")})";
+                    paramRealValue = $" ({CPU.getUInt16ForBytes(parameters[1], parameters[2]).ToString("X4")})";
                 }
             }
             else
@@ -212,7 +214,7 @@ namespace trentGB
                 }
             }
 
-            return $"{address.ToString("X4")}: {desc} {((parameters.Length > 0) ? "0x" : "")}{String.Join(", 0x", parameters.Select(b => b.ToString("X2")))}{paramRealValue}";
+            return $"Addr: {address.ToString("X4")}: {desc} {((parameters.Length > 0) ? "0x" : "")}{String.Join(", 0x", parameters.Select(b => b.ToString("X2")))}{paramRealValue}, Cycles: {getCycleCount()}";
         }
 
         public Byte getCBOpLength()
@@ -510,7 +512,7 @@ namespace trentGB
 
         public new String ToString()
         {
-            return $"AF = 0x{getAF().ToString("X4")}, BC = 0x{getBC().ToString("X4")}, DE = 0x{getDE().ToString("X4")}, HL = 0x{getHL().ToString("X4")}, SP = 0x{getSP().ToString("X4")}, PC = 0x{getPC().ToString("X4")}, A = 0x{getA().ToString("X2")}, B = 0x{getB().ToString("X2")}, C = 0x{getC().ToString("X2")}, D = 0x{getD().ToString("X2")}, E = 0x{getE().ToString("X2")}, H = 0x{getH().ToString("X2")}, L = 0x{getL().ToString("X2")}, F = 0x{getF().ToString("X2")} ({generateFlagsStr()}), (BC) = 0x{mem.peekByte(getBC()).ToString("X2")}, (DE) = 0x{mem.peekByte(getDE()).ToString("X2")}, (HL) = 0x{mem.peekByte(getHL()).ToString("X2")}";
+            return $"Current Inst. = {((getCurrentInstruction() == null) ? "NULL" : getCurrentInstruction().ToString())} AF = 0x{getAF().ToString("X4")}, BC = 0x{getBC().ToString("X4")}, DE = 0x{getDE().ToString("X4")}, HL = 0x{getHL().ToString("X4")}, SP = 0x{getSP().ToString("X4")}, PC = 0x{getPC().ToString("X4")}, A = 0x{getA().ToString("X2")}, B = 0x{getB().ToString("X2")}, C = 0x{getC().ToString("X2")}, D = 0x{getD().ToString("X2")}, E = 0x{getE().ToString("X2")}, H = 0x{getH().ToString("X2")}, L = 0x{getL().ToString("X2")}, F = 0x{getF().ToString("X2")} ({generateFlagsStr()}), (BC) = 0x{mem.peekByte(getBC()).ToString("X2")}, (DE) = 0x{mem.peekByte(getDE()).ToString("X2")}, (HL) = 0x{mem.peekByte(getHL()).ToString("X2")}";
         }
 
         public void tick()
@@ -4023,7 +4025,7 @@ namespace trentGB
                 setZeroFlag(true);
             }
 
-            if ((value & 0x0F) == 0x00)
+            if ((value & 0x0F) == 0x00 && value != 0x00)
             {
                 setHalfCarryFlag(true);
             }

@@ -200,6 +200,9 @@ namespace trentGB
             Array.ConstrainedCopy(headerInfo, 0, bytes, 0x130, headerInfo.Length);
             Array.ConstrainedCopy(parameters, 0, bytes, 0x100, parameters.Length);
 
+            byte[] fileBytes = new byte[8000];
+            Array.ConstrainedCopy(bytes, 0, fileBytes, 0, fileBytes.Length);
+            File.WriteAllBytes("testRom.gb", bytes);
 
             // Load Rom Header Info
             loadRomHeaderData();
