@@ -14,6 +14,7 @@ namespace trentGB.Tests
 
         // Assert override
 
+        #region Shared Functions
         public CPU setupOpCode(byte opCode, String testName, byte param1 = 0x00, byte param2 = 0x00, byte[] extraParams = null)
         {
             int count = 3;
@@ -115,8 +116,10 @@ namespace trentGB.Tests
         {
             Console.WriteLine(message);
         }
+        #endregion
 
         #region Helper Functions
+
         [DataRow((ushort)1u, (ushort)0xFFFFu)]
         [DataRow((ushort)1u, (ushort)100u)]
         [DataTestMethod]
@@ -1372,7 +1375,9 @@ namespace trentGB.Tests
         }
         #endregion
 
+
         #region Op Code Tests
+
         #region 0x00 - NOP
         [TestMethod]
         [TestCategory("OP Codes")]
@@ -1420,7 +1425,7 @@ namespace trentGB.Tests
         }
         #endregion
 
-        #region OP Code 0x02 - A to Mem BC
+        #region 0x02 - A to Mem BC
         [DataRow((byte)0xFFu, (ushort)0xC000)]
         [DataRow((byte)0x01u, (ushort)0xC000)]
         [DataRow((byte)0x0Fu, (ushort)0xC000)]
@@ -1597,6 +1602,87 @@ namespace trentGB.Tests
 
         }
         #endregion
+
+        #region 0x07- Rotate Left Carry A
+        [DataRow((byte)0x80, (Byte) 0x01, false, true)]
+        [DataRow((byte)0x40, (Byte)0x80, false, false)]
+        [DataRow((byte)0x40, (Byte)0x80, true, false)]
+        [DataRow((byte)0x00, (Byte)0x00, false, false)]
+        [DataRow((byte)0x00, (Byte)0x00, true, false)]
+        [DataRow((byte)0xFF, (Byte)0xFF, false, true)]
+        [DataRow((byte)0xFF, (Byte)0xFF, true, true)]
+        [DataRow((byte)0x0F, (Byte)0x1E, false, false)]
+        [DataTestMethod]
+        [TestCategory("OP Codes")]
+        [TestCategory("OP Code 0x07 - Rotate Left Carry A")]
+        public void decodeAndExecute_rlcA(byte op1, byte result, bool carryState, bool carryAfterState)
+        {
+            byte opCode = 0x07;
+
+            CPU cpu = setupOpCode(opCode, MethodBase.GetCurrentMethod().Name);
+            cpu.setF((Byte)(((carryState) ? (byte)CPU.CPUFlagsMask.Carry : (byte)0) | (Byte)CPU.CPUFlagsMask.Subtract | (Byte)CPU.CPUFlagsMask.HalfCarry));
+            cpu.setA(op1);
+
+            byte expectedFlags = (Byte)(((carryAfterState) ? (byte)CPU.CPUFlagsMask.Carry : (byte)0)); // Zero Flag is Always Reset. Confirmed by BGB EMu
+
+            fetchAndLoadInstruction(cpu, opCode);
+            assertInstructionFinished(cpu, opCode);
+            Assert.That.AreEqual(result, cpu.getA());
+
+            if (carryAfterState)
+            {
+                Assert.IsTrue(cpu.getCarryFlag());
+            }
+            else
+            {
+                Assert.IsFalse(cpu.getCarryFlag());
+            }
+
+            Assert.That.FlagsEqual(cpu, expectedFlags);
+
+        }
+        #endregion
+
+        #region 0x08 - Load SP Mem 16
+        [DataRow((Byte)0xFF, (Byte) 0xFF, (ushort) 0xFFFF)]
+        [DataRow((Byte)0x00, (Byte)0x00, (ushort)0x0000)]
+        [DataRow((Byte)0x0F, (Byte)0x00, (ushort)0x000F)]
+        [DataRow((Byte)0xFF, (Byte)0x00, (ushort)0x00FF)]
+        [DataRow((Byte)0x00, (Byte)0xFF, (ushort)0xFF00)]
+        [DataTestMethod]
+        [TestCategory("OP Codes")]
+        [TestCategory("OP Code 0x08 - Load SP from Mem 16")]
+        public void decodeAndExecute_ldSP_Mem16(byte op1, byte op2, ushort result)
+        {
+            byte opCode = 0x08;
+
+            CPU cpu = setupOpCode(opCode, MethodBase.GetCurrentMethod().Name, op1, op2);
+            cpu.setF(0xF0);
+
+            byte expectedFlags = 0xF0;
+            ushort sp = cpu.getSP();
+
+            fetchAndLoadInstruction(cpu, opCode);
+            Assert.That.AreEqual(sp, cpu.getSP());
+            tick(cpu);
+            Assert.That.AreEqual(sp, cpu.getSP());
+            Assert.That.AreEqual(op1, cpu.getCurrentInstruction().storage & 0x00FF);
+            tick(cpu);
+            Assert.That.AreEqual(sp, cpu.getSP());
+            Assert.That.AreEqual(CPU.getUInt16ForBytes(op1, op2), cpu.getCurrentInstruction().storage);
+            tick(cpu);
+            Assert.That.AreEqual(op1, cpu.getSP() & 0x00FF);
+            Assert.That.AreEqual((sp & 0xFF00), cpu.getSP() & 0xFF00);
+            tick(cpu);
+            assertInstructionFinished(cpu, opCode);
+            Assert.That.AreEqual(result, cpu.getSP());
+
+            Assert.That.FlagsEqual(cpu, expectedFlags);
+
+        }
+        #endregion
+
+
 
         #endregion
 
