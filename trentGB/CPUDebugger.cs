@@ -124,27 +124,33 @@ namespace trentGB
             wait = false;
         }
 
-        private void loadDisassembledRom(List<Instruction> insList)
+        private void showDisassembledRom()
         {
-            //romView.Items.Clear();
+            romView.Items.Clear();
 
-            //foreach (Instruction ins in insList)
-            //{
-            //    if (ins.address >= currentAddress && (ins.address < (currentAddress + 20) && ((ins.address+20) <= 0xFFFF)))
-            //    {
-            //        Color textColor = romView.ForeColor;
+            foreach (Instruction ins in disRom)
+            {
+                Color textColor = romView.ForeColor;
 
-            //        ListViewItem c = new ListViewItem(ins.ToString());
-            //        c.ForeColor = (ins.address == currentAddress) ? Color.LightGreen : romView.ForeColor;
-            //        //c.Font = new Font(c.Font, FontStyle.Bold);
-            //        romView.Items.Add(c);
-            //    }
-            //}
+                ListViewItem c = new ListViewItem(ins.ToString());
+                c.ForeColor = (!ins.isCompleted()) ? Color.LightGreen : romView.ForeColor;
+                //c.Font = new Font(c.Font, FontStyle.Bold);
+                romView.Items.Add(c);
+            }
+            if (romView.Items.Count > 0)
+            {
+                romView.Items[0].EnsureVisible();
+            }
 
-            //romView.Items[0].EnsureVisible();
 
-            // Decode current Instruction
+            //Decode current Instruction
+        }
 
+        public void updateDisassembledRom(List<Instruction> insList)
+        {
+            this.disRom = insList;
+
+            //Decode current Instruction
         }
 
         public void printText(String text)
@@ -166,10 +172,6 @@ namespace trentGB
             {
                 romView.Items[0].EnsureVisible();
             }
-            
-
-
-
         }
 
         private void addKeyToListView(ListView view, String key)
@@ -336,7 +338,7 @@ namespace trentGB
 
         private void CPUDebugger_Load(object sender, EventArgs e)
         {
-            loadDisassembledRom(disRom);
+            showDisassembledRom();
         }
 
         private void CPUDebugger_SizeChanged(object sender, EventArgs e)

@@ -213,8 +213,8 @@ namespace trentGB
                     paramRealValue = $" ({CPU.getUInt16ForBytes(parameters).ToString("X4")})";
                 }
             }
-
-            return $"Addr: {address.ToString("X4")}: {desc} {((parameters.Length > 0) ? "0x" : "")}{String.Join(", 0x", parameters.Select(b => b.ToString("X2")))}{paramRealValue}, Cycles: {getCycleCount()}";
+            
+            return $"Addr: {address.ToString("X4")}: {desc} {((parameters.Length > 0) ? "0x" : "")}{String.Join(", 0x", parameters.Select(b => b.ToString("X2")))}{paramRealValue}, Cycles: {getCycleCount()}/{cycles} {((isCompleted()) ? "Done" : "")}";
         }
 
         public Byte getCBOpLength()
@@ -391,7 +391,7 @@ namespace trentGB
             this.rom = rom;
             loadOpCodeMap();
             this.clock = clock;
-            debuggerForm = new CPUDebugger(this.rom.disassemble(opCodeTranslationDict));
+            debuggerForm = new CPUDebugger(this.commandHistoryList.getStackCopy());
         }
 
         public Instruction getCurrentInstruction()
@@ -645,45 +645,22 @@ namespace trentGB
         {
             breakAtInstruction = addr;
         }
-
+        bool showAfterText = false;
         public void decodeAndExecute()
         {
             Byte opCode = 0x00;
             bool enableInterrupts = shouldEnableInterrupts;
             bool disableInterrupts = shouldDisableInterrupts;
 
-            if (currentInstruction == null) // Everything is one cycle right now
+            if (currentInstruction == null)
             {
                 // Is New Command
                 currentInstruction = new Instruction(opCodeTranslationDict[peek()], getPC(), peek(1), peek(2));
                 opCode = fetch();
-                currentInstruction.incrementExecutedCycles();
-                currentInstruction.execute();
-
-                // HACK: All Commands are 2 cycle for now when they are all fixed for cycle accuraccy removw this.
-                if (((opCode >> 4) == 0))
-                {
-                    // Command is cycle accurate do Nothing
-                }
-                else
-                {
-                    // Command is not cycle accurate they only run once
-                    currentInstruction.earlyCompletionRequested = true;
-                }
-            }
-            else
-            {
-                opCode = currentInstruction.opCode;
-                // Continue Execution
-                currentInstruction.incrementExecutedCycles(); // first cycle
 
                 // Debug Window
-                Byte[] peekBytes = new byte[2];
-                peekBytes[0] = mem.peekByte(getPC());
-                peekBytes[1] = mem.peekByte((ushort)((getPC() + 1) & 0xFFFF));
-                ushort peek16 = getUInt16ForBytes(peekBytes);
-                String beforeText = $"Before:\nOP[0x{(getPC() - 1).ToString("X4")}] 0x{opCode.ToString("X2")} -> {getOpCodeDesc(opCode)}\nPossible Params = 0x{peekBytes[0].ToString("X2")} 0x{peekBytes[1].ToString("X2")}\nAs UI16 0x{peek16.ToString("X4")}\n\n(0x{peek16.ToString("X4")}) = 0x{mem.peekByte(peek16).ToString("X2")}\n\nContinue Debugging??";
-                bool showAfterText = false;
+                String beforeText = $"Before:\nOP: {currentInstruction.ToString()}\n\nContinue Debugging??";
+                showAfterText = false;
 
                 if (breakAtInstruction == (getPC() - 1) || debuggerRequested)
                 {
@@ -692,7 +669,9 @@ namespace trentGB
                     rom.disassemble(opCodeTranslationDict);
                     debuggerForm.updateMemoryWindow(getStateDict());
                     debuggerForm.setContinueAddr(getPC());
-
+                    List<Instruction> commandList = commandHistoryList.getStackCopy();
+                    commandList.Insert(0, currentInstruction);
+                    debuggerForm.updateDisassembledRom(commandList);
                     debuggerForm.currentAddress = (ushort)((getPC() - 1) & 0xFFFF);
                     debuggerForm.printText(beforeText);
                     DialogResult res = debuggerForm.ShowDialog();
@@ -717,6 +696,25 @@ namespace trentGB
                     clock.Start();
                 }
 
+                currentInstruction.incrementExecutedCycles();
+                currentInstruction.execute();
+
+                // HACK: All Commands are 2 cycle for now when they are all fixed for cycle accuraccy removw this.
+                if (((opCode >> 4) == 0))
+                {
+                    // Command is cycle accurate do Nothing
+                }
+                else
+                {
+                    // Command is not cycle accurate they only run once
+                    currentInstruction.earlyCompletionRequested = true;
+                }
+            }
+            else
+            {
+                opCode = currentInstruction.opCode;
+                // Continue Execution
+                currentInstruction.incrementExecutedCycles(); // first cycle
 
                currentInstruction.execute();
 
@@ -733,14 +731,23 @@ namespace trentGB
                     shouldDisableInterrupts = false;
                 }
 
+            }
+
+
+            if (currentInstruction.isCompleted())
+            {
+                // Store it and reset for a new instruction
+                commandHistoryList.Push(currentInstruction);
+
                 if (showAfterText)
                 {
                     clock.Stop();
                     debuggerForm.setContinueAddr(getPC());
                     breakAtInstruction = getPC();
-
-                    String afterText = $"After: \nOP [0x{(getPC() - 1).ToString("X4")}] 0x{opCode.ToString("X2")} -> {getOpCodeDesc(opCode)}\nPossible Params = 0x{peekBytes[0].ToString("X2")} 0x{peekBytes[1].ToString("X2")}\nAs UI16 0x{peek16.ToString("X4")}\n\n(0x{peek16.ToString("X4")}) = 0x{mem.peekByte(peek16).ToString("X2")}\n\nNext OP: 0x{mem.peekByte(getPC())} -> {getOpCodeDesc(mem.peekByte(getPC()))}\n\nContinue Debugging??";
+                    Instruction nextInst = new Instruction(opCodeTranslationDict[peek()], getPC(), peek(1), peek(2));
+                    String afterText = $"After: \nOP: {currentInstruction.ToString()}\n\n Next OP: {nextInst.ToString()}\n\nContinue Debugging??";
                     debuggerForm.updateMemoryWindow(getStateDict());
+                    debuggerForm.updateDisassembledRom(commandHistoryList.getStackCopy());
                     DialogResult res = debuggerForm.ShowDialog(getPC());
 
                     while (debuggerForm.wait)
@@ -764,13 +771,7 @@ namespace trentGB
                     }
                     clock.Start();
                 }
-            }
 
-
-            if (currentInstruction.isCompleted())
-            {
-                // Store it and reset for a new instruction
-                commandHistoryList.Push(currentInstruction);
                 currentInstruction = null;
             }
 
@@ -2061,7 +2062,8 @@ namespace trentGB
         }
         public void setF(Byte value)
         {
-            F = value;
+            Byte res = (Byte)(value & 0xF0); // cant Write to lower 4 bits of F
+            F = res;
         }
 
 
@@ -2113,7 +2115,7 @@ namespace trentGB
         public void setAF(ushort value)
         {
             A = (Byte)((value & 0xFF00) >> 8);
-            F = (Byte)(value & 0x00FF);
+            F = (Byte)(value & 0x00F0); // Cant Write to lower 4 bits of F
         }
 
         public ushort getBC()
