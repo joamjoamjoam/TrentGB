@@ -1396,6 +1396,7 @@ namespace trentGB.Tests
         #endregion
 
         #region 0x01 - Load BC
+
         [DataRow((byte)0xFFu, (byte)0xFF)]
         [DataRow((byte)0x01, (byte)0xFFu)]
         [DataRow((byte)0x00, (byte)0x00u)]
