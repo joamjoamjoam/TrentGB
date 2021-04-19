@@ -458,6 +458,30 @@ namespace trentGB
             return rv;
         }
 
+        public static Byte generateFlagsByte(bool halfCarrySet, bool carrySet, bool subSet, bool zeroSet)
+        {
+            byte rv = 0;
+
+            if (halfCarrySet)
+            {
+                rv += (Byte)CPUFlagsMask.HalfCarry;
+            }
+            if (carrySet)
+            {
+                rv += (Byte)CPUFlagsMask.Carry;
+            }
+            if (subSet)
+            {
+                rv += (Byte)CPUFlagsMask.Subtract;
+            }
+            if (zeroSet)
+            {
+                rv += (Byte)CPUFlagsMask.Zero;
+            }
+
+            return rv;
+        }
+
         public String generateFlagsStr(short flags = -1)
         {
             Byte flagsByte = 0;
@@ -2478,7 +2502,7 @@ namespace trentGB
             if (currentInstruction.getCycleCount() == 8)
             {
                 Byte value = fetch();
-                setB(value);
+                setC(value);
             }
         }
         private void rrcA() // 0x0F
@@ -4087,14 +4111,9 @@ namespace trentGB
             {
                 setZeroFlag(true);
             }
-            else if ((value & 0x0F) == 0x0F)
+            if ((value & 0x0F) == 0x0F)
             {
-                value++;
                 setHalfCarryFlag(true);
-            }
-            else
-            {
-                value++;
             }
 
             return result;
@@ -4114,7 +4133,7 @@ namespace trentGB
                 setZeroFlag(true);
             }
 
-            if ((value & 0x0F) == 0x00 && value != 0x00)
+            if ((value & 0x0F) == 0x00)
             {
                 setHalfCarryFlag(true);
             }
