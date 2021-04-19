@@ -373,6 +373,7 @@ namespace trentGB
         public event EventHandler ShowDebugForm;
 
         public CPUInstructionStack commandHistoryList = new CPUInstructionStack(500);
+        CPUDebugger.DebugType debugType = CPUDebugger.DebugType.Address;
 
         public ROM rom = null;
 
@@ -380,7 +381,6 @@ namespace trentGB
         Stopwatch clock = null;
         ushort breakAtInstruction = 0x0100;
         CPUDebugger debuggerForm = null;
-        bool debuggerRequested = false;
 
         // Tsting/Cycle Accurate Counters
         private Instruction currentInstruction = null;
@@ -502,12 +502,12 @@ namespace trentGB
 
         public void enableDebugger()
         {
-            debuggerRequested = true;
+            debugType = CPUDebugger.DebugType.StopNext;
         }
 
         public void disableDebugger()
         {
-            debuggerRequested = false;
+            debugType = CPUDebugger.DebugType.None;
         }
 
         public new String ToString()
@@ -572,6 +572,41 @@ namespace trentGB
                 else if (state == CPUState.Halted || state == CPUState.Stopped)
                 {
                     // Do Nothing
+                    if (debugStopRequested())
+                    {
+                        clock.Stop();
+                        debugType = CPUDebugger.DebugType.None;
+                        debuggerForm.updateMemoryWindow(getStateDict());
+                        debuggerForm.setContinueAddr(getPC());
+                        debuggerForm.updateDisassembledRom(commandHistoryList.getStackCopy());
+                        debuggerForm.currentAddress = (ushort)((getPC() - 1) & 0xFFFF);
+                        DialogResult res = debuggerForm.ShowDialog();
+                        if (res == DialogResult.No)
+                        {
+                            showAfterText = false;
+                            debugType = CPUDebugger.DebugType.None;
+                        }
+                        else if (res == DialogResult.Ignore)
+                        {
+                            // Continue Pressed
+                            setDebugParams(debuggerForm.getContinueAddr());
+                        }
+                        else
+                        {
+                            // yes Pressed
+                            debugType = CPUDebugger.DebugType.StopNext;
+                        }
+                        debuggerForm.wait = showAfterText;
+
+                        clock.Start();
+                    }
+                    if (debugType == CPUDebugger.DebugType.InstrCount)
+                    {
+                        if (breakAtInstruction > 0)
+                        {
+                            breakAtInstruction--;
+                        }
+                    }
                 }
                 else
                 {
@@ -581,6 +616,21 @@ namespace trentGB
             }
         }
 
+        public void setDebugParams(CPUDebugger.DebugType type, ushort value)
+        {
+            debugType = type;
+            breakAtInstruction = value;
+        }
+        public void setDebugParams(List<ushort> debugParams)
+        {
+            if (debugParams != null && debugParams.Count == 2)
+            {
+                debugType = (CPUDebugger.DebugType)debugParams[0];
+                breakAtInstruction = debugParams[1];
+
+            }
+            
+        }
 
         public void reset()
         {
@@ -641,10 +691,40 @@ namespace trentGB
             return mem.getByte(address);
         }
 
-        public void setNextBreak(ushort addr)
+        private bool debugStopRequested()
         {
-            breakAtInstruction = addr;
+            bool rv = false;
+
+            switch (debugType)
+            {
+                case CPUDebugger.DebugType.None:
+                    rv = false;
+                    break;
+                case CPUDebugger.DebugType.InstrCount:
+                    rv = (breakAtInstruction <= 0);
+                    break;
+                case CPUDebugger.DebugType.Address:
+                    rv = (breakAtInstruction == (getPC() - 1));
+                    break;
+                case CPUDebugger.DebugType.StopNext:
+                    rv = true;
+                    break;
+                case CPUDebugger.DebugType.StopNextCall:
+                    if (currentInstruction != null)
+                    {
+                        ushort nextOpCode = (currentInstruction.opCode == 0xCB) ? getUInt16ForBytes(currentInstruction.parameters[0], currentInstruction.opCode) : getUInt16ForBytes(currentInstruction.opCode, 0);
+                        if (breakAtInstruction == nextOpCode)
+                        {
+                            rv = true;
+                        }
+                    }
+
+                    break;
+            }
+
+            return rv;
         }
+
         bool showAfterText = false;
         public void decodeAndExecute()
         {
@@ -662,10 +742,10 @@ namespace trentGB
                 String beforeText = $"Before:\nOP: {currentInstruction.ToString()}\n\nContinue Debugging??";
                 showAfterText = false;
 
-                if (breakAtInstruction == (getPC() - 1) || debuggerRequested)
+                if (debugStopRequested())
                 {
                     clock.Stop();
-                    debuggerRequested = false;
+                    debugType = CPUDebugger.DebugType.None;
                     rom.disassemble(opCodeTranslationDict);
                     debuggerForm.updateMemoryWindow(getStateDict());
                     debuggerForm.setContinueAddr(getPC());
@@ -678,18 +758,18 @@ namespace trentGB
                     if (res == DialogResult.No)
                     {
                         showAfterText = false;
-                        breakAtInstruction = 0xFFFF;
+                        debugType = CPUDebugger.DebugType.None;
                     }
                     else if (res == DialogResult.Ignore)
                     {
                         // Continue Pressed
-                        breakAtInstruction = debuggerForm.getContinueAddr();
+                        setDebugParams(debuggerForm.getContinueAddr());
                     }
                     else
                     {
                         // yes Pressed
                         showAfterText = true;
-
+                        debugType = CPUDebugger.DebugType.StopNext;
                     }
                     debuggerForm.wait = showAfterText;
 
@@ -757,19 +837,27 @@ namespace trentGB
 
                     if (res == DialogResult.No)
                     {
-                        showAfterText = false;
+                        debugType = CPUDebugger.DebugType.None;
+                        
                     }
                     else if (res == DialogResult.Ignore)
                     {
                         // Continue Pressed
-                        breakAtInstruction = debuggerForm.getContinueAddr();
+                        setDebugParams(debuggerForm.getContinueAddr());
                     }
                     else
                     {
                         // yes Pressed
-                        showAfterText = true;
+                        debugType = CPUDebugger.DebugType.StopNext;
                     }
                     clock.Start();
+                }
+                if (debugType == CPUDebugger.DebugType.InstrCount)
+                {
+                    if (breakAtInstruction > 0)
+                    {
+                        breakAtInstruction--;
+                    }
                 }
 
                 currentInstruction = null;
@@ -2414,7 +2502,6 @@ namespace trentGB
             {
                 //throw new NotImplementedException($"0x10 prefix Command 0x{command.ToString("X2")} is not implented.");
             }
-            
         }
         private void ldDE16() // 0x11
         {

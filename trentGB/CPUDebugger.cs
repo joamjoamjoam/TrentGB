@@ -14,6 +14,16 @@ namespace trentGB
 {
     public partial class CPUDebugger : Form
     {
+        public enum DebugType
+        {
+            Address,
+            InstrCount,
+            StopNextCall,
+            StopNext = 0xFFFE,
+            None = 0xFFFF
+        }
+
+
         private List<ushort> watchList = new List<ushort>();
         private BindingList<ushort> watchListBinded = new BindingList<ushort>(); 
         private Dictionary<string, string> currentStatusDict = new Dictionary<String, String>();
@@ -38,7 +48,8 @@ namespace trentGB
             watchAddrListBox.HeaderStyle = ColumnHeaderStyle.None;
             memoryListBox.HeaderStyle = ColumnHeaderStyle.None;
             romView.HeaderStyle = ColumnHeaderStyle.None;
-            
+
+            debugTypeCB.SelectedIndex = 0;      
 
             loadSpecialRegistersMap();
             disRom = disassembledRom;
@@ -122,6 +133,19 @@ namespace trentGB
         private void continueBtn_Click(object sender, EventArgs e)
         {
             wait = false;
+            if ((DebugType)debugTypeCB.SelectedIndex == DebugType.StopNextCall)
+            {
+                if (!Regex.IsMatch(contAddrTxtBox.Text, "[ ]*[0-9A-F][0-9A-F][ ]*") && !Regex.IsMatch(contAddrTxtBox.Text, "[ ]*CB[ ]*[0-9A-F][0-9A-F][ ]*"))
+                {
+                    MessageBox.Show("Invalid Opcode");
+                    this.DialogResult = DialogResult.None;
+                }
+                else
+                {
+                    // Send this to form as ushort
+                    contAddrTxtBox.Text = Convert.ToUInt16(contAddrTxtBox.Text.Replace(" ", ""), 10).ToString("X4");
+                }
+            }
         }
 
         private void showDisassembledRom()
@@ -217,11 +241,12 @@ namespace trentGB
             watchListBinded.ResetBindings();
         }
 
-        public ushort getContinueAddr()
+        public List<ushort> getContinueAddr()
         {
-            ushort rv = 0;
+            List<ushort> rv = new List<ushort>();
 
-            rv = Convert.ToUInt16(contAddrTxtBox.Text, 16);
+            rv.Add((ushort) debugTypeCB.SelectedIndex);
+            rv.Add(Convert.ToUInt16(contAddrTxtBox.Text, 16));
 
             return rv;
         }
@@ -275,20 +300,42 @@ namespace trentGB
             contAddrTxtBox.Text = nextAddr.ToString("X4");
         }
 
-        private void contAddrTxtBox_Validating(object sender, CancelEventArgs e)
-        {
-            if (!Regex.IsMatch(contAddrTxtBox.Text, $"[0-9A-F]*") || contAddrTxtBox.Text.Length > 4)
-            {
-                e.Cancel = true;
-            }
-        }
-
         private void watchAddrTxtBox_Validating(object sender, CancelEventArgs e)
         {
-            if (!Regex.IsMatch(contAddrTxtBox.Text, $"[0-9A-F]*") || contAddrTxtBox.Text.Length > 4)
+
+
+            switch ((DebugType) debugTypeCB.SelectedIndex) 
             {
-                e.Cancel = true;
+                case DebugType.Address:
+                    if (!Regex.IsMatch(contAddrTxtBox.Text, $"[0-9A-F]*") || contAddrTxtBox.Text.Length > 4)
+                    {
+                        e.Cancel = true;
+                    }
+                    break;
+                case DebugType.InstrCount:
+                    try
+                    {
+                        ushort val = Convert.ToUInt16(contAddrTxtBox.Text.Length);
+                        if (!Regex.IsMatch(contAddrTxtBox.Text, $"[0-9]*"))
+                        {
+                            throw new ArgumentException("Value is not a decimal integer");
+                        }
+                    }
+                    catch
+                    {
+                        e.Cancel = true;
+                    }
+
+                    break;
+                case DebugType.StopNextCall:
+                    if (!Regex.IsMatch(contAddrTxtBox.Text, $"[0-9A-F ]*"))
+                    {
+                        e.Cancel = true;
+                    }
+                    break;
+
             }
+
         }
 
         private void Watch_Click(object sender, EventArgs e)
@@ -344,6 +391,11 @@ namespace trentGB
         private void CPUDebugger_SizeChanged(object sender, EventArgs e)
         {
             // Format All Boxes 1/3 the screen
+        }
+
+        private void debugTypeCB_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            contAddrTxtBox.Text = "";
         }
     }
 

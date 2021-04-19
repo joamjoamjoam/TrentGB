@@ -36,7 +36,7 @@ namespace trentGB.Tests
             AddressSpace addrSpace = new AddressSpace(blankRom);
             CPU cpu = new CPU(addrSpace, blankRom, clock);
             cpu.disableDebugger();
-            cpu.setNextBreak(0x0000);
+            cpu.setDebugParams(CPUDebugger.DebugType.None, 0x0000);
             cpu.reset();
             logMessage("Checking PC = 0x100");
             Assert.That.AreEqual(0x100, cpu.getPC(), "X4");
