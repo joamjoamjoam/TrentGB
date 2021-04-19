@@ -16,9 +16,9 @@ namespace trentGB
     {
         public enum DebugType
         {
-            Address,
-            InstrCount,
-            StopNextCall,
+            Address = 0,
+            InstrCount = 1,
+            StopNextCall = 2,
             StopNext = 0xFFFE,
             None = 0xFFFF
         }
@@ -143,7 +143,7 @@ namespace trentGB
                 else
                 {
                     // Send this to form as ushort
-                    contAddrTxtBox.Text = Convert.ToUInt16(contAddrTxtBox.Text.Replace(" ", ""), 10).ToString("X4");
+                    contAddrTxtBox.Text = Convert.ToUInt16(contAddrTxtBox.Text.Replace(" ", ""), 16).ToString("X4");
                 }
             }
         }

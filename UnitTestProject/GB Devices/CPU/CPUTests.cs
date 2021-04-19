@@ -1922,6 +1922,47 @@ namespace trentGB.Tests
         }
         #endregion
 
+        #region 0xB8 - Compare A with B
+        [DataRow((byte)0x01, (Byte)0x00, (Byte)0x00, (Byte)0x40)]
+        [DataRow((byte)0x00, (Byte)0x01, (Byte)0x00, (Byte)0x70)]
+        [DataRow((byte)0x25, (Byte)0xFF, (Byte)0x00, (Byte)0x70)]
+        [DataRow((byte)0xFF, (Byte)0x25, (Byte)0x00, (Byte)0x40)]
+        [DataRow((byte)0x00, (Byte)0x00, (Byte)0x00, (Byte)0xC0)]
+        [DataRow((byte)0x25, (Byte)0x25, (Byte)0x00, (Byte)0xC0)]
+        [DataRow((byte)0xFF, (Byte)0xFE, (Byte)0x00, (Byte)0x40)]
+        [DataRow((byte)0xFE, (Byte)0xFF, (Byte)0x00, (Byte)0x70)]
+
+        [DataRow((byte)0x01, (Byte)0x00, (Byte)0xF0, (Byte)0x40)]
+        [DataRow((byte)0x00, (Byte)0x01, (Byte)0xF0, (Byte)0x70)]
+        [DataRow((byte)0x25, (Byte)0xFF, (Byte)0xF0, (Byte)0x70)]
+        [DataRow((byte)0xFF, (Byte)0x25, (Byte)0xF0, (Byte)0x40)]
+        [DataRow((byte)0x00, (Byte)0x00, (Byte)0xF0, (Byte)0xC0)]
+        [DataRow((byte)0x25, (Byte)0x25, (Byte)0xF0, (Byte)0xC0)]
+        [DataRow((byte)0xFF, (Byte)0xFE, (Byte)0xF0, (Byte)0x40)]
+        [DataRow((byte)0xFE, (Byte)0xFF, (Byte)0xF0, (Byte)0x70)]
+
+        [DataTestMethod]
+        [TestCategory("OP Codes")]
+        [TestCategory("Op Code 0xB8 - Compare A with B")]
+        public void decodeAndExecute_cpAB(byte a, byte b, byte initFlags, byte afterFlags)
+        {
+            byte opCode = 0xB8;
+
+            CPU cpu = setupOpCode(opCode, MethodBase.GetCurrentMethod().Name);
+            cpu.setF(initFlags);
+            cpu.setA(a);
+            cpu.setB(b);
+
+            fetchAndLoadInstruction(cpu, opCode);
+            assertInstructionFinished(cpu, opCode);
+
+            Assert.That.FlagsEqual(cpu, afterFlags);
+
+        }
+        #endregion
+
+
+
 
         #endregion
 

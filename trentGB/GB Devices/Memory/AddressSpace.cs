@@ -112,7 +112,7 @@ namespace trentGB
             // No Graphics test Mode for Blargg Test Roms
             if (address == 0xFF01)
             {
-                testChar = (char)(value+10);
+                testChar = (char)(value);
             }
             else if (address == 0xFF02)
             {

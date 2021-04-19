@@ -637,6 +637,7 @@ namespace trentGB
             headerInfoDict.Add(new ROMHeaderInfo("Supports SGB Functions", null, typeof(bool), ((bytes[0x0146] == 0x03) && (bytes[0x014B] == 0x33))));
 
             headerInfoDict.Add(new ROMHeaderInfo("Cartridge Type", new byte[] { bytes[0x0147] }, typeof(CartridgeType), (CartridgeType)bytes[0x0147]));
+            //headerInfoDict.Add(new ROMHeaderInfo("Cartridge Type", new byte[] { 0x00 }, typeof(CartridgeType), (CartridgeType)0x00));
             headerInfoDict.Add(new ROMHeaderInfo("ROM Size", new byte[] { bytes[0x0148] }, typeof(ROMSize), Enum.GetName(typeof(ROMSize), bytes[0x0148])));
             headerInfoDict.Add(new ROMHeaderInfo("RAM Size", new byte[] { bytes[0x0149] }, typeof(RAMSize), Enum.GetName(typeof(RAMSize), bytes[0x0149])));
             headerInfoDict.Add(new ROMHeaderInfo("Destination Code", new byte[] { bytes[0x014A] }, typeof(String), (bytes[0x014A] == 0) ? "Japanese" : "Non - Japanese"));

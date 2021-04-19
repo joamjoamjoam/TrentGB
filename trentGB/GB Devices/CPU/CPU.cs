@@ -214,7 +214,7 @@ namespace trentGB
                 }
             }
             
-            return $"Addr: {address.ToString("X4")}: {desc} {((parameters.Length > 0) ? "0x" : "")}{String.Join(", 0x", parameters.Select(b => b.ToString("X2")))}{paramRealValue}, Cycles: {getCycleCount()}/{cycles} {((isCompleted()) ? "Done" : "")}";
+            return $"Addr: {address.ToString("X4")}: OP: {desc} - 0x{opCode} {((parameters.Length > 0) ? "0x" : "")}{String.Join(", 0x", parameters.Select(b => b.ToString("X2")))}{paramRealValue}, Cycles: {getCycleCount()}/{cycles} {((isCompleted()) ? "Done" : "")}";
         }
 
         public Byte getCBOpLength()
@@ -651,7 +651,6 @@ namespace trentGB
             {
                 debugType = (CPUDebugger.DebugType)debugParams[0];
                 breakAtInstruction = debugParams[1];
-
             }
             
         }
@@ -4296,29 +4295,9 @@ namespace trentGB
             return value;
         }
 
-        public Byte cmp(Byte op1, Byte op2)
+        public Byte cmp(Byte op1, Byte a)
         {
-            int result = (int)op2 - (int)op1;
-            Byte value = (byte)((result & 0xFF));
-            setZeroFlag(false);
-            setHalfCarryFlag(false);
-            setSubtractFlag(true);
-            setCarryFlag(false);
-
-            if (value == 0)
-            {
-                setZeroFlag(true);
-            }
-            if (((op2 & 0xF) > (op1 & 0xF))) // Lower Nible of op2 is higher we need to borrow
-            {
-                setHalfCarryFlag(true);
-            }
-            if (op2 > op1) // Lower Nible of op2 is higher we need to borrow
-            {
-                setCarryFlag(true);
-            }
-
-            return value;
+            return subtract(a, op1);
         }
 
         public Byte daa(byte arg)
