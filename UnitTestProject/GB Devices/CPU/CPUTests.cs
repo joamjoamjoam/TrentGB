@@ -23,7 +23,7 @@ namespace trentGB.Tests
                 count += extraParams.Length;
             }
 
-            byte[] arr = new byte [count];
+            byte[] arr = new byte[count];
             arr[0] = opCode;
             arr[1] = param1;
             arr[2] = param2;
@@ -31,7 +31,7 @@ namespace trentGB.Tests
             {
                 Array.Copy(extraParams, 0, arr, 3, extraParams.Length);
             }
-            
+
             ROM blankRom = new ROM(arr);
             AddressSpace addrSpace = new AddressSpace(blankRom);
             CPU cpu = new CPU(addrSpace, blankRom, clock);
@@ -213,7 +213,7 @@ namespace trentGB.Tests
             logMessage($"Check Result of {cpu.getSP()} + {addNum}");
             Assert.That.AreEqual(1, cpu.addSP(cpu.getSP(), addNum));
 
-            Assert.That.FlagsEqual(cpu, halfCarrySet:false, carrySet:false, zeroSet:false, subSet:false);
+            Assert.That.FlagsEqual(cpu, halfCarrySet: false, carrySet: false, zeroSet: false, subSet: false);
 
         }
 
@@ -501,13 +501,13 @@ namespace trentGB.Tests
                 {
                     throw;
                 }
-                catch(Exception ex)
+                catch (Exception ex)
                 {
                     logMessage($"Excpetion Recieved ({typeof(NotImplementedException).ToString()}, {ex.GetType().ToString()})");
                     Assert.IsInstanceOfType(ex, typeof(NotImplementedException));
                 }
             }
-            else 
+            else
             {
                 if (opCode != 0xCB)
                 {
@@ -519,7 +519,7 @@ namespace trentGB.Tests
                 {
                     Assert.Inconclusive("CB Prefixed Opcodes are handled by their own tests.");
                 }
-                
+
             }
         }
 
@@ -1365,7 +1365,7 @@ namespace trentGB.Tests
         {
             CPU cpu = setupOpCode(0xCB, MethodBase.GetCurrentMethod().Name, opCode);
             logMessage($"Testing CB Prefixed OpCode 0x{opCode.ToString("X2")} - {cpu.getInstructionForOpCode(opCode).desc}");
-            
+
             executeCurrentInstruction(cpu);
 
             // Check Number of Cycles
@@ -1433,7 +1433,7 @@ namespace trentGB.Tests
         [DataTestMethod]
         [TestCategory("OP Codes")]
         [TestCategory("OP Code 0x02 - A to Mem BC")]
-        public void decodeAndExecute_OPCode_0x02_ldAToMemBC(byte op1,  ushort address)
+        public void decodeAndExecute_OPCode_0x02_ldAToMemBC(byte op1, ushort address)
         {
             byte opCode = 0x02;
             CPU cpu = setupOpCode(opCode, MethodBase.GetCurrentMethod().Name);
@@ -1466,7 +1466,7 @@ namespace trentGB.Tests
             byte loadBCOpCode = 0x01;
 
             // Setup CPU and Load BC with Data
-            CPU cpu = setupOpCode(loadBCOpCode, MethodBase.GetCurrentMethod().Name, CPU.getLSB(bc), CPU.getMSB(bc), new byte[] { opCode});
+            CPU cpu = setupOpCode(loadBCOpCode, MethodBase.GetCurrentMethod().Name, CPU.getLSB(bc), CPU.getMSB(bc), new byte[] { opCode });
             executeCurrentInstruction(cpu);
             Assert.That.AreEqual(bc, cpu.getBC());
             Assert.That.AreEqual(0x100 + cpu.getInstructionForOpCode(loadBCOpCode).length, cpu.getPC());
@@ -1590,7 +1590,7 @@ namespace trentGB.Tests
         #endregion
 
         #region 0x07- Rotate Left Carry A
-        [DataRow((byte)0x80, (Byte) 0x01, false, true)]
+        [DataRow((byte)0x80, (Byte)0x01, false, true)]
         [DataRow((byte)0x40, (Byte)0x80, false, false)]
         [DataRow((byte)0x40, (Byte)0x80, true, false)]
         [DataRow((byte)0x00, (Byte)0x00, false, false)]
@@ -1630,7 +1630,7 @@ namespace trentGB.Tests
         #endregion
 
         #region 0x08 - Load SP Mem 16
-        [DataRow((Byte)0xFF, (Byte) 0xFF, (ushort) 0xFFFF)]
+        [DataRow((Byte)0xFF, (Byte)0xFF, (ushort)0xFFFF)]
         [DataRow((Byte)0x00, (Byte)0x00, (ushort)0x0000)]
         [DataRow((Byte)0x0F, (Byte)0x00, (ushort)0x000F)]
         [DataRow((Byte)0xFF, (Byte)0x00, (ushort)0x00FF)]
@@ -1669,9 +1669,9 @@ namespace trentGB.Tests
         #endregion
 
         #region 0x09 - Add BC to HL
-        [DataRow((ushort)0x0001, (ushort)0xFFFF, (ushort)0x0000, (Byte)0xF0, (Byte) ((Byte)CPU.CPUFlagsMask.Zero + (Byte)CPU.CPUFlagsMask.Carry + (Byte)CPU.CPUFlagsMask.HalfCarry))]
+        [DataRow((ushort)0x0001, (ushort)0xFFFF, (ushort)0x0000, (Byte)0xF0, (Byte)((Byte)CPU.CPUFlagsMask.Zero + (Byte)CPU.CPUFlagsMask.Carry + (Byte)CPU.CPUFlagsMask.HalfCarry))]
         [DataRow((ushort)0x00FF, (ushort)0xFF00, (ushort)0xFFFF, (Byte)0xF0, ((Byte)CPU.CPUFlagsMask.Zero))]
-        [DataRow((ushort)0x0FFF, (ushort)0x0001, (ushort)0x1000, (Byte)0xF0, (Byte)((Byte)CPU.CPUFlagsMask.Zero +  (Byte)CPU.CPUFlagsMask.HalfCarry))]
+        [DataRow((ushort)0x0FFF, (ushort)0x0001, (ushort)0x1000, (Byte)0xF0, (Byte)((Byte)CPU.CPUFlagsMask.Zero + (Byte)CPU.CPUFlagsMask.HalfCarry))]
         [DataRow((ushort)0xF000, (ushort)0x1000, (ushort)0x0000, (Byte)0xF0, (Byte)((Byte)CPU.CPUFlagsMask.Zero + (Byte)CPU.CPUFlagsMask.Carry))]
         [DataRow((ushort)0x000A, (ushort)0x0000, (ushort)0x000A, (Byte)0xF0, (Byte)CPU.CPUFlagsMask.Zero)]
         [DataRow((ushort)0x0000, (ushort)0x000A, (ushort)0x000A, (Byte)0xF0, (Byte)CPU.CPUFlagsMask.Zero)]
@@ -1695,7 +1695,7 @@ namespace trentGB.Tests
             cpu.setF(initialFlags); // Zero and Subtract Should Be Cleared
             cpu.setHL(hl);
             cpu.setBC(bc);
-            
+
             ushort interRes = CPU.getUInt16ForBytes(CPU.getLSB(result), CPU.getMSB(cpu.getHL()));
 
             fetchAndLoadInstruction(cpu, opCode);
@@ -1952,7 +1952,7 @@ public static class AssertExtensions
 
         if (halfCarrySet)
         {
-            flagsByte = (Byte)(flagsByte | (Byte) CPU.CPUFlagsMask.HalfCarry);
+            flagsByte = (Byte)(flagsByte | (Byte)CPU.CPUFlagsMask.HalfCarry);
         }
         if (carrySet)
         {
@@ -1991,6 +1991,6 @@ public static class AssertExtensions
             Console.WriteLine($"Mismatch Found: ({expectedStr}, {actualStr})");
             throw;
         }
-        
+
     }
 }
