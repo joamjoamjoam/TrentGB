@@ -241,7 +241,10 @@
             this.debugTypeCB.Items.AddRange(new object[] {
             "Address",
             "Instruction Count",
-            "NextCall"});
+            "Next Call of Op Code",
+            "Next Write To Address",
+            "Next Read From Address",
+            "Next Access to Address"});
             this.debugTypeCB.Location = new System.Drawing.Point(828, 1363);
             this.debugTypeCB.Name = "debugTypeCB";
             this.debugTypeCB.Size = new System.Drawing.Size(132, 32);

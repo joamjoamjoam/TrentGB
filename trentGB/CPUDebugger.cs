@@ -19,6 +19,9 @@ namespace trentGB
             Address = 0,
             InstrCount = 1,
             StopNextCall = 2,
+            MemoryWrite = 3,
+            MemoryRead = 4,
+            MemoryAccess = 5,
             StopNext = 0xFFFE,
             None = 0xFFFF
         }
@@ -307,6 +310,9 @@ namespace trentGB
             switch ((DebugType) debugTypeCB.SelectedIndex) 
             {
                 case DebugType.Address:
+                case DebugType.MemoryAccess:
+                case DebugType.MemoryWrite:
+                case DebugType.MemoryRead:
                     if (!Regex.IsMatch(contAddrTxtBox.Text, $"[0-9A-F]*") || contAddrTxtBox.Text.Length > 4)
                     {
                         e.Cancel = true;

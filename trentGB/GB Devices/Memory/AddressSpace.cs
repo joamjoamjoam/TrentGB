@@ -40,12 +40,53 @@ namespace trentGB
 
     public class AddressSpace
     {
-        private byte[] bytes = new byte[0xFFFF+1];
+        private byte[] bytes = new byte[0xFFFF + 1];
         ushort echoOffset = (0xE000 - 0xC000);
 
         // Test Rom Ascii byte (No Graphics). Store ASCII encoded Byte at FF01. Print to console when 0x81 is written to 0xFF02
         public Char testChar;
         public ROM rom;
+
+        public enum DebugCheck
+        {
+            None,
+            WriteOccurred,
+            ReadOccurred,
+            AccessOcurred
+        }
+        public class AddressSpaceBreakpoint
+        {
+            DebugCheck checktype = DebugCheck.None;
+            ushort address = 0x0000;
+            bool breakHit = false;
+
+            public AddressSpaceBreakpoint(ushort address, DebugCheck type)
+            {
+                checktype = type;
+                this.address = address;
+            }
+
+            public void update(ushort address, DebugCheck type)
+            {
+                if (!breakHit)
+                {
+                    breakHit = ((address == this.address) && ((type == checktype) || (type == DebugCheck.AccessOcurred)));
+                }
+            }
+
+            public bool wasHit(ushort address, DebugCheck type)
+            {
+                return (breakHit && (address == this.address) && (type == checktype));
+            }
+
+            public void reset()
+            {
+                breakHit = false;
+            }
+        }
+
+        public DebugCheck debugStopRequested = DebugCheck.None;
+        public List<AddressSpaceBreakpoint> breakpointList = new List<AddressSpaceBreakpoint>();
 
         public AddressSpace(ROM rom)
         {
@@ -56,6 +97,75 @@ namespace trentGB
 
         }
         
+        private void updateDebugRequests(ushort address, DebugCheck type)
+        {
+            breakpointList.ForEach(bp => bp.update(address, type));
+        }
+
+        public bool checkDebugRequests(ushort address, CPUDebugger.DebugType type)
+        {
+            DebugCheck realType = DebugCheck.None;
+
+            switch (type)
+            {
+                case CPUDebugger.DebugType.MemoryAccess:
+                    realType = DebugCheck.AccessOcurred;
+                    break;
+                case CPUDebugger.DebugType.MemoryRead:
+                    realType = DebugCheck.ReadOccurred;
+                    break;
+                case CPUDebugger.DebugType.MemoryWrite:
+                    realType = DebugCheck.WriteOccurred;
+                    break;
+                default:
+                    throw new Exception($"Attempted to Check a Memory Breakpoint with the Wrong Type: {type.ToString()}");
+            }
+
+            return checkDebugRequests(address, realType);
+        }
+        public bool checkDebugRequests(ushort address, DebugCheck type)
+        {
+            bool rv = false;
+            try
+            {
+                rv = (breakpointList.Count(bp => bp.wasHit(address, type)) > 0);
+                breakpointList.ForEach(bp => bp.reset());
+            }
+            catch
+            {
+                rv = false;
+            }
+
+            return rv;
+        }
+
+        public void setBreakPoint(ushort address, CPUDebugger.DebugType type)
+        {
+            DebugCheck realType = DebugCheck.None;
+
+            switch (type)
+            {
+                case CPUDebugger.DebugType.MemoryAccess:
+                    realType = DebugCheck.AccessOcurred;
+                    break;
+                case CPUDebugger.DebugType.MemoryRead:
+                    realType = DebugCheck.ReadOccurred;
+                    break;
+                case CPUDebugger.DebugType.MemoryWrite:
+                    realType = DebugCheck.WriteOccurred;
+                    break;
+                default:
+                    throw new Exception($"Attempted to create a Memory Breakpoint with the Wrong Type: {type.ToString()}");
+            }
+
+            setBreakPoint(address, realType);
+        }
+
+        public void setBreakPoint(ushort address, DebugCheck type)
+        {
+            breakpointList.Clear(); // only one for now
+            breakpointList.Add(new AddressSpaceBreakpoint(address, type));
+        }
 
         public byte[] getBytes()
         {
@@ -64,6 +174,7 @@ namespace trentGB
         public byte getByte(ushort address)
         {
             Byte rv = 0;
+            updateDebugRequests(address, DebugCheck.ReadOccurred);
             // ROM Space
             if (address >= 0x0000 && address <= 0x7FFF)
             {
@@ -85,23 +196,24 @@ namespace trentGB
             return bytes[address];
         }
 
-        public byte[] getBytes(ushort address, ushort count)
-        {
-            byte[] rv = new Byte[count];
-            if (((UInt32)address + (UInt32)count) <= 0xFFFF)
-            {
-                Array.ConstrainedCopy(bytes, address,  rv, 0, (int)count);
-            }
-            else
-            {
-                rv = null;
-            }
+        //public byte[] getBytes(ushort address, ushort count)
+        //{
+        //    byte[] rv = new Byte[count];
+        //    if (((UInt32)address + (UInt32)count) <= 0xFFFF)
+        //    {
+        //        Array.ConstrainedCopy(bytes, address,  rv, 0, (int)count);
+        //    }
+        //    else
+        //    {
+        //        rv = null;
+        //    }
             
-            return rv;
-        }
+        //    return rv;
+        //}
 
         public void setByte(ushort address, Byte value)
         {
+            updateDebugRequests(address, DebugCheck.WriteOccurred);
             bytes[address] = value;
 
             if (address > 0x0000 && address <= 0x8000)
@@ -132,27 +244,27 @@ namespace trentGB
             setByte(0xFF0F, (Byte)((getByte(0xFF0F) | (int)type)));
         }
 
-        public void setBytes(ushort address, Byte[] values)
-        {
+        //public void setBytes(ushort address, Byte[] values)
+        //{
 
-            if (((UInt32)address + values.Count()) <= 0xFFFF)
-            {
-                Array.ConstrainedCopy(values, 0, bytes, address, values.Count());
+        //    if (((UInt32)address + values.Count()) <= 0xFFFF)
+        //    {
+        //        Array.ConstrainedCopy(values, 0, bytes, address, values.Count());
 
-                if (address >= 0xC000 && address <= 0xDE00)
-                {
-                    Array.ConstrainedCopy(values, 0, bytes, (address + echoOffset), values.Count());
-                }
-                else if (address >= 0xE000 && address <= 0xFE00)
-                {
-                    Array.ConstrainedCopy(values, 0, bytes, (address - echoOffset), values.Count());
-                }
-            }
-            else
-            {
-                throw new Exception($"GetBytes: Writing a Value out of Range of Address Space");
-            }
-        }
+        //        if (address >= 0xC000 && address <= 0xDE00)
+        //        {
+        //            Array.ConstrainedCopy(values, 0, bytes, (address + echoOffset), values.Count());
+        //        }
+        //        else if (address >= 0xE000 && address <= 0xFE00)
+        //        {
+        //            Array.ConstrainedCopy(values, 0, bytes, (address - echoOffset), values.Count());
+        //        }
+        //    }
+        //    else
+        //    {
+        //        throw new Exception($"GetBytes: Writing a Value out of Range of Address Space");
+        //    }
+        //}
 
         //public void loadRom(ROM rom)
         //{

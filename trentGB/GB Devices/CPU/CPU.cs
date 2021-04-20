@@ -72,7 +72,7 @@ namespace trentGB
         public readonly byte cycles;
         public readonly byte opCode;
         public readonly byte length;
-        public int address;
+        public ushort address;
         public byte[] parameters = new byte[0];
         public readonly Action opFunc = null;
         public readonly String desc = "";
@@ -83,7 +83,7 @@ namespace trentGB
         public ushort storage = 0;
 
 
-        public Instruction(byte opCode, byte length, byte cycles , Action act, int PC, ROM rom)
+        public Instruction(byte opCode, byte length, byte cycles , Action act, ushort PC, ROM rom)
         {
             // PC is at the adress for the first parametr if applicable
 
@@ -109,7 +109,7 @@ namespace trentGB
             }
         }
 
-        public Instruction(Instruction model, int PC, ROM rom)
+        public Instruction(Instruction model, ushort PC, ROM rom)
         {
             // PC is at the adress for the first parametr if applicable
 
@@ -136,7 +136,7 @@ namespace trentGB
             }
         }
 
-        public Instruction(Instruction model, int PC, Byte param1 = 0, Byte param2 = 0)
+        public Instruction(Instruction model, ushort PC, Byte param1 = 0, Byte param2 = 0)
         {
             // PC is at the adress for the first parametr if applicable
 
@@ -184,6 +184,7 @@ namespace trentGB
 
         public void execute()
         {
+            incrementExecutedCycles();
             opFunc.Invoke();
         }
 
@@ -217,12 +218,12 @@ namespace trentGB
             return $"Addr: {address.ToString("X4")}: OP: {desc} - 0x{opCode} {((parameters.Length > 0) ? "0x" : "")}{String.Join(", 0x", parameters.Select(b => b.ToString("X2")))}{paramRealValue}, Cycles: {getCycleCount()}/{cycles} {((isCompleted()) ? "Done" : "")}";
         }
 
-        public Byte getCBOpLength()
+        private Byte getCBOpLength()
         {
             return 2;
         }
 
-        public Byte getCBCycles(Byte cbOpCode)
+        private Byte getCBCycles(Byte cbOpCode)
         {
             Byte rv = 8;
             switch (cbOpCode)
@@ -273,7 +274,7 @@ namespace trentGB
             return rv;
         }
 
-        public void incrementExecutedCycles()
+        private void incrementExecutedCycles()
         {
             executedCycles += 4;
         }
@@ -649,8 +650,21 @@ namespace trentGB
         {
             if (debugParams != null && debugParams.Count == 2)
             {
-                debugType = (CPUDebugger.DebugType)debugParams[0];
-                breakAtInstruction = debugParams[1];
+                CPUDebugger.DebugType type = (CPUDebugger.DebugType)debugParams[0];
+                ushort address = debugParams[1];
+                switch (type)
+                {
+                    case CPUDebugger.DebugType.MemoryAccess:
+                    case CPUDebugger.DebugType.MemoryRead:
+                    case CPUDebugger.DebugType.MemoryWrite:
+                        mem.setBreakPoint(address, type);
+                        break;
+                    default:
+                        debugType = (CPUDebugger.DebugType)debugParams[0];
+                        breakAtInstruction = debugParams[1];
+                        break;
+                }
+
             }
             
         }
@@ -717,7 +731,7 @@ namespace trentGB
         private bool debugStopRequested()
         {
             bool rv = false;
-
+            ushort executingAddress = (getCurrentInstruction() != null) ? getCurrentInstruction().address : (ushort)(getPC() - 1);
             switch (debugType)
             {
                 case CPUDebugger.DebugType.None:
@@ -727,10 +741,15 @@ namespace trentGB
                     rv = (breakAtInstruction <= 0);
                     break;
                 case CPUDebugger.DebugType.Address:
-                    rv = (breakAtInstruction == (getPC() - 1));
+                    rv = (breakAtInstruction == executingAddress);
                     break;
                 case CPUDebugger.DebugType.StopNext:
                     rv = true;
+                    break;
+                case CPUDebugger.DebugType.MemoryWrite:
+                case CPUDebugger.DebugType.MemoryRead:
+                case CPUDebugger.DebugType.MemoryAccess:
+                    rv = mem.checkDebugRequests(executingAddress, debugType);
                     break;
                 case CPUDebugger.DebugType.StopNextCall:
                     if (currentInstruction != null)
@@ -769,7 +788,7 @@ namespace trentGB
                 {
                     clock.Stop();
                     debugType = CPUDebugger.DebugType.None;
-                    rom.disassemble(opCodeTranslationDict);
+                    //rom.disassemble(opCodeTranslationDict);
                     debuggerForm.updateMemoryWindow(getStateDict());
                     debuggerForm.setContinueAddr(getPC());
                     List<Instruction> commandList = commandHistoryList.getStackCopy();
@@ -799,7 +818,6 @@ namespace trentGB
                     clock.Start();
                 }
 
-                currentInstruction.incrementExecutedCycles();
                 currentInstruction.execute();
 
                 // HACK: All Commands are 2 cycle for now when they are all fixed for cycle accuraccy removw this.
@@ -817,9 +835,7 @@ namespace trentGB
             {
                 opCode = currentInstruction.opCode;
                 // Continue Execution
-                currentInstruction.incrementExecutedCycles(); // first cycle
-
-               currentInstruction.execute();
+                currentInstruction.execute();
 
 
 
@@ -1129,7 +1145,7 @@ namespace trentGB
             opCodeTranslationDict.Add(0xE6, new Instruction(0xE6, 2, 8, andANinA));
             opCodeTranslationDict.Add(0xE7, new Instruction(0xE7, 1, 16, rst20));
             opCodeTranslationDict.Add(0xE8, new Instruction(0xE8, 2, 16, addNtoSP));
-            opCodeTranslationDict.Add(0xE9, new Instruction(0xE9, 1, 4, jumpMemHL));
+            opCodeTranslationDict.Add(0xE9, new Instruction(0xE9, 1, 4, jumpHL));
             opCodeTranslationDict.Add(0xEA, new Instruction(0xEA, 3, 16, ldAIntoNN16));
             opCodeTranslationDict.Add(0xEB, new Instruction(0xEB, 1, 4, unusedEB));
             opCodeTranslationDict.Add(0xEC, new Instruction(0xEC, 1, 4, unusedEC));
@@ -3963,11 +3979,13 @@ namespace trentGB
 
             setSP(compValue);
         }
-        private void jumpMemHL() // 0xE9
+        private void jumpHL() // 0xE9
         {
-            byte[] value = mem.getBytes(getHL(), 2);
-
-            setPC(getUInt16ForBytes(value));
+            if (getCurrentInstruction().getCycleCount() == 4)
+            {
+                setPC(getHL());
+            }
+            
         }
         private void ldAIntoNN16() // 0xEA
         {

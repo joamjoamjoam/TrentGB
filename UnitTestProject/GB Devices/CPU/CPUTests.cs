@@ -1375,7 +1375,6 @@ namespace trentGB.Tests
         }
         #endregion
 
-
         #region Op Code Tests
 
         #region 0x00 - NOP
@@ -1961,8 +1960,39 @@ namespace trentGB.Tests
         }
         #endregion
 
+        #region 0xE9 - Jump to HL
+        [DataRow((ushort)0xFFFF)]
+        [DataRow((ushort)0xC100)]
+        [DataRow((ushort)0xFF00)]
+        [DataRow((ushort)0xC0FF)]
+        [DataRow((ushort)0xCFFF)]
+        [DataRow((ushort)0xCFF0)]
+        [DataRow((ushort)0xC234)]
+        [DataTestMethod]
+        [TestCategory("OP Codes")]
+        [TestCategory("OP Code 0xE9 - Jump HL")]
+        public void decodeAndExecute_jumpHL(ushort op1)
+        {
+            byte opCode = 0xE9;
 
+            CPU cpu = setupOpCode(opCode, MethodBase.GetCurrentMethod().Name);
+            cpu.setF(0xF0);
+            cpu.mem.setByte(op1, 0x12);
+            Byte flagsByte = cpu.getF();
+            cpu.setHL(op1);
 
+            Assert.That.AreEqual(0x100, cpu.getPC());
+            Assert.That.AreEqual(0x12, cpu.mem.getByte(op1));
+            fetchAndLoadInstruction(cpu, opCode);
+            assertInstructionFinished(cpu, opCode);
+
+            Assert.That.AreEqual(op1, cpu.getHL());
+            Assert.That.AreEqual(op1, cpu.getPC());
+            Assert.That.AreEqual(0x12, cpu.mem.getByte(op1));
+            
+            Assert.That.FlagsEqual(cpu, flagsByte);
+        }
+        #endregion
 
         #endregion
 

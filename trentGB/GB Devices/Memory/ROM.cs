@@ -661,20 +661,20 @@ namespace trentGB
             return rv;
         }
 
-        public List<Instruction> disassemble(Dictionary<Byte, Instruction> model)
-        {
-            List<Instruction> rv = new List<Instruction>();
-            for (int i = 0; i < bytes.Length; i++)
-            {
-                Byte opCode = bytes[i];
-                Instruction tmp = new Instruction(model[opCode], i, this);
-                rv.Add(tmp);
+        //public List<Instruction> disassemble(Dictionary<Byte, Instruction> model)
+        //{
+        //    List<Instruction> rv = new List<Instruction>();
+        //    for (int i = 0; i < bytes.Length; i++)
+        //    {
+        //        Byte opCode = bytes[i];
+        //        Instruction tmp = new Instruction(model[opCode], i, this);
+        //        rv.Add(tmp);
 
-                i += tmp.length - 1;
-            }
+        //        i += tmp.length - 1;
+        //    }
 
-            return rv;
-        }
+        //    return rv;
+        //}
 
         public void printRomHeader()
         {
