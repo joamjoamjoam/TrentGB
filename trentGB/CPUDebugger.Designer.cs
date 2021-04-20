@@ -106,7 +106,8 @@
             this.contAddrTxtBox.Name = "contAddrTxtBox";
             this.contAddrTxtBox.Size = new System.Drawing.Size(90, 29);
             this.contAddrTxtBox.TabIndex = 4;
-            this.contAddrTxtBox.Validating += new System.ComponentModel.CancelEventHandler(this.watchAddrTxtBox_Validating);
+            this.contAddrTxtBox.KeyDown += new System.Windows.Forms.KeyEventHandler(this.contAddrTxtBox_KeyDown);
+            this.contAddrTxtBox.KeyPress += new System.Windows.Forms.KeyPressEventHandler(this.contAddrTxtBox_KeyPress);
             // 
             // Watch
             // 
@@ -134,7 +135,8 @@
             this.watchAddrTxtBox.Name = "watchAddrTxtBox";
             this.watchAddrTxtBox.Size = new System.Drawing.Size(204, 29);
             this.watchAddrTxtBox.TabIndex = 8;
-            this.watchAddrTxtBox.Validating += new System.ComponentModel.CancelEventHandler(this.watchAddrTxtBox_Validating);
+            this.watchAddrTxtBox.KeyDown += new System.Windows.Forms.KeyEventHandler(this.watchAddrTxtBox_KeyDown);
+            this.watchAddrTxtBox.KeyPress += new System.Windows.Forms.KeyPressEventHandler(this.contAddrTxtBox_KeyPress);
             // 
             // watchAddrListBox
             // 
@@ -235,8 +237,10 @@
             // 
             // debugTypeCB
             // 
+            this.debugTypeCB.BackColor = System.Drawing.SystemColors.ControlDarkDark;
             this.debugTypeCB.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
             this.debugTypeCB.FlatStyle = System.Windows.Forms.FlatStyle.Popup;
+            this.debugTypeCB.ForeColor = System.Drawing.Color.White;
             this.debugTypeCB.FormattingEnabled = true;
             this.debugTypeCB.Items.AddRange(new object[] {
             "Address",
@@ -247,9 +251,10 @@
             "Next Access to Address"});
             this.debugTypeCB.Location = new System.Drawing.Point(828, 1363);
             this.debugTypeCB.Name = "debugTypeCB";
-            this.debugTypeCB.Size = new System.Drawing.Size(132, 32);
+            this.debugTypeCB.Size = new System.Drawing.Size(266, 32);
             this.debugTypeCB.TabIndex = 13;
             this.debugTypeCB.SelectedIndexChanged += new System.EventHandler(this.debugTypeCB_SelectedIndexChanged);
+            this.debugTypeCB.KeyDown += new System.Windows.Forms.KeyEventHandler(this.watchAddrTxtBox_KeyDown);
             // 
             // CPUDebugger
             // 

@@ -600,13 +600,13 @@ namespace trentGB
                     if (debugStopRequested())
                     {
                         clock.Stop();
-                        debugType = CPUDebugger.DebugType.None;
+                        //debugType = CPUDebugger.DebugType.None;
                         debuggerForm.updateMemoryWindow(getStateDict());
                         debuggerForm.setContinueAddr(getPC());
                         debuggerForm.updateDisassembledRom(commandHistoryList.getStackCopy());
                         debuggerForm.currentAddress = (ushort)((getPC() - 1) & 0xFFFF);
                         DialogResult res = debuggerForm.ShowDialog();
-                        if (res == DialogResult.No)
+                        if (res == DialogResult.No || res == DialogResult.Cancel)
                         {
                             showAfterText = false;
                             debugType = CPUDebugger.DebugType.None;
@@ -652,6 +652,7 @@ namespace trentGB
             {
                 CPUDebugger.DebugType type = (CPUDebugger.DebugType)debugParams[0];
                 ushort address = debugParams[1];
+                debugType = (CPUDebugger.DebugType)debugParams[0];
                 switch (type)
                 {
                     case CPUDebugger.DebugType.MemoryAccess:
@@ -660,7 +661,6 @@ namespace trentGB
                         mem.setBreakPoint(address, type);
                         break;
                     default:
-                        debugType = (CPUDebugger.DebugType)debugParams[0];
                         breakAtInstruction = debugParams[1];
                         break;
                 }
@@ -749,7 +749,7 @@ namespace trentGB
                 case CPUDebugger.DebugType.MemoryWrite:
                 case CPUDebugger.DebugType.MemoryRead:
                 case CPUDebugger.DebugType.MemoryAccess:
-                    rv = mem.checkDebugRequests(executingAddress, debugType);
+                    rv = mem.checkDebugRequests();
                     break;
                 case CPUDebugger.DebugType.StopNextCall:
                     if (currentInstruction != null)
@@ -787,7 +787,7 @@ namespace trentGB
                 if (debugStopRequested())
                 {
                     clock.Stop();
-                    debugType = CPUDebugger.DebugType.None;
+                    //debugType = CPUDebugger.DebugType.None;
                     //rom.disassemble(opCodeTranslationDict);
                     debuggerForm.updateMemoryWindow(getStateDict());
                     debuggerForm.setContinueAddr(getPC());
@@ -797,7 +797,7 @@ namespace trentGB
                     debuggerForm.currentAddress = (ushort)((getPC() - 1) & 0xFFFF);
                     debuggerForm.printText(beforeText);
                     DialogResult res = debuggerForm.ShowDialog();
-                    if (res == DialogResult.No)
+                    if (res == DialogResult.No || res == DialogResult.Cancel)
                     {
                         showAfterText = false;
                         debugType = CPUDebugger.DebugType.None;
@@ -874,7 +874,7 @@ namespace trentGB
                         Thread.Sleep(200);
                     }
 
-                    if (res == DialogResult.No)
+                    if (res == DialogResult.No || res == DialogResult.Cancel)
                     {
                         debugType = CPUDebugger.DebugType.None;
                         

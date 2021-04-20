@@ -136,18 +136,30 @@ namespace trentGB
         private void continueBtn_Click(object sender, EventArgs e)
         {
             wait = false;
-            if ((DebugType)debugTypeCB.SelectedIndex == DebugType.StopNextCall)
+            DebugType type = (DebugType)debugTypeCB.SelectedIndex;
+
+            switch (type)
             {
-                if (!Regex.IsMatch(contAddrTxtBox.Text, "[ ]*[0-9A-F][0-9A-F][ ]*") && !Regex.IsMatch(contAddrTxtBox.Text, "[ ]*CB[ ]*[0-9A-F][0-9A-F][ ]*"))
-                {
-                    MessageBox.Show("Invalid Opcode");
-                    this.DialogResult = DialogResult.None;
-                }
-                else
-                {
-                    // Send this to form as ushort
-                    contAddrTxtBox.Text = Convert.ToUInt16(contAddrTxtBox.Text.Replace(" ", ""), 16).ToString("X4");
-                }
+                case DebugType.MemoryAccess:
+                case DebugType.MemoryRead:
+                case DebugType.MemoryWrite:
+                    addToWatchList(getContinueAddr()[1]);
+                    break;
+                case DebugType.StopNextCall:
+                    if (!Regex.IsMatch(contAddrTxtBox.Text, "[ ]*[0-9A-F][0-9A-F][ ]*") && !Regex.IsMatch(contAddrTxtBox.Text, "[ ]*CB[ ]*[0-9A-F][0-9A-F][ ]*"))
+                    {
+                        MessageBox.Show("Invalid Opcode");
+                        this.DialogResult = DialogResult.None;
+                    }
+                    else
+                    {
+                        // Send this to form as ushort
+                        contAddrTxtBox.Text = Convert.ToUInt16(contAddrTxtBox.Text.Replace(" ", ""), 16).ToString("X4");
+                    }
+                    break;
+
+                default:
+                    break;
             }
         }
 
@@ -303,47 +315,6 @@ namespace trentGB
             contAddrTxtBox.Text = nextAddr.ToString("X4");
         }
 
-        private void watchAddrTxtBox_Validating(object sender, CancelEventArgs e)
-        {
-
-
-            switch ((DebugType) debugTypeCB.SelectedIndex) 
-            {
-                case DebugType.Address:
-                case DebugType.MemoryAccess:
-                case DebugType.MemoryWrite:
-                case DebugType.MemoryRead:
-                    if (!Regex.IsMatch(contAddrTxtBox.Text, $"[0-9A-F]*") || contAddrTxtBox.Text.Length > 4)
-                    {
-                        e.Cancel = true;
-                    }
-                    break;
-                case DebugType.InstrCount:
-                    try
-                    {
-                        ushort val = Convert.ToUInt16(contAddrTxtBox.Text.Length);
-                        if (!Regex.IsMatch(contAddrTxtBox.Text, $"[0-9]*"))
-                        {
-                            throw new ArgumentException("Value is not a decimal integer");
-                        }
-                    }
-                    catch
-                    {
-                        e.Cancel = true;
-                    }
-
-                    break;
-                case DebugType.StopNextCall:
-                    if (!Regex.IsMatch(contAddrTxtBox.Text, $"[0-9A-F ]*"))
-                    {
-                        e.Cancel = true;
-                    }
-                    break;
-
-            }
-
-        }
-
         private void Watch_Click(object sender, EventArgs e)
         {
             if (watchAddrTxtBox.Text.Length > 0)
@@ -402,6 +373,86 @@ namespace trentGB
         private void debugTypeCB_SelectedIndexChanged(object sender, EventArgs e)
         {
             contAddrTxtBox.Text = "";
+            switch ((DebugType)debugTypeCB.SelectedIndex)
+            {
+                case DebugType.InstrCount:
+                case DebugType.StopNextCall:
+                    contAddrTxtBox.MaxLength = 5;
+                    break;
+                default:
+                    contAddrTxtBox.MaxLength = 4;
+                    break;
+            }
+        }
+
+        private void contAddrTxtBox_KeyPress(object sender, KeyPressEventArgs e)
+        {
+            TextBox tb = (TextBox)sender;
+            if (e.KeyChar != '\b')
+            {
+                String newText = $"{tb.Text}{e.KeyChar}";
+
+                if (tb.Name == "contAddrTxtBox")
+                {
+                    switch ((DebugType)debugTypeCB.SelectedIndex)
+                    {
+                        case DebugType.Address:
+                        case DebugType.MemoryAccess:
+                        case DebugType.MemoryWrite:
+                        case DebugType.MemoryRead:
+                            if (Regex.IsMatch(newText, $"[^0-9A-F]+") || newText.Length > 4)
+                            {
+                                e.Handled = true;
+                            }
+                            break;
+                        case DebugType.InstrCount:
+                            try
+                            {
+                                if (Regex.IsMatch(newText, $"[^0-9]+"))
+                                {
+                                    throw new ArgumentException("Value is not a decimal integer");
+                                }
+                            }
+                            catch
+                            {
+                                e.Handled = true;
+                            }
+
+                            break;
+                        case DebugType.StopNextCall:
+                            if (Regex.IsMatch(newText, $"[^0-9A-F ]+"))
+                            {
+                                e.Handled = true;
+                            }
+                            break;
+                    }
+                }
+                else
+                {
+                    if (Regex.IsMatch(newText, $"[^0-9A-F]+") || newText.Length > 4)
+                    {
+                        e.Handled = true;
+                    }
+                }
+            }
+            
+        }
+
+        private void watchAddrTxtBox_KeyDown(object sender, KeyEventArgs e)
+        {
+            if (e.KeyCode == Keys.Enter)
+            {
+                Watch_Click(sender, new EventArgs());
+            }
+        }
+
+        private void contAddrTxtBox_KeyDown(object sender, KeyEventArgs e)
+        {
+            if (e.KeyCode == Keys.Enter)
+            {
+                this.DialogResult = DialogResult.Ignore;
+                continueBtn_Click(sender, new EventArgs());
+            }
         }
     }
 

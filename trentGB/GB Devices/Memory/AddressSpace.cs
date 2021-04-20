@@ -56,13 +56,13 @@ namespace trentGB
         }
         public class AddressSpaceBreakpoint
         {
-            DebugCheck checktype = DebugCheck.None;
+            DebugCheck checkType = DebugCheck.None;
             ushort address = 0x0000;
             bool breakHit = false;
 
             public AddressSpaceBreakpoint(ushort address, DebugCheck type)
             {
-                checktype = type;
+                checkType = type;
                 this.address = address;
             }
 
@@ -70,18 +70,25 @@ namespace trentGB
             {
                 if (!breakHit)
                 {
-                    breakHit = ((address == this.address) && ((type == checktype) || (type == DebugCheck.AccessOcurred)));
+                    breakHit = ((address == this.address) && ((type == checkType) || (checkType == DebugCheck.AccessOcurred)));
                 }
             }
 
-            public bool wasHit(ushort address, DebugCheck type)
+            public bool wasHit()
             {
-                return (breakHit && (address == this.address) && (type == checktype));
+                return breakHit;
             }
+
+
 
             public void reset()
             {
                 breakHit = false;
+            }
+
+            public new String ToString()
+            {
+                return $"{checkType.ToString()} at 0x{(address.ToString("X4"))} {((breakHit) ? "Was Hit" : "Was Not Hit")}";
             }
         }
 
@@ -102,41 +109,14 @@ namespace trentGB
             breakpointList.ForEach(bp => bp.update(address, type));
         }
 
-        public bool checkDebugRequests(ushort address, CPUDebugger.DebugType type)
+        public bool checkDebugRequests()
         {
-            DebugCheck realType = DebugCheck.None;
-
-            switch (type)
-            {
-                case CPUDebugger.DebugType.MemoryAccess:
-                    realType = DebugCheck.AccessOcurred;
-                    break;
-                case CPUDebugger.DebugType.MemoryRead:
-                    realType = DebugCheck.ReadOccurred;
-                    break;
-                case CPUDebugger.DebugType.MemoryWrite:
-                    realType = DebugCheck.WriteOccurred;
-                    break;
-                default:
-                    throw new Exception($"Attempted to Check a Memory Breakpoint with the Wrong Type: {type.ToString()}");
-            }
-
-            return checkDebugRequests(address, realType);
+            return (breakpointList.Count(bp => bp.wasHit()) > 0);
         }
-        public bool checkDebugRequests(ushort address, DebugCheck type)
-        {
-            bool rv = false;
-            try
-            {
-                rv = (breakpointList.Count(bp => bp.wasHit(address, type)) > 0);
-                breakpointList.ForEach(bp => bp.reset());
-            }
-            catch
-            {
-                rv = false;
-            }
 
-            return rv;
+        public void resetAllBreakpoints()
+        {
+            breakpointList.ForEach(bp => bp.reset());
         }
 
         public void setBreakPoint(ushort address, CPUDebugger.DebugType type)
