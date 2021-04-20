@@ -810,9 +810,10 @@ namespace trentGB
                     else
                     {
                         // yes Pressed
-                        showAfterText = true;
+                        showAfterText = debuggerForm.getShowAfterState();
                         debugType = CPUDebugger.DebugType.StopNext;
                     }
+
                     debuggerForm.wait = showAfterText;
 
                     clock.Start();

@@ -46,6 +46,7 @@
             this.romView = new System.Windows.Forms.ListView();
             this.columnHeader5 = ((System.Windows.Forms.ColumnHeader)(new System.Windows.Forms.ColumnHeader()));
             this.debugTypeCB = new System.Windows.Forms.ComboBox();
+            this.showAfterStateCB = new System.Windows.Forms.CheckBox();
             this.watchViewContextMenu.SuspendLayout();
             this.SuspendLayout();
             // 
@@ -55,7 +56,7 @@
             this.yesBtn.BackColor = System.Drawing.SystemColors.ControlDarkDark;
             this.yesBtn.DialogResult = System.Windows.Forms.DialogResult.Yes;
             this.yesBtn.ForeColor = System.Drawing.Color.White;
-            this.yesBtn.Location = new System.Drawing.Point(37, 1355);
+            this.yesBtn.Location = new System.Drawing.Point(37, 1292);
             this.yesBtn.Margin = new System.Windows.Forms.Padding(6);
             this.yesBtn.Name = "yesBtn";
             this.yesBtn.Size = new System.Drawing.Size(226, 52);
@@ -70,10 +71,10 @@
             this.noBtn.BackColor = System.Drawing.SystemColors.ControlDarkDark;
             this.noBtn.DialogResult = System.Windows.Forms.DialogResult.No;
             this.noBtn.ForeColor = System.Drawing.Color.White;
-            this.noBtn.Location = new System.Drawing.Point(273, 1355);
+            this.noBtn.Location = new System.Drawing.Point(37, 1356);
             this.noBtn.Margin = new System.Windows.Forms.Padding(6);
             this.noBtn.Name = "noBtn";
-            this.noBtn.Size = new System.Drawing.Size(194, 52);
+            this.noBtn.Size = new System.Drawing.Size(226, 52);
             this.noBtn.TabIndex = 2;
             this.noBtn.Text = "Stop Debugging";
             this.noBtn.UseVisualStyleBackColor = false;
@@ -85,7 +86,7 @@
             this.continueBtn.BackColor = System.Drawing.SystemColors.ControlDarkDark;
             this.continueBtn.DialogResult = System.Windows.Forms.DialogResult.Ignore;
             this.continueBtn.ForeColor = System.Drawing.Color.White;
-            this.continueBtn.Location = new System.Drawing.Point(500, 1355);
+            this.continueBtn.Location = new System.Drawing.Point(285, 1355);
             this.continueBtn.Margin = new System.Windows.Forms.Padding(6);
             this.continueBtn.Name = "continueBtn";
             this.continueBtn.Size = new System.Drawing.Size(182, 52);
@@ -100,7 +101,7 @@
             this.contAddrTxtBox.BackColor = System.Drawing.SystemColors.ControlDarkDark;
             this.contAddrTxtBox.CharacterCasing = System.Windows.Forms.CharacterCasing.Upper;
             this.contAddrTxtBox.ForeColor = System.Drawing.Color.White;
-            this.contAddrTxtBox.Location = new System.Drawing.Point(705, 1366);
+            this.contAddrTxtBox.Location = new System.Drawing.Point(490, 1366);
             this.contAddrTxtBox.Margin = new System.Windows.Forms.Padding(6);
             this.contAddrTxtBox.MaxLength = 5;
             this.contAddrTxtBox.Name = "contAddrTxtBox";
@@ -249,12 +250,23 @@
             "Next Write To Address",
             "Next Read From Address",
             "Next Access to Address"});
-            this.debugTypeCB.Location = new System.Drawing.Point(828, 1363);
+            this.debugTypeCB.Location = new System.Drawing.Point(613, 1364);
             this.debugTypeCB.Name = "debugTypeCB";
             this.debugTypeCB.Size = new System.Drawing.Size(266, 32);
             this.debugTypeCB.TabIndex = 13;
             this.debugTypeCB.SelectedIndexChanged += new System.EventHandler(this.debugTypeCB_SelectedIndexChanged);
             this.debugTypeCB.KeyDown += new System.Windows.Forms.KeyEventHandler(this.watchAddrTxtBox_KeyDown);
+            // 
+            // showAfterStateCB
+            // 
+            this.showAfterStateCB.AutoSize = true;
+            this.showAfterStateCB.ForeColor = System.Drawing.Color.White;
+            this.showAfterStateCB.Location = new System.Drawing.Point(285, 1304);
+            this.showAfterStateCB.Name = "showAfterStateCB";
+            this.showAfterStateCB.Size = new System.Drawing.Size(287, 29);
+            this.showAfterStateCB.TabIndex = 14;
+            this.showAfterStateCB.Text = "Show State After Execution?";
+            this.showAfterStateCB.UseVisualStyleBackColor = true;
             // 
             // CPUDebugger
             // 
@@ -262,6 +274,7 @@
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.BackColor = System.Drawing.Color.FromArgb(((int)(((byte)(64)))), ((int)(((byte)(64)))), ((int)(((byte)(64)))));
             this.ClientSize = new System.Drawing.Size(1969, 1423);
+            this.Controls.Add(this.showAfterStateCB);
             this.Controls.Add(this.debugTypeCB);
             this.Controls.Add(this.romView);
             this.Controls.Add(this.memoryListBox);
@@ -305,5 +318,6 @@
         private System.Windows.Forms.ListView romView;
         private System.Windows.Forms.ColumnHeader columnHeader5;
         private System.Windows.Forms.ComboBox debugTypeCB;
+        private System.Windows.Forms.CheckBox showAfterStateCB;
     }
 }

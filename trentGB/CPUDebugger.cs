@@ -385,12 +385,17 @@ namespace trentGB
             }
         }
 
+        public bool getShowAfterState()
+        {
+            return showAfterStateCB.Checked;
+        }
+
         private void contAddrTxtBox_KeyPress(object sender, KeyPressEventArgs e)
         {
             TextBox tb = (TextBox)sender;
             if (e.KeyChar != '\b')
             {
-                String newText = $"{tb.Text}{e.KeyChar}";
+                String newText = $"{tb.Text}{e.KeyChar.ToString().ToUpper()}";
 
                 if (tb.Name == "contAddrTxtBox")
                 {

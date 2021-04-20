@@ -216,7 +216,6 @@ namespace trentGB
                 Debug.Write(testChar);
             }
 
-
         }
 
         public void requestInterrupt(CPU.InterruptType type)
