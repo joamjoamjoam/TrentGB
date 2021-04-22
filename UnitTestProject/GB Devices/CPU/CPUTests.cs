@@ -64,12 +64,18 @@ namespace trentGB.Tests
             Assert.IsTrue(cpu.getLastExecutedInstruction().isCompleted(), "Instruction did not Report Completion");
         }
 
-        public void assertInstructionFinished(CPU cpu, byte opCode)
+        public void assertInstructionFinished(CPU cpu, byte opCode, byte cbOpcode = 0x00)
         {
-            Assert.IsTrue(cpu.getLastExecutedInstruction().isCompleted());
-            Assert.IsNotNull(cpu.getLastExecutedInstruction());
+            Assert.IsNotNull(cpu.getLastExecutedInstruction(), $"Command Is not Finished {((cpu.getCurrentInstruction() != null) ? cpu.getCurrentInstruction().ToString() : "")}");
+            Assert.IsNull(cpu.getCurrentInstruction(), message: $"Current command is still Executing {((cpu.getCurrentInstruction() != null) ? cpu.getCurrentInstruction().ToString() : "")}");
+            Assert.IsTrue(cpu.getLastExecutedInstruction().isCompleted(), message: $"Command is Not Completed {cpu.getLastExecutedInstruction().ToString()}");
             logMessage("Checking that Scheduled Opcode is same as Executed OpCode");
-            Assert.That.AreEqual(opCode, cpu.getLastExecutedInstruction().opCode);
+            Assert.That.AreEqual(opCode, cpu.getLastExecutedInstruction().opCode, "X2", message: $"Last Executed Opcode is not a match in Op {cpu.getLastExecutedInstruction().ToString()}");
+            Assert.That.AreEqual(cpu.getLastExecutedInstruction().length, cpu.getLastExecutedInstruction().getFetchCount(), "", message: $"Fetches Do not Match Length in last executed Operation");
+            if (opCode == 0xCB)
+            {
+                Assert.That.AreEqual(cbOpcode, cpu.getLastExecutedInstruction().parameters[0], "X2", message: $"CB Opcode Did not Match in Instruction {cpu.getLastExecutedInstruction().ToString()}");
+            }
         }
 
         public void fetchAndLoadInstruction(CPU cpu, byte opCode)
@@ -77,17 +83,17 @@ namespace trentGB.Tests
             Assert.IsNull(cpu.getCurrentInstruction());
             logMessage($"Starting Execution of Instruction {cpu.getInstructionForOpCode(opCode).ToString()}");
             tick(cpu);
-            if (cpu.getInstructionForOpCode(opCode).cycles == 4)
+            if (cpu.getInstructionForOpCode(opCode).getExpectedCycles() == 4)
             {
                 Assert.IsNull(cpu.getCurrentInstruction());
                 logMessage("Check fetched Instruction is correct.");
-                Assert.That.AreEqual(opCode, cpu.getLastExecutedInstruction().opCode);
+                Assert.That.AreEqual(opCode, cpu.getLastExecutedInstruction().opCode, "X2", "Fetched opcode is Not Correct");
             }
             else
             {
                 Assert.IsNotNull(cpu.getCurrentInstruction());
                 logMessage("Check fetched Instruction is correct.");
-                Assert.That.AreEqual(opCode, cpu.getCurrentInstruction().opCode);
+                Assert.That.AreEqual(opCode, cpu.getCurrentInstruction().opCode, "X2", "Fetched Opcode is Not Correct");
             }
 
         }
@@ -1097,7 +1103,7 @@ namespace trentGB.Tests
             }
 
             // Check Number of Cycles
-            Assert.That.AreEqual(cpu.getLastExecutedInstruction().cycles, cpu.getLastExecutedInstruction().getCycleCount());
+            Assert.That.AreEqual(cpu.getLastExecutedInstruction().getExpectedCycles(), cpu.getLastExecutedInstruction().getCycleCount());
         }
 
         [DataTestMethod]
@@ -1369,9 +1375,9 @@ namespace trentGB.Tests
             executeCurrentInstruction(cpu);
 
             // Check Number of Cycles
-            Assert.That.AreEqual(0xCB, cpu.getLastExecutedInstruction().opCode, "OpCode was not 0xCB");
-            Assert.That.AreEqual(opCode, cpu.getLastExecutedInstruction().parameters[0], "CB Prefixed Opcode was Incorrect");
-            Assert.That.AreEqual(cpu.getLastExecutedInstruction().cycles, cpu.getLastExecutedInstruction().getCycleCount(), "Actual Cycles did match Model Cycles");
+            Assert.That.AreEqual(0xCB, cpu.getLastExecutedInstruction().opCode, "X2", message:"OpCode was not 0xCB");
+            Assert.That.AreEqual(opCode, cpu.getLastExecutedInstruction().parameters[0], "X2", "CB Prefixed Opcode was Incorrect");
+            Assert.That.AreEqual(cpu.getLastExecutedInstruction().getExpectedCycles(), cpu.getLastExecutedInstruction().getCycleCount(), "", "Actual Cycles did match Model Cycles");
         }
         #endregion
 
@@ -1942,7 +1948,7 @@ namespace trentGB.Tests
 
         [DataTestMethod]
         [TestCategory("OP Codes")]
-        [TestCategory("Op Code 0xB8 - Compare A with B")]
+        [TestCategory("OP Code 0xB8 - Compare A with B")]
         public void decodeAndExecute_cpAB(byte a, byte b, byte initFlags, byte afterFlags)
         {
             byte opCode = 0xB8;
@@ -1996,13 +2002,838 @@ namespace trentGB.Tests
 
         #endregion
 
+        #region CB OPCode Tests
 
+        #region 0xCB 0x00 - Rotate Left Carry B
+        [DataRow((byte)0x80, (Byte)0x01, false, true)]
+        [DataRow((byte)0x40, (Byte)0x80, false, false)]
+        [DataRow((byte)0x40, (Byte)0x80, true, false)]
+        [DataRow((byte)0x00, (Byte)0x00, false, false)]
+        [DataRow((byte)0x00, (Byte)0x00, true, false)]
+        [DataRow((byte)0xFF, (Byte)0xFF, false, true)]
+        [DataRow((byte)0xFF, (Byte)0xFF, true, true)]
+        [DataRow((byte)0x0F, (Byte)0x1E, false, false)]
+        [DataTestMethod]
+        [TestCategory("OP Codes")]
+        [TestCategory("OP Code 0xCB 0x00 - Rotate Left Carry B")]
+        public void decodeAndExecute_CB_rlcB(byte op1, byte result, bool carryState, bool carryAfterState)
+        {
+            byte opCode = 0x00;
+
+            CPU cpu = setupOpCode(0xCB, MethodBase.GetCurrentMethod().Name, opCode);
+            cpu.setF((Byte)(((carryState) ? (byte)CPU.CPUFlagsMask.Carry : (byte)0) | (Byte)CPU.CPUFlagsMask.Subtract | (Byte)CPU.CPUFlagsMask.HalfCarry));
+            cpu.setB(op1);
+
+            byte expectedFlags = (Byte)(((carryAfterState) ? (byte)CPU.CPUFlagsMask.Carry : (byte)0)); // Zero Flag is Always Reset. Confirmed by BGB EMu
+
+            fetchAndLoadInstruction(cpu, 0xCB);
+            Assert.That.AreEqual(op1, cpu.getB());
+            if (carryState)
+            {
+                Assert.IsTrue(cpu.getCarryFlag());
+            }
+            else
+            {
+                Assert.IsFalse(cpu.getCarryFlag());
+            }
+            tick(cpu);
+            assertInstructionFinished(cpu, 0xCB, opCode);
+            Assert.That.AreEqual(result, cpu.getB());
+
+            if (carryAfterState)
+            {
+                Assert.IsTrue(cpu.getCarryFlag());
+            }
+            else
+            {
+                Assert.IsFalse(cpu.getCarryFlag());
+            }
+
+            Assert.That.FlagsEqual(cpu, expectedFlags);
+
+        }
+        #endregion
+
+        #region 0xCB 0x01 - Rotate Left Carry C
+        [DataRow((byte)0x80, (Byte)0x01, false, true)]
+        [DataRow((byte)0x40, (Byte)0x80, false, false)]
+        [DataRow((byte)0x40, (Byte)0x80, true, false)]
+        [DataRow((byte)0x00, (Byte)0x00, false, false)]
+        [DataRow((byte)0x00, (Byte)0x00, true, false)]
+        [DataRow((byte)0xFF, (Byte)0xFF, false, true)]
+        [DataRow((byte)0xFF, (Byte)0xFF, true, true)]
+        [DataRow((byte)0x0F, (Byte)0x1E, false, false)]
+        [DataTestMethod]
+        [TestCategory("OP Codes")]
+        [TestCategory("OP Code 0xCB 0x01 - Rotate Left Carry C")]
+        public void decodeAndExecute_CB_rlcC(byte op1, byte result, bool carryState, bool carryAfterState)
+        {
+            byte opCode = 0x01;
+
+            CPU cpu = setupOpCode(0xCB, MethodBase.GetCurrentMethod().Name, opCode);
+            cpu.setF((Byte)(((carryState) ? (byte)CPU.CPUFlagsMask.Carry : (byte)0) | (Byte)CPU.CPUFlagsMask.Subtract | (Byte)CPU.CPUFlagsMask.HalfCarry));
+            cpu.setC(op1);
+
+            byte expectedFlags = (Byte)(((carryAfterState) ? (byte)CPU.CPUFlagsMask.Carry : (byte)0)); // Zero Flag is Always Reset. Confirmed by BGB EMu
+
+            fetchAndLoadInstruction(cpu, 0xCB);
+            Assert.That.AreEqual(op1, cpu.getC());
+            if (carryState)
+            {
+                Assert.IsTrue(cpu.getCarryFlag());
+            }
+            else
+            {
+                Assert.IsFalse(cpu.getCarryFlag());
+            }
+            tick(cpu);
+            assertInstructionFinished(cpu, 0xCB, opCode);
+            Assert.That.AreEqual(result, cpu.getC());
+
+            if (carryAfterState)
+            {
+                Assert.IsTrue(cpu.getCarryFlag());
+            }
+            else
+            {
+                Assert.IsFalse(cpu.getCarryFlag());
+            }
+
+            Assert.That.FlagsEqual(cpu, expectedFlags);
+
+        }
+        #endregion
+
+        #region 0xCB 0x02 - Rotate Left Carry D
+        [DataRow((byte)0x80, (Byte)0x01, false, true)]
+        [DataRow((byte)0x40, (Byte)0x80, false, false)]
+        [DataRow((byte)0x40, (Byte)0x80, true, false)]
+        [DataRow((byte)0x00, (Byte)0x00, false, false)]
+        [DataRow((byte)0x00, (Byte)0x00, true, false)]
+        [DataRow((byte)0xFF, (Byte)0xFF, false, true)]
+        [DataRow((byte)0xFF, (Byte)0xFF, true, true)]
+        [DataRow((byte)0x0F, (Byte)0x1E, false, false)]
+        [DataTestMethod]
+        [TestCategory("OP Codes")]
+        [TestCategory("OP Code 0xCB 0x02 - Rotate Left Carry D")]
+        public void decodeAndExecute_CB_rlcD(byte op1, byte result, bool carryState, bool carryAfterState)
+        {
+            byte opCode = 0x02;
+
+            CPU cpu = setupOpCode(0xCB, MethodBase.GetCurrentMethod().Name, opCode);
+            cpu.setF((Byte)(((carryState) ? (byte)CPU.CPUFlagsMask.Carry : (byte)0) | (Byte)CPU.CPUFlagsMask.Subtract | (Byte)CPU.CPUFlagsMask.HalfCarry));
+            cpu.setD(op1);
+
+            byte expectedFlags = (Byte)(((carryAfterState) ? (byte)CPU.CPUFlagsMask.Carry : (byte)0)); // Zero Flag is Always Reset. Confirmed by BGB EMu
+
+            fetchAndLoadInstruction(cpu, 0xCB);
+            Assert.That.AreEqual(op1, cpu.getD());
+            if (carryState)
+            {
+                Assert.IsTrue(cpu.getCarryFlag());
+            }
+            else
+            {
+                Assert.IsFalse(cpu.getCarryFlag());
+            }
+            tick(cpu);
+            assertInstructionFinished(cpu, 0xCB, opCode);
+            Assert.That.AreEqual(result, cpu.getD());
+
+            if (carryAfterState)
+            {
+                Assert.IsTrue(cpu.getCarryFlag());
+            }
+            else
+            {
+                Assert.IsFalse(cpu.getCarryFlag());
+            }
+
+            Assert.That.FlagsEqual(cpu, expectedFlags);
+
+        }
+        #endregion
+
+        #region 0xCB 0x03 - Rotate Left Carry E
+        [DataRow((byte)0x80, (Byte)0x01, false, true)]
+        [DataRow((byte)0x40, (Byte)0x80, false, false)]
+        [DataRow((byte)0x40, (Byte)0x80, true, false)]
+        [DataRow((byte)0x00, (Byte)0x00, false, false)]
+        [DataRow((byte)0x00, (Byte)0x00, true, false)]
+        [DataRow((byte)0xFF, (Byte)0xFF, false, true)]
+        [DataRow((byte)0xFF, (Byte)0xFF, true, true)]
+        [DataRow((byte)0x0F, (Byte)0x1E, false, false)]
+        [DataTestMethod]
+        [TestCategory("OP Codes")]
+        [TestCategory("OP Code 0xCB 0x03 - Rotate Left Carry E")]
+        public void decodeAndExecute_CB_rlcE(byte op1, byte result, bool carryState, bool carryAfterState)
+        {
+            byte opCode = 0x03;
+
+            CPU cpu = setupOpCode(0xCB, MethodBase.GetCurrentMethod().Name, opCode);
+            cpu.setF((Byte)(((carryState) ? (byte)CPU.CPUFlagsMask.Carry : (byte)0) | (Byte)CPU.CPUFlagsMask.Subtract | (Byte)CPU.CPUFlagsMask.HalfCarry));
+            cpu.setE(op1);
+
+            byte expectedFlags = (Byte)(((carryAfterState) ? (byte)CPU.CPUFlagsMask.Carry : (byte)0)); // Zero Flag is Always Reset. Confirmed by BGB EMu
+
+            fetchAndLoadInstruction(cpu, 0xCB);
+            Assert.That.AreEqual(op1, cpu.getE());
+            if (carryState)
+            {
+                Assert.IsTrue(cpu.getCarryFlag());
+            }
+            else
+            {
+                Assert.IsFalse(cpu.getCarryFlag());
+            }
+            tick(cpu);
+            assertInstructionFinished(cpu, 0xCB, opCode);
+            Assert.That.AreEqual(result, cpu.getE());
+
+            if (carryAfterState)
+            {
+                Assert.IsTrue(cpu.getCarryFlag());
+            }
+            else
+            {
+                Assert.IsFalse(cpu.getCarryFlag());
+            }
+
+            Assert.That.FlagsEqual(cpu, expectedFlags);
+
+        }
+        #endregion
+
+        #region 0xCB 0x04 - Rotate Left Carry H
+        [DataRow((byte)0x80, (Byte)0x01, false, true)]
+        [DataRow((byte)0x40, (Byte)0x80, false, false)]
+        [DataRow((byte)0x40, (Byte)0x80, true, false)]
+        [DataRow((byte)0x00, (Byte)0x00, false, false)]
+        [DataRow((byte)0x00, (Byte)0x00, true, false)]
+        [DataRow((byte)0xFF, (Byte)0xFF, false, true)]
+        [DataRow((byte)0xFF, (Byte)0xFF, true, true)]
+        [DataRow((byte)0x0F, (Byte)0x1E, false, false)]
+        [DataTestMethod]
+        [TestCategory("OP Codes")]
+        [TestCategory("OP Code 0xCB 0x04 - Rotate Left Carry H")]
+        public void decodeAndExecute_CB_rlcH(byte op1, byte result, bool carryState, bool carryAfterState)
+        {
+            byte opCode = 0x04;
+
+            CPU cpu = setupOpCode(0xCB, MethodBase.GetCurrentMethod().Name, opCode);
+            cpu.setF((Byte)(((carryState) ? (byte)CPU.CPUFlagsMask.Carry : (byte)0) | (Byte)CPU.CPUFlagsMask.Subtract | (Byte)CPU.CPUFlagsMask.HalfCarry));
+            cpu.setH(op1);
+
+            byte expectedFlags = (Byte)(((carryAfterState) ? (byte)CPU.CPUFlagsMask.Carry : (byte)0)); // Zero Flag is Always Reset. Confirmed by BGB EMu
+
+            fetchAndLoadInstruction(cpu, 0xCB);
+            Assert.That.AreEqual(op1, cpu.getH());
+            if (carryState)
+            {
+                Assert.IsTrue(cpu.getCarryFlag());
+            }
+            else
+            {
+                Assert.IsFalse(cpu.getCarryFlag());
+            }
+            tick(cpu);
+            assertInstructionFinished(cpu, 0xCB, opCode);
+            Assert.That.AreEqual(result, cpu.getH());
+
+            if (carryAfterState)
+            {
+                Assert.IsTrue(cpu.getCarryFlag());
+            }
+            else
+            {
+                Assert.IsFalse(cpu.getCarryFlag());
+            }
+
+            Assert.That.FlagsEqual(cpu, expectedFlags);
+
+        }
+        #endregion
+
+        #region 0xCB 0x05 - Rotate Left Carry L
+        [DataRow((byte)0x80, (Byte)0x01, false, true)]
+        [DataRow((byte)0x40, (Byte)0x80, false, false)]
+        [DataRow((byte)0x40, (Byte)0x80, true, false)]
+        [DataRow((byte)0x00, (Byte)0x00, false, false)]
+        [DataRow((byte)0x00, (Byte)0x00, true, false)]
+        [DataRow((byte)0xFF, (Byte)0xFF, false, true)]
+        [DataRow((byte)0xFF, (Byte)0xFF, true, true)]
+        [DataRow((byte)0x0F, (Byte)0x1E, false, false)]
+        [DataTestMethod]
+        [TestCategory("OP Codes")]
+        [TestCategory("OP Code 0xCB 0x05 - Rotate Left Carry L")]
+        public void decodeAndExecute_CB_rlcL(byte op1, byte result, bool carryState, bool carryAfterState)
+        {
+            byte opCode = 0x05;
+
+            CPU cpu = setupOpCode(0xCB, MethodBase.GetCurrentMethod().Name, opCode);
+            cpu.setF((Byte)(((carryState) ? (byte)CPU.CPUFlagsMask.Carry : (byte)0) | (Byte)CPU.CPUFlagsMask.Subtract | (Byte)CPU.CPUFlagsMask.HalfCarry));
+            cpu.setL(op1);
+
+            byte expectedFlags = (Byte)(((carryAfterState) ? (byte)CPU.CPUFlagsMask.Carry : (byte)0)); // Zero Flag is Always Reset. Confirmed by BGB EMu
+
+            fetchAndLoadInstruction(cpu, 0xCB);
+            Assert.That.AreEqual(op1, cpu.getL());
+            if (carryState)
+            {
+                Assert.IsTrue(cpu.getCarryFlag());
+            }
+            else
+            {
+                Assert.IsFalse(cpu.getCarryFlag());
+            }
+            tick(cpu);
+            assertInstructionFinished(cpu, 0xCB, opCode);
+            Assert.That.AreEqual(result, cpu.getL());
+
+            if (carryAfterState)
+            {
+                Assert.IsTrue(cpu.getCarryFlag());
+            }
+            else
+            {
+                Assert.IsFalse(cpu.getCarryFlag());
+            }
+
+            Assert.That.FlagsEqual(cpu, expectedFlags);
+
+        }
+        #endregion
+
+        #region 0xCB 0x06 - Rotate Left Carry MemHL
+        [DataRow((ushort)0xC000, (byte)0x80, (Byte)0x01, false, true)]
+        [DataRow((ushort)0xC000, (byte)0x40, (Byte)0x80, false, false)]
+        [DataRow((ushort)0xC000, (byte)0x40, (Byte)0x80, true, false)]
+        [DataRow((ushort)0xC000, (byte)0x00, (Byte)0x00, false, false)]
+        [DataRow((ushort)0xC000, (byte)0x00, (Byte)0x00, true, false)]
+        [DataRow((ushort)0xC000, (byte)0xFF, (Byte)0xFF, false, true)]
+        [DataRow((ushort)0xC000, (byte)0xFF, (Byte)0xFF, true, true)]
+        [DataRow((ushort)0xC000, (byte)0x0F, (Byte)0x1E, false, false)]
+        [DataTestMethod]
+        [TestCategory("OP Codes")]
+        [TestCategory("OP Code 0xCB 0x06 - Rotate Left Carry Mem HL")]
+        public void decodeAndExecute_CB_rlcMemHL(ushort address, byte op1, byte result, bool carryState, bool carryAfterState)
+        {
+            byte opCode = 0x06;
+
+            CPU cpu = setupOpCode(0xCB, MethodBase.GetCurrentMethod().Name, opCode);
+            cpu.setF((Byte)(((carryState) ? (byte)CPU.CPUFlagsMask.Carry : (byte)0) | (Byte)CPU.CPUFlagsMask.Subtract | (Byte)CPU.CPUFlagsMask.HalfCarry));
+            cpu.mem.setByte(address, op1);
+            cpu.setHL(address);
+
+            byte expectedFlags = (Byte)(((carryAfterState) ? (byte)CPU.CPUFlagsMask.Carry : (byte)0)); // Zero Flag is Always Reset. Confirmed by BGB EMu
+
+            fetchAndLoadInstruction(cpu, 0xCB);
+            tick(cpu);
+            Assert.That.AreEqual(opCode, cpu.getCurrentInstruction().parameters[0]);
+            Assert.That.AreEqual(0x0000, cpu.getCurrentInstruction().storage);
+            tick(cpu);
+            Assert.That.AreEqual(op1, cpu.getCurrentInstruction().storage);
+            Assert.That.AreEqual(op1, cpu.mem.getByte(address));
+            if (carryState)
+            {
+                Assert.IsTrue(cpu.getCarryFlag());
+            }
+            else
+            {
+                Assert.IsFalse(cpu.getCarryFlag());
+            }
+            tick(cpu);
+            assertInstructionFinished(cpu, 0xCB, opCode);
+            Assert.That.AreEqual(address, cpu.getHL());
+            Assert.That.AreEqual(result, cpu.mem.getByte(address));
+
+            if (carryAfterState)
+            {
+                Assert.IsTrue(cpu.getCarryFlag());
+            }
+            else
+            {
+                Assert.IsFalse(cpu.getCarryFlag());
+            }
+
+            Assert.That.FlagsEqual(cpu, expectedFlags);
+
+        }
+        #endregion
+
+        #region 0xCB 0x07 - Rotate Left Carry A
+        [DataRow((byte)0x80, (Byte)0x01, false, true)]
+        [DataRow((byte)0x40, (Byte)0x80, false, false)]
+        [DataRow((byte)0x40, (Byte)0x80, true, false)]
+        [DataRow((byte)0x00, (Byte)0x00, false, false)]
+        [DataRow((byte)0x00, (Byte)0x00, true, false)]
+        [DataRow((byte)0xFF, (Byte)0xFF, false, true)]
+        [DataRow((byte)0xFF, (Byte)0xFF, true, true)]
+        [DataRow((byte)0x0F, (Byte)0x1E, false, false)]
+        [DataTestMethod]
+        [TestCategory("OP Codes")]
+        [TestCategory("OP Code 0xCB 0x07 - Rotate Left Carry A")]
+        public void decodeAndExecute_CB_rlcA(byte op1, byte result, bool carryState, bool carryAfterState)
+        {
+            byte opCode = 0x07;
+
+            CPU cpu = setupOpCode(0xCB, MethodBase.GetCurrentMethod().Name, opCode);
+            cpu.setF((Byte)(((carryState) ? (byte)CPU.CPUFlagsMask.Carry : (byte)0) | (Byte)CPU.CPUFlagsMask.Subtract | (Byte)CPU.CPUFlagsMask.HalfCarry));
+            cpu.setA(op1);
+
+            byte expectedFlags = (Byte)(((carryAfterState) ? (byte)CPU.CPUFlagsMask.Carry : (byte)0)); // Zero Flag is Always Reset. Confirmed by BGB EMu
+
+            fetchAndLoadInstruction(cpu, 0xCB);
+            Assert.That.AreEqual(op1, cpu.getA());
+            if (carryState)
+            {
+                Assert.IsTrue(cpu.getCarryFlag());
+            }
+            else
+            {
+                Assert.IsFalse(cpu.getCarryFlag());
+            }
+            tick(cpu);
+            assertInstructionFinished(cpu, 0xCB, opCode);
+            Assert.That.AreEqual(result, cpu.getA());
+
+            if (carryAfterState)
+            {
+                Assert.IsTrue(cpu.getCarryFlag());
+            }
+            else
+            {
+                Assert.IsFalse(cpu.getCarryFlag());
+            }
+
+            Assert.That.FlagsEqual(cpu, expectedFlags);
+
+        }
+        #endregion
+
+        #region 0xCB 0x08 - Rotate Right Carry B
+        [DataRow((byte)0x01, (Byte)0x80, false, true)]
+        [DataRow((byte)0x01, (Byte)0x80, true, true)]
+        [DataRow((byte)0x80, (Byte)0x40, false, false)]
+        [DataRow((byte)0x80, (Byte)0x40, true, false)]
+        [DataRow((byte)0x00, (Byte)0x00, false, false)]
+        [DataRow((byte)0x00, (Byte)0x00, true, false)]
+        [DataRow((byte)0xFF, (Byte)0xFF, false, true)]
+        [DataRow((byte)0xFF, (Byte)0xFF, true, true)]
+        [DataRow((byte)0x1E, (Byte)0x0F, false, false)]
+        [DataTestMethod]
+        [TestCategory("OP Codes")]
+        [TestCategory("OP Code 0xCB 0x08 - Rotate Right Carry B")]
+        public void decodeAndExecute_CB_rrcB(byte op1, byte result, bool carryState, bool carryAfterState)
+        {
+            byte opCode = 0x08;
+
+            CPU cpu = setupOpCode(0xCB, MethodBase.GetCurrentMethod().Name, opCode);
+            cpu.setF((Byte)(((carryState) ? (byte)CPU.CPUFlagsMask.Carry : (byte)0) | (Byte)CPU.CPUFlagsMask.Subtract | (Byte)CPU.CPUFlagsMask.HalfCarry));
+            cpu.setB(op1);
+
+            byte expectedFlags = (Byte)(((carryAfterState) ? (byte)CPU.CPUFlagsMask.Carry : (byte)0)); // Zero Flag is Always Reset. Confirmed by BGB EMU
+
+            fetchAndLoadInstruction(cpu, 0xCB);
+            Assert.That.AreEqual(op1, cpu.getB());
+            if (carryState)
+            {
+                Assert.IsTrue(cpu.getCarryFlag());
+            }
+            else
+            {
+                Assert.IsFalse(cpu.getCarryFlag());
+            }
+            tick(cpu);
+            assertInstructionFinished(cpu, 0xCB, opCode);
+            Assert.That.AreEqual(result, cpu.getB());
+
+            if (carryAfterState)
+            {
+                Assert.IsTrue(cpu.getCarryFlag());
+            }
+            else
+            {
+                Assert.IsFalse(cpu.getCarryFlag());
+            }
+
+            Assert.That.FlagsEqual(cpu, expectedFlags);
+
+        }
+        #endregion
+
+        #region 0xCB 0x09 - Rotate Right Carry C
+        [DataRow((byte)0x01, (Byte)0x80, false, true)]
+        [DataRow((byte)0x01, (Byte)0x80, true, true)]
+        [DataRow((byte)0x80, (Byte)0x40, false, false)]
+        [DataRow((byte)0x80, (Byte)0x40, true, false)]
+        [DataRow((byte)0x00, (Byte)0x00, false, false)]
+        [DataRow((byte)0x00, (Byte)0x00, true, false)]
+        [DataRow((byte)0xFF, (Byte)0xFF, false, true)]
+        [DataRow((byte)0xFF, (Byte)0xFF, true, true)]
+        [DataRow((byte)0x1E, (Byte)0x0F, false, false)]
+        [DataTestMethod]
+        [TestCategory("OP Codes")]
+        [TestCategory("OP Code 0xCB 0x09 - Rotate Right Carry C")]
+        public void decodeAndExecute_CB_rrcC(byte op1, byte result, bool carryState, bool carryAfterState)
+        {
+            byte opCode = 0x09;
+
+            CPU cpu = setupOpCode(0xCB, MethodBase.GetCurrentMethod().Name, opCode);
+            cpu.setF((Byte)(((carryState) ? (byte)CPU.CPUFlagsMask.Carry : (byte)0) | (Byte)CPU.CPUFlagsMask.Subtract | (Byte)CPU.CPUFlagsMask.HalfCarry));
+            cpu.setC(op1);
+
+            byte expectedFlags = (Byte)(((carryAfterState) ? (byte)CPU.CPUFlagsMask.Carry : (byte)0)); // Zero Flag is Always Reset. Confirmed by BGB EMU
+
+            fetchAndLoadInstruction(cpu, 0xCB);
+            Assert.That.AreEqual(op1, cpu.getC());
+            if (carryState)
+            {
+                Assert.IsTrue(cpu.getCarryFlag());
+            }
+            else
+            {
+                Assert.IsFalse(cpu.getCarryFlag());
+            }
+            tick(cpu);
+            assertInstructionFinished(cpu, 0xCB, opCode);
+            Assert.That.AreEqual(result, cpu.getC());
+
+            if (carryAfterState)
+            {
+                Assert.IsTrue(cpu.getCarryFlag());
+            }
+            else
+            {
+                Assert.IsFalse(cpu.getCarryFlag());
+            }
+
+            Assert.That.FlagsEqual(cpu, expectedFlags);
+
+        }
+        #endregion
+
+        #region 0xCB 0x0A - Rotate Right Carry D
+        [DataRow((byte)0x01, (Byte)0x80, false, true)]
+        [DataRow((byte)0x01, (Byte)0x80, true, true)]
+        [DataRow((byte)0x80, (Byte)0x40, false, false)]
+        [DataRow((byte)0x80, (Byte)0x40, true, false)]
+        [DataRow((byte)0x00, (Byte)0x00, false, false)]
+        [DataRow((byte)0x00, (Byte)0x00, true, false)]
+        [DataRow((byte)0xFF, (Byte)0xFF, false, true)]
+        [DataRow((byte)0xFF, (Byte)0xFF, true, true)]
+        [DataRow((byte)0x1E, (Byte)0x0F, false, false)]
+        [DataTestMethod]
+        [TestCategory("OP Codes")]
+        [TestCategory("OP Code 0xCB 0x0A - Rotate Right Carry D")]
+        public void decodeAndExecute_CB_rrcD(byte op1, byte result, bool carryState, bool carryAfterState)
+        {
+            byte opCode = 0x0A;
+
+            CPU cpu = setupOpCode(0xCB, MethodBase.GetCurrentMethod().Name, opCode);
+            cpu.setF((Byte)(((carryState) ? (byte)CPU.CPUFlagsMask.Carry : (byte)0) | (Byte)CPU.CPUFlagsMask.Subtract | (Byte)CPU.CPUFlagsMask.HalfCarry));
+            cpu.setD(op1);
+
+            byte expectedFlags = (Byte)(((carryAfterState) ? (byte)CPU.CPUFlagsMask.Carry : (byte)0)); // Zero Flag is Always Reset. Confirmed by BGB EMU
+
+            fetchAndLoadInstruction(cpu, 0xCB);
+            Assert.That.AreEqual(op1, cpu.getD());
+            if (carryState)
+            {
+                Assert.IsTrue(cpu.getCarryFlag());
+            }
+            else
+            {
+                Assert.IsFalse(cpu.getCarryFlag());
+            }
+            tick(cpu);
+            assertInstructionFinished(cpu, 0xCB, opCode);
+            Assert.That.AreEqual(result, cpu.getD());
+
+            if (carryAfterState)
+            {
+                Assert.IsTrue(cpu.getCarryFlag());
+            }
+            else
+            {
+                Assert.IsFalse(cpu.getCarryFlag());
+            }
+
+            Assert.That.FlagsEqual(cpu, expectedFlags);
+
+        }
+        #endregion
+
+        #region 0xCB 0x0B - Rotate Right Carry E
+        [DataRow((byte)0x01, (Byte)0x80, false, true)]
+        [DataRow((byte)0x01, (Byte)0x80, true, true)]
+        [DataRow((byte)0x80, (Byte)0x40, false, false)]
+        [DataRow((byte)0x80, (Byte)0x40, true, false)]
+        [DataRow((byte)0x00, (Byte)0x00, false, false)]
+        [DataRow((byte)0x00, (Byte)0x00, true, false)]
+        [DataRow((byte)0xFF, (Byte)0xFF, false, true)]
+        [DataRow((byte)0xFF, (Byte)0xFF, true, true)]
+        [DataRow((byte)0x1E, (Byte)0x0F, false, false)]
+        [DataTestMethod]
+        [TestCategory("OP Codes")]
+        [TestCategory("OP Code 0xCB 0x0B - Rotate Right Carry B")]
+        public void decodeAndExecute_CB_rrcE(byte op1, byte result, bool carryState, bool carryAfterState)
+        {
+            byte opCode = 0x0B;
+
+            CPU cpu = setupOpCode(0xCB, MethodBase.GetCurrentMethod().Name, opCode);
+            cpu.setF((Byte)(((carryState) ? (byte)CPU.CPUFlagsMask.Carry : (byte)0) | (Byte)CPU.CPUFlagsMask.Subtract | (Byte)CPU.CPUFlagsMask.HalfCarry));
+            cpu.setE(op1);
+
+            byte expectedFlags = (Byte)(((carryAfterState) ? (byte)CPU.CPUFlagsMask.Carry : (byte)0)); // Zero Flag is Always Reset. Confirmed by BGB EMU
+
+            fetchAndLoadInstruction(cpu, 0xCB);
+            Assert.That.AreEqual(op1, cpu.getE());
+            if (carryState)
+            {
+                Assert.IsTrue(cpu.getCarryFlag());
+            }
+            else
+            {
+                Assert.IsFalse(cpu.getCarryFlag());
+            }
+            tick(cpu);
+            assertInstructionFinished(cpu, 0xCB, opCode);
+            Assert.That.AreEqual(result, cpu.getE());
+
+            if (carryAfterState)
+            {
+                Assert.IsTrue(cpu.getCarryFlag());
+            }
+            else
+            {
+                Assert.IsFalse(cpu.getCarryFlag());
+            }
+
+            Assert.That.FlagsEqual(cpu, expectedFlags);
+
+        }
+        #endregion
+
+        #region 0xCB 0x0C - Rotate Right Carry H
+        [DataRow((byte)0x01, (Byte)0x80, false, true)]
+        [DataRow((byte)0x01, (Byte)0x80, true, true)]
+        [DataRow((byte)0x80, (Byte)0x40, false, false)]
+        [DataRow((byte)0x80, (Byte)0x40, true, false)]
+        [DataRow((byte)0x00, (Byte)0x00, false, false)]
+        [DataRow((byte)0x00, (Byte)0x00, true, false)]
+        [DataRow((byte)0xFF, (Byte)0xFF, false, true)]
+        [DataRow((byte)0xFF, (Byte)0xFF, true, true)]
+        [DataRow((byte)0x1E, (Byte)0x0F, false, false)]
+        [DataTestMethod]
+        [TestCategory("OP Codes")]
+        [TestCategory("OP Code 0xCB 0x0C - Rotate Right Carry H")]
+        public void decodeAndExecute_CB_rrcH(byte op1, byte result, bool carryState, bool carryAfterState)
+        {
+            byte opCode = 0x0C;
+
+            CPU cpu = setupOpCode(0xCB, MethodBase.GetCurrentMethod().Name, opCode);
+            cpu.setF((Byte)(((carryState) ? (byte)CPU.CPUFlagsMask.Carry : (byte)0) | (Byte)CPU.CPUFlagsMask.Subtract | (Byte)CPU.CPUFlagsMask.HalfCarry));
+            cpu.setH(op1);
+
+            byte expectedFlags = (Byte)(((carryAfterState) ? (byte)CPU.CPUFlagsMask.Carry : (byte)0)); // Zero Flag is Always Reset. Confirmed by BGB EMU
+
+            fetchAndLoadInstruction(cpu, 0xCB);
+            Assert.That.AreEqual(op1, cpu.getH());
+            if (carryState)
+            {
+                Assert.IsTrue(cpu.getCarryFlag());
+            }
+            else
+            {
+                Assert.IsFalse(cpu.getCarryFlag());
+            }
+            tick(cpu);
+            assertInstructionFinished(cpu, 0xCB, opCode);
+            Assert.That.AreEqual(result, cpu.getH());
+
+            if (carryAfterState)
+            {
+                Assert.IsTrue(cpu.getCarryFlag());
+            }
+            else
+            {
+                Assert.IsFalse(cpu.getCarryFlag());
+            }
+
+            Assert.That.FlagsEqual(cpu, expectedFlags);
+
+        }
+        #endregion
+
+        #region 0xCB 0x0D - Rotate Right Carry L
+        [DataRow((byte)0x01, (Byte)0x80, false, true)]
+        [DataRow((byte)0x01, (Byte)0x80, true, true)]
+        [DataRow((byte)0x80, (Byte)0x40, false, false)]
+        [DataRow((byte)0x80, (Byte)0x40, true, false)]
+        [DataRow((byte)0x00, (Byte)0x00, false, false)]
+        [DataRow((byte)0x00, (Byte)0x00, true, false)]
+        [DataRow((byte)0xFF, (Byte)0xFF, false, true)]
+        [DataRow((byte)0xFF, (Byte)0xFF, true, true)]
+        [DataRow((byte)0x1E, (Byte)0x0F, false, false)]
+        [DataTestMethod]
+        [TestCategory("OP Codes")]
+        [TestCategory("OP Code 0xCB 0x0D - Rotate Right Carry L")]
+        public void decodeAndExecute_CB_rrcL(byte op1, byte result, bool carryState, bool carryAfterState)
+        {
+            byte opCode = 0x0D;
+
+            CPU cpu = setupOpCode(0xCB, MethodBase.GetCurrentMethod().Name, opCode);
+            cpu.setF((Byte)(((carryState) ? (byte)CPU.CPUFlagsMask.Carry : (byte)0) | (Byte)CPU.CPUFlagsMask.Subtract | (Byte)CPU.CPUFlagsMask.HalfCarry));
+            cpu.setL(op1);
+
+            byte expectedFlags = (Byte)(((carryAfterState) ? (byte)CPU.CPUFlagsMask.Carry : (byte)0)); // Zero Flag is Always Reset. Confirmed by BGB EMU
+
+            fetchAndLoadInstruction(cpu, 0xCB);
+            Assert.That.AreEqual(op1, cpu.getL());
+            if (carryState)
+            {
+                Assert.IsTrue(cpu.getCarryFlag());
+            }
+            else
+            {
+                Assert.IsFalse(cpu.getCarryFlag());
+            }
+            tick(cpu);
+            assertInstructionFinished(cpu, 0xCB, opCode);
+            Assert.That.AreEqual(result, cpu.getL());
+
+            if (carryAfterState)
+            {
+                Assert.IsTrue(cpu.getCarryFlag());
+            }
+            else
+            {
+                Assert.IsFalse(cpu.getCarryFlag());
+            }
+
+            Assert.That.FlagsEqual(cpu, expectedFlags);
+
+        }
+        #endregion
+
+        #region 0xCB 0x0E - Rotate Right Mem HL
+        [DataRow((ushort)0xC000, (byte)0x01, (Byte)0x80, false, true)]
+        [DataRow((ushort)0xC000, (byte)0x01, (Byte)0x80, true, true)]
+        [DataRow((ushort)0xC000, (byte)0x80, (Byte)0x40, false, false)]
+        [DataRow((ushort)0xC000, (byte)0x80, (Byte)0x40, true, false)]
+        [DataRow((ushort)0xC000, (byte)0x00, (Byte)0x00, false, false)]
+        [DataRow((ushort)0xC000, (byte)0x00, (Byte)0x00, true, false)]
+        [DataRow((ushort)0xC000, (byte)0xFF, (Byte)0xFF, false, true)]
+        [DataRow((ushort)0xC000, (byte)0xFF, (Byte)0xFF, true, true)]
+        [DataRow((ushort)0xC000, (byte)0x1E, (Byte)0x0F, false, false)]
+        [DataTestMethod]
+        [TestCategory("OP Codes")]
+        [TestCategory("OP Code 0xCB 0x0E - Rotate Right Carry Mem HL")]
+        public void decodeAndExecute_CB_rrcMemHL(ushort address, byte op1, byte result, bool carryState, bool carryAfterState)
+        {
+            byte opCode = 0x0E;
+
+            CPU cpu = setupOpCode(0xCB, MethodBase.GetCurrentMethod().Name, opCode);
+            cpu.setF((Byte)(((carryState) ? (byte)CPU.CPUFlagsMask.Carry : (byte)0) | (Byte)CPU.CPUFlagsMask.Subtract | (Byte)CPU.CPUFlagsMask.HalfCarry));
+            cpu.mem.setByte(address, op1);
+            cpu.setHL(address);
+
+            byte expectedFlags = (Byte)(((carryAfterState) ? (byte)CPU.CPUFlagsMask.Carry : (byte)0)); // Zero Flag is Always Reset. Confirmed by BGB EMu
+
+            fetchAndLoadInstruction(cpu, 0xCB);
+            tick(cpu);
+            Assert.That.AreEqual(opCode, cpu.getCurrentInstruction().parameters[0]);
+            Assert.That.AreEqual(0x0000, cpu.getCurrentInstruction().storage);
+            tick(cpu);
+            Assert.That.AreEqual(op1, cpu.getCurrentInstruction().storage);
+            Assert.That.AreEqual(op1, cpu.mem.getByte(address));
+            if (carryState)
+            {
+                Assert.IsTrue(cpu.getCarryFlag());
+            }
+            else
+            {
+                Assert.IsFalse(cpu.getCarryFlag());
+            }
+            tick(cpu);
+            assertInstructionFinished(cpu, 0xCB, opCode);
+            Assert.That.AreEqual(address, cpu.getHL());
+            Assert.That.AreEqual(result, cpu.mem.getByte(address));
+
+            if (carryAfterState)
+            {
+                Assert.IsTrue(cpu.getCarryFlag());
+            }
+            else
+            {
+                Assert.IsFalse(cpu.getCarryFlag());
+            }
+
+            Assert.That.FlagsEqual(cpu, expectedFlags);
+
+        }
+        #endregion
+
+        #region 0xCB 0x0F - Rotate Right Carry A
+        [DataRow((byte)0x01, (Byte)0x80, false, true)]
+        [DataRow((byte)0x01, (Byte)0x80, true, true)]
+        [DataRow((byte)0x80, (Byte)0x40, false, false)]
+        [DataRow((byte)0x80, (Byte)0x40, true, false)]
+        [DataRow((byte)0x00, (Byte)0x00, false, false)]
+        [DataRow((byte)0x00, (Byte)0x00, true, false)]
+        [DataRow((byte)0xFF, (Byte)0xFF, false, true)]
+        [DataRow((byte)0xFF, (Byte)0xFF, true, true)]
+        [DataRow((byte)0x1E, (Byte)0x0F, false, false)]
+        [DataTestMethod]
+        [TestCategory("OP Codes")]
+        [TestCategory("OP Code 0xCB 0x0F - Rotate Right Carry A")]
+        public void decodeAndExecute_CB_rrcA(byte op1, byte result, bool carryState, bool carryAfterState)
+        {
+            byte opCode = 0x0F;
+
+            CPU cpu = setupOpCode(0xCB, MethodBase.GetCurrentMethod().Name, opCode);
+            cpu.setF((Byte)(((carryState) ? (byte)CPU.CPUFlagsMask.Carry : (byte)0) | (Byte)CPU.CPUFlagsMask.Subtract | (Byte)CPU.CPUFlagsMask.HalfCarry));
+            cpu.setA(op1);
+
+            byte expectedFlags = (Byte)(((carryAfterState) ? (byte)CPU.CPUFlagsMask.Carry : (byte)0)); // Zero Flag is Always Reset. Confirmed by BGB EMU
+
+            fetchAndLoadInstruction(cpu, 0xCB);
+            Assert.That.AreEqual(op1, cpu.getA());
+            if (carryState)
+            {
+                Assert.IsTrue(cpu.getCarryFlag());
+            }
+            else
+            {
+                Assert.IsFalse(cpu.getCarryFlag());
+            }
+            tick(cpu);
+            assertInstructionFinished(cpu, 0xCB, opCode);
+            Assert.That.AreEqual(result, cpu.getA());
+
+            if (carryAfterState)
+            {
+                Assert.IsTrue(cpu.getCarryFlag());
+            }
+            else
+            {
+                Assert.IsFalse(cpu.getCarryFlag());
+            }
+
+            Assert.That.FlagsEqual(cpu, expectedFlags);
+
+        }
+        #endregion
+
+
+        #endregion
     }
 }
 
 public static class AssertExtensions
 {
-    public static void AreEqual(this Assert assert, int expected, int actual, String format = "", String message = "")
+    public static void AreEqual(this Assert assert, int expected, int actual, String format = "X4", String message = "")
     {
         if (message == "")
         {
