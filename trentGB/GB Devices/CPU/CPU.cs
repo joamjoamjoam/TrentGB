@@ -740,11 +740,26 @@ namespace trentGB
 
         public Byte fetch()
         {
+            Byte rv = mem.getByte(PC++);
             if (currentInstruction != null)
             {
                 currentInstruction.incrementFetches();
+
+                // Add Fetch to Instructions Parameters Array if not opCode
+                if (currentInstruction.getFetchCount() > 1)
+                {
+                    if (currentInstruction.getFetchCount() <= currentInstruction.length)
+                    {
+                        currentInstruction.parameters[currentInstruction.getFetchCount() - 2] = rv;
+                    }
+                    else
+                    {
+                        throw new Exception($"Attrempted to fetch a new Byte but we already met our length: {currentInstruction.ToString()}");
+                    }
+                    
+                }
             }
-            return mem.getByte(PC++);
+            return rv;
         }
 
         public Byte peek(ushort n = 0)
