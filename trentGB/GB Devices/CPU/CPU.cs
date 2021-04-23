@@ -74,16 +74,16 @@ namespace trentGB
         public readonly byte length;
         public ushort address;
         public byte[] parameters = new byte[0];
-        public readonly Action opFunc = null;
+        public readonly Func<bool> opFunc = null;
         public readonly String desc = "";
 
         public int executedCycles = 0;
         public int fetches = 0;
-        public bool earlyCompletionRequested = false; // Some Commands skip cycles if conditions are unmet see opCodeTranslatioDict for a list
+        public bool opReportedComplete = false; // Some Commands skip cycles if conditions are unmet see opCodeTranslatioDict for a list
         public ushort storage = 0;
 
 
-        public Instruction(byte opCode, byte length, byte cycles , Action act, ushort PC, ROM rom)
+        public Instruction(byte opCode, byte length, byte cycles , Func<bool> act, ushort PC, ROM rom)
         {
             // PC is at the adress for the first parametr if applicable
 
@@ -157,7 +157,7 @@ namespace trentGB
             parameters = new byte[length - 1];
         }
 
-        public Instruction(byte opCode, byte length, byte cycles , Action act)
+        public Instruction(byte opCode, byte length, byte cycles , Func<bool> act)
         {
             // PC is at the adress for the first parametr if applicable
 
@@ -170,10 +170,25 @@ namespace trentGB
             parameters = new byte[length-1];
         }
 
-        public void execute()
+        public bool execute()
         {
             incrementExecutedCycles();
-            opFunc.Invoke();
+            bool rv = false;
+            if (!opReportedComplete)
+            {
+                rv = opFunc.Invoke();
+                if (rv)
+                {
+                    opReportedComplete = true;
+                }
+            }
+            else
+            {
+                throw new Exception($"OpFunc reported Done but we are still calling it. {ToString()}");
+            }
+
+
+            return rv;
         }
 
         public byte getExpectedCycles()
@@ -208,7 +223,7 @@ namespace trentGB
                 }
             }
             
-            return $"Addr: {address.ToString("X4")}: OP: {desc} - 0x{opCode} {((parameters.Length > 0) ? "0x" : "")}{String.Join(", 0x", parameters.Select(b => b.ToString("X2")))}{paramRealValue}, Cycles: {getCycleCount()}/{cycles} {((isCompleted()) ? "Done" : "")}";
+            return $"Addr: {address.ToString("X4")}: OP: {desc} - 0x{opCode} {((parameters.Length > 0) ? "0x" : "")}{String.Join(", 0x", parameters.Select(b => b.ToString("X2")))}{paramRealValue}, Cycles: {getCycleCount()}/{cycles} {((getOpFuncReportedState()) ? "Done" : "")} Cycle Accurate Emulation: {((isCompleted()) ? "True" : "False")}";
         }
 
         private Byte getCBOpLength()
@@ -294,7 +309,12 @@ namespace trentGB
 
         public bool isCompleted()
         {
-            return (executedCycles >= cycles) || earlyCompletionRequested;
+            return (executedCycles == cycles) && getOpFuncReportedState();
+        }
+
+        public bool getOpFuncReportedState() // Use this until all commands are cycle accurate
+        {
+            return opReportedComplete;
         }
     }
 
@@ -634,8 +654,14 @@ namespace trentGB
                 }
                 else
                 {
+
                     // Keep on Keepin On
-                    decodeAndExecute();
+                    ExecutionStatus rv = decodeAndExecute();
+                    if (rv == ExecutionStatus.ErrorOpFinishedWithMismatchedCycles)
+                    {
+                        // We Should throw an Exception here when all commands are cycle accurate
+                        //throw new ArgumentException($"Operation Reported Complete But not all Cycles were Used. {currentInstruction.ToString()}");
+                    }
                 }
             }
         }
@@ -767,16 +793,27 @@ namespace trentGB
         }
 
         bool showAfterText = false;
-        public void decodeAndExecute()
+        public enum ExecutionStatus
         {
+            None,
+            OpStarted,
+            OPFinished,
+            ErrorOpFinishedWithMismatchedCycles
+        }
+
+        public ExecutionStatus decodeAndExecute()
+        {
+            ExecutionStatus rv = ExecutionStatus.None;
             Byte opCode = 0x00;
             bool enableInterrupts = shouldEnableInterrupts;
             bool disableInterrupts = shouldDisableInterrupts;
+            bool opCompleted = false;
 
             if (currentInstruction == null)
             {
                 // Is New Command
                 currentInstruction = new Instruction(opCodeTranslationDict[peek()], getPC());
+                rv = ExecutionStatus.OpStarted;
                 opCode = fetch();
 
                 // Debug Window
@@ -818,24 +855,24 @@ namespace trentGB
                     clock.Start();
                 }
 
-                currentInstruction.execute();
+                opCompleted = currentInstruction.execute();
 
                 // HACK: All Commands are 2 cycle for now when they are all fixed for cycle accuraccy removw this.
-                if (((opCode >> 4) == 0) || opCode == 0xCB) 
-                {
-                    // Command is cycle accurate do Nothing
-                }
-                else
-                {
-                    // Command is not cycle accurate they only run once
-                    currentInstruction.earlyCompletionRequested = true;
-                }
+                //if (((opCode >> 4) == 0) || opCode == 0xCB) 
+                //{
+                //    // Command is cycle accurate do Nothing
+                //}
+                //else
+                //{
+                //    // Command is not cycle accurate they only run once
+                //    currentInstruction.earlyCompletionRequested = true;
+                //}
             }
             else
             {
                 opCode = currentInstruction.opCode;
                 // Continue Execution
-                currentInstruction.execute();
+                opCompleted = currentInstruction.execute();
 
 
 
@@ -851,20 +888,20 @@ namespace trentGB
                 }
 
                 // HACK: All Commands are 2 cycle for now when they are all fixed for cycle accuraccy removw this.
-                if ((opCode != 0xCB) || (opCode == 0xCB && getCurrentInstruction().getCycleCount() >= 8 && getCurrentInstruction().parameters[0] <= 0x0F)) // CB functions from 0x00 to 0x08 are cycle accurate
-                {
-                    // Command is cycle accurate do Nothing
-                }
-                else
-                {
-                    // Command is not cycle accurate they only run once
-                    currentInstruction.earlyCompletionRequested = true;
-                }
+                //if ((opCode != 0xCB) || (opCode == 0xCB && getCurrentInstruction().getCycleCount() >= 8 && getCurrentInstruction().parameters[0] <= 0x17)) // CB functions from 0x00 to 0x08 are cycle accurate
+                //{
+                //    // Command is cycle accurate do Nothing
+                //}
+                //else
+                //{
+                //    // Command is not cycle accurate they only run once
+                //    currentInstruction.earlyCompletionRequested = true;
+                //}
 
             }
 
 
-            if (currentInstruction.isCompleted())
+            if (opCompleted)
             {
                 // Store it and reset for a new instruction
                 commandHistoryList.Push(currentInstruction);
@@ -910,9 +947,23 @@ namespace trentGB
                     }
                 }
 
+                if (!currentInstruction.isCompleted())
+                {
+                    // Operation returned Complete but we didnt use expected Cycles
+                    // We Should throw execption when evrything is cycle accurate.
+                    currentInstruction = null;
+                    rv = ExecutionStatus.ErrorOpFinishedWithMismatchedCycles;
+                    
+                }
+                else
+                {
+                    rv = ExecutionStatus.OPFinished;
+                }
+
+                // reset for next Instruction
                 currentInstruction = null;
             }
-
+            return rv;
         }
 
         public Instruction getInstructionForOpCode(Byte opCode)
@@ -1183,8 +1234,9 @@ namespace trentGB
         #endregion
 
         #region CB Prefixed Instructions
-        private void executeCBOperation()
+        private bool executeCBOperation()
         {
+            bool done = false;
             if (getCurrentInstruction().getCycleCount() == 4)
             {
                 // 0xCB fetched
@@ -1202,21 +1254,27 @@ namespace trentGB
                 {
                     case 0x00:
                         setB(rotateLeftCarry(getB()));
+                        done = true;
                         break;
                     case 0x01:
                         setC(rotateLeftCarry(getC()));
+                        done = true;
                         break;
                     case 0x02:
                         setD(rotateLeftCarry(getD()));
+                        done = true;
                         break;
                     case 0x03:
                         setE(rotateLeftCarry(getE()));
+                        done = true;
                         break;
                     case 0x04:
                         setH(rotateLeftCarry(getH()));
+                        done = true;
                         break;
                     case 0x05:
                         setL(rotateLeftCarry(getL()));
+                        done = true;
                         break;
                     case 0x06:
                         if (getCurrentInstruction().getCycleCount() == 12)
@@ -1226,28 +1284,36 @@ namespace trentGB
                         else if (getCurrentInstruction().getCycleCount() == 16)
                         {
                             mem.setByte(getHL(), rotateLeftCarry((Byte) (getCurrentInstruction().storage & 0x00FF)));
+                            done = true;
                         }
                         break;
                     case 0x07:
                         setA(rotateLeftCarry(getA()));
+                        done = true;
                         break;
                     case 0x08:
                         setB(rotateRightCarry(getB()));
+                        done = true;
                         break;
                     case 0x09:
                         setC(rotateRightCarry(getC()));
+                        done = true;
                         break;
                     case 0x0A:
                         setD(rotateRightCarry(getD()));
+                        done = true;
                         break;
                     case 0x0B:
                         setE(rotateRightCarry(getE()));
+                        done = true;
                         break;
                     case 0x0C:
                         setH(rotateRightCarry(getH()));
+                        done = true;
                         break;
                     case 0x0D:
                         setL(rotateRightCarry(getL()));
+                        done = true;
                         break;
                     case 0x0E:
                         if (getCurrentInstruction().getCycleCount() == 12)
@@ -1257,733 +1323,984 @@ namespace trentGB
                         else if (getCurrentInstruction().getCycleCount() == 16)
                         {
                             mem.setByte(getHL(), rotateRightCarry((Byte)(getCurrentInstruction().storage & 0x00FF)));
+                            done = true;
                         }
                         break;
                     case 0x0F:
                         setA(rotateRightCarry(getA()));
+                        done = true;
                         break;
                     case 0x10:
                         setB(rotateLeft(getB()));
+                        done = true;
                         break;
                     case 0x11:
                         setC(rotateLeft(getC()));
+                        done = true;
                         break;
                     case 0x12:
                         setD(rotateLeft(getD()));
+                        done = true;
                         break;
                     case 0x13:
                         setE(rotateLeft(getE()));
+                        done = true;
                         break;
                     case 0x14:
                         setH(rotateLeft(getH()));
+                        done = true;
                         break;
                     case 0x15:
                         setL(rotateLeft(getL()));
+                        done = true;
                         break;
                     case 0x16:
-                        mem.setByte(getHL(), rotateLeft(mem.getByte(getHL())));
+                        if (getCurrentInstruction().getCycleCount() == 12)
+                        {
+                            getCurrentInstruction().storage = mem.getByte(getHL());
+                        }
+                        else if (getCurrentInstruction().getCycleCount() == 16)
+                        {
+                            mem.setByte(getHL(), rotateLeft((Byte)(getCurrentInstruction().storage & 0x00FF)));
+                            done = true;
+                        }
+                        
                         break;
                     case 0x17:
                         setA(rotateLeft(getA()));
+                        done = true;
                         break;
                     case 0x18:
                         setB(rotateRight(getB()));
+                        done = true;
                         break;
                     case 0x19:
                         setC(rotateRight(getC()));
+                        done = true;
                         break;
                     case 0x1A:
                         setD(rotateRight(getD()));
+                        done = true;
                         break;
                     case 0x1B:
                         setE(rotateRight(getE()));
+                        done = true;
                         break;
                     case 0x1C:
                         setH(rotateRight(getH()));
+                        done = true;
                         break;
                     case 0x1D:
                         setL(rotateRight(getL()));
+                        done = true;
                         break;
                     case 0x1E:
                         mem.setByte(getHL(), rotateRight(mem.getByte(getHL())));
+                        done = true;
                         break;
                     case 0x1F:
                         setA(rotateRight(getA()));
+                        done = true;
                         break;
                     case 0x20:
                         setB(sla(getB()));
+                        done = true;
                         break;
                     case 0x21:
                         setC(sla(getC()));
+                        done = true;
                         break;
                     case 0x22:
                         setD(sla(getD()));
+                        done = true;
                         break;
                     case 0x23:
                         setE(sla(getE()));
+                        done = true;
                         break;
                     case 0x24:
                         setH(sla(getH()));
+                        done = true;
                         break;
                     case 0x25:
                         setL(sla(getL()));
+                        done = true;
                         break;
                     case 0x26:
                         mem.setByte(getHL(), sla(mem.getByte(getHL())));
+                        done = true;
                         break;
                     case 0x27:
                         setA(sla(getA()));
+                        done = true;
                         break;
                     case 0x28:
                         setB(sra(getB()));
+                        done = true;
                         break;
                     case 0x29:
                         setC(sra(getC()));
+                        done = true;
                         break;
                     case 0x2A:
                         setD(sra(getD()));
+                        done = true;
                         break;
                     case 0x2B:
                         setE(sra(getE()));
+                        done = true;
                         break;
                     case 0x2C:
                         setH(sra(getH()));
+                        done = true;
                         break;
                     case 0x2D:
                         setL(sra(getL()));
+                        done = true;
                         break;
                     case 0x2E:
                         mem.setByte(getHL(), sra(mem.getByte(getHL())));
+                        done = true;
                         break;
                     case 0x2F:
                         setA(sra(getA()));
+                        done = true;
                         break;
                     case 0x30:
                         setB(swapNibbles(getB()));
+                        done = true;
                         break;
                     case 0x31:
                         setC(swapNibbles(getC()));
+                        done = true;
                         break;
                     case 0x32:
                         setD(swapNibbles(getD()));
+                        done = true;
                         break;
                     case 0x33:
                         setE(swapNibbles(getE()));
+                        done = true;
                         break;
                     case 0x34:
                         setH(swapNibbles(getH()));
+                        done = true;
                         break;
                     case 0x35:
                         setL(swapNibbles(getL()));
+                        done = true;
                         break;
                     case 0x36:
                         mem.setByte(getHL(), swapNibbles(mem.getByte(getHL())));
+                        done = true;
                         break;
                     case 0x37:
                         setA(swapNibbles(getA()));
+                        done = true;
                         break;
                     case 0x38:
                         setB(srl(getB()));
+                        done = true;
                         break;
                     case 0x39:
                         setC(srl(getC()));
+                        done = true;
                         break;
                     case 0x3A:
                         setD(srl(getD()));
+                        done = true;
                         break;
                     case 0x3B:
                         setE(srl(getE()));
+                        done = true;
                         break;
                     case 0x3C:
                         setH(srl(getH()));
+                        done = true;
                         break;
                     case 0x3D:
                         setL(srl(getL()));
+                        done = true;
                         break;
                     case 0x3E:
                         mem.setByte(getHL(), srl(mem.getByte(getHL())));
+                        done = true;
                         break;
                     case 0x3F:
                         setA(srl(getA()));
+                        done = true;
                         break;
                     case 0x40:
                         executeBitOperation(BitOperationType.Test, 'B', 0x01);
+                        done = true;
                         break;
                     case 0x41:
                         executeBitOperation(BitOperationType.Test, 'C', 0x01);
+                        done = true;
                         break;
                     case 0x42:
                         executeBitOperation(BitOperationType.Test, 'D', 0x01);
+                        done = true;
                         break;
                     case 0x43:
                         executeBitOperation(BitOperationType.Test, 'E', 0x01);
+                        done = true;
                         break;
                     case 0x44:
                         executeBitOperation(BitOperationType.Test, 'H', 0x01);
+                        done = true;
                         break;
                     case 0x45:
                         executeBitOperation(BitOperationType.Test, 'L', 0x01);
+                        done = true;
                         break;
                     case 0x46:
                         executeBitOperation(BitOperationType.Test, 'M', 0x01);
+                        done = true;
                         break;
                     case 0x47:
                         executeBitOperation(BitOperationType.Test, 'A', 0x01);
+                        done = true;
                         break;
                     case 0x48:
                         executeBitOperation(BitOperationType.Test, 'B', 0x02);
+                        done = true;
                         break;
                     case 0x49:
                         executeBitOperation(BitOperationType.Test, 'C', 0x02);
+                        done = true;
                         break;
                     case 0x4A:
                         executeBitOperation(BitOperationType.Test, 'D', 0x02);
+                        done = true;
                         break;
                     case 0x4B:
                         executeBitOperation(BitOperationType.Test, 'E', 0x02);
+                        done = true;
                         break;
                     case 0x4C:
                         executeBitOperation(BitOperationType.Test, 'H', 0x02);
+                        done = true;
                         break;
                     case 0x4D:
                         executeBitOperation(BitOperationType.Test, 'L', 0x02);
+                        done = true;
                         break;
                     case 0x4E:
                         executeBitOperation(BitOperationType.Test, 'M', 0x02);
+                        done = true;
                         break;
                     case 0x4F:
                         executeBitOperation(BitOperationType.Test, 'A', 0x02);
+                        done = true;
                         break;
                     case 0x50:
                         executeBitOperation(BitOperationType.Test, 'B', 0x04);
+                        done = true;
                         break;
                     case 0x51:
                         executeBitOperation(BitOperationType.Test, 'C', 0x04);
+                        done = true;
                         break;
                     case 0x52:
                         executeBitOperation(BitOperationType.Test, 'D', 0x04);
+                        done = true;
                         break;
                     case 0x53:
                         executeBitOperation(BitOperationType.Test, 'E', 0x04);
+                        done = true;
                         break;
                     case 0x54:
                         executeBitOperation(BitOperationType.Test, 'H', 0x04);
+                        done = true;
                         break;
                     case 0x55:
                         executeBitOperation(BitOperationType.Test, 'L', 0x04);
+                        done = true;
                         break;
                     case 0x56:
                         executeBitOperation(BitOperationType.Test, 'M', 0x04);
+                        done = true;
                         break;
                     case 0x57:
                         executeBitOperation(BitOperationType.Test, 'A', 0x04);
+                        done = true;
                         break;
                     case 0x58:
                         executeBitOperation(BitOperationType.Test, 'B', 0x08);
+                        done = true;
                         break;
                     case 0x59:
                         executeBitOperation(BitOperationType.Test, 'C', 0x08);
+                        done = true;
                         break;
                     case 0x5A:
                         executeBitOperation(BitOperationType.Test, 'D', 0x08);
+                        done = true;
                         break;
                     case 0x5B:
                         executeBitOperation(BitOperationType.Test, 'E', 0x08);
+                        done = true;
                         break;
                     case 0x5C:
                         executeBitOperation(BitOperationType.Test, 'H', 0x08);
+                        done = true;
                         break;
                     case 0x5D:
                         executeBitOperation(BitOperationType.Test, 'L', 0x08);
+                        done = true;
                         break;
                     case 0x5E:
                         executeBitOperation(BitOperationType.Test, 'M', 0x08);
+                        done = true;
                         break;
                     case 0x5F:
                         executeBitOperation(BitOperationType.Test, 'A', 0x08);
+                        done = true;
                         break;
                     case 0x60:
                         executeBitOperation(BitOperationType.Test, 'B', 0x10);
+                        done = true;
                         break;
                     case 0x61:
                         executeBitOperation(BitOperationType.Test, 'C', 0x10);
+                        done = true;
                         break;
                     case 0x62:
                         executeBitOperation(BitOperationType.Test, 'D', 0x10);
+                        done = true;
                         break;
                     case 0x63:
                         executeBitOperation(BitOperationType.Test, 'E', 0x10);
+                        done = true;
                         break;
                     case 0x64:
                         executeBitOperation(BitOperationType.Test, 'H', 0x10);
+                        done = true;
                         break;
                     case 0x65:
                         executeBitOperation(BitOperationType.Test, 'L', 0x10);
+                        done = true;
                         break;
                     case 0x66:
                         executeBitOperation(BitOperationType.Test, 'M', 0x10);
+                        done = true;
                         break;
                     case 0x67:
                         executeBitOperation(BitOperationType.Test, 'A', 0x10);
+                        done = true;
                         break;
                     case 0x68:
                         executeBitOperation(BitOperationType.Test, 'B', 0x20);
+                        done = true;
                         break;
                     case 0x69:
                         executeBitOperation(BitOperationType.Test, 'C', 0x20);
+                        done = true;
                         break;
                     case 0x6A:
                         executeBitOperation(BitOperationType.Test, 'D', 0x20);
+                        done = true;
                         break;
                     case 0x6B:
                         executeBitOperation(BitOperationType.Test, 'E', 0x20);
+                        done = true;
                         break;
                     case 0x6C:
                         executeBitOperation(BitOperationType.Test, 'H', 0x20);
+                        done = true;
                         break;
                     case 0x6D:
                         executeBitOperation(BitOperationType.Test, 'L', 0x20);
+                        done = true;
                         break;
                     case 0x6E:
                         executeBitOperation(BitOperationType.Test, 'M', 0x20);
+                        done = true;
                         break;
                     case 0x6F:
                         executeBitOperation(BitOperationType.Test, 'A', 0x20);
+                        done = true;
                         break;
                     case 0x70:
                         executeBitOperation(BitOperationType.Test, 'B', 0x40);
+                        done = true;
                         break;
                     case 0x71:
                         executeBitOperation(BitOperationType.Test, 'C', 0x40);
+                        done = true;
                         break;
                     case 0x72:
                         executeBitOperation(BitOperationType.Test, 'D', 0x40);
+                        done = true;
                         break;
                     case 0x73:
                         executeBitOperation(BitOperationType.Test, 'E', 0x40);
+                        done = true;
                         break;
                     case 0x74:
                         executeBitOperation(BitOperationType.Test, 'H', 0x40);
+                        done = true;
                         break;
                     case 0x75:
                         executeBitOperation(BitOperationType.Test, 'L', 0x40);
+                        done = true;
                         break;
                     case 0x76:
                         executeBitOperation(BitOperationType.Test, 'M', 0x40);
+                        done = true;
                         break;
                     case 0x77:
                         executeBitOperation(BitOperationType.Test, 'A', 0x40);
+                        done = true;
                         break;
                     case 0x78:
                         executeBitOperation(BitOperationType.Test, 'B', 0x80);
+                        done = true;
                         break;
                     case 0x79:
                         executeBitOperation(BitOperationType.Test, 'C', 0x80);
+                        done = true;
                         break;
                     case 0x7A:
                         executeBitOperation(BitOperationType.Test, 'D', 0x80);
+                        done = true;
                         break;
                     case 0x7B:
                         executeBitOperation(BitOperationType.Test, 'E', 0x80);
+                        done = true;
                         break;
                     case 0x7C:
                         executeBitOperation(BitOperationType.Test, 'H', 0x80);
+                        done = true;
                         break;
                     case 0x7D:
                         executeBitOperation(BitOperationType.Test, 'L', 0x80);
+                        done = true;
                         break;
                     case 0x7E:
                         executeBitOperation(BitOperationType.Test, 'M', 0x80);
+                        done = true;
                         break;
                     case 0x7F:
                         executeBitOperation(BitOperationType.Test, 'A', 0x80);
+                        done = true;
                         break;
                     case 0x80:
                         executeBitOperation(BitOperationType.Reset, 'B', 0x01);
+                        done = true;
                         break;
                     case 0x81:
                         executeBitOperation(BitOperationType.Reset, 'C', 0x01);
+                        done = true;
                         break;
                     case 0x82:
                         executeBitOperation(BitOperationType.Reset, 'D', 0x01);
+                        done = true;
                         break;
                     case 0x83:
                         executeBitOperation(BitOperationType.Reset, 'E', 0x01);
+                        done = true;
                         break;
                     case 0x84:
                         executeBitOperation(BitOperationType.Reset, 'H', 0x01);
+                        done = true;
                         break;
                     case 0x85:
                         executeBitOperation(BitOperationType.Reset, 'L', 0x01);
+                        done = true;
                         break;
                     case 0x86:
                         executeBitOperation(BitOperationType.Reset, 'M', 0x01);
+                        done = true;
                         break;
                     case 0x87:
                         executeBitOperation(BitOperationType.Reset, 'A', 0x01);
+                        done = true;
                         break;
                     case 0x88:
                         executeBitOperation(BitOperationType.Reset, 'B', 0x02);
+                        done = true;
                         break;
                     case 0x89:
                         executeBitOperation(BitOperationType.Reset, 'C', 0x02);
+                        done = true;
                         break;
                     case 0x8A:
                         executeBitOperation(BitOperationType.Reset, 'D', 0x02);
+                        done = true;
                         break;
                     case 0x8B:
                         executeBitOperation(BitOperationType.Reset, 'E', 0x02);
+                        done = true;
                         break;
                     case 0x8C:
                         executeBitOperation(BitOperationType.Reset, 'H', 0x02);
+                        done = true;
                         break;
                     case 0x8D:
                         executeBitOperation(BitOperationType.Reset, 'L', 0x02);
+                        done = true;
                         break;
                     case 0x8E:
                         executeBitOperation(BitOperationType.Reset, 'M', 0x02);
+                        done = true;
                         break;
                     case 0x8F:
                         executeBitOperation(BitOperationType.Reset, 'A', 0x02);
+                        done = true;
                         break;
                     case 0x90:
                         executeBitOperation(BitOperationType.Reset, 'B', 0x04);
+                        done = true;
                         break;
                     case 0x91:
                         executeBitOperation(BitOperationType.Reset, 'C', 0x04);
+                        done = true;
                         break;
                     case 0x92:
                         executeBitOperation(BitOperationType.Reset, 'D', 0x04);
+                        done = true;
                         break;
                     case 0x93:
                         executeBitOperation(BitOperationType.Reset, 'E', 0x04);
+                        done = true;
                         break;
                     case 0x94:
                         executeBitOperation(BitOperationType.Reset, 'H', 0x04);
+                        done = true;
                         break;
                     case 0x95:
                         executeBitOperation(BitOperationType.Reset, 'L', 0x04);
+                        done = true;
                         break;
                     case 0x96:
                         executeBitOperation(BitOperationType.Reset, 'M', 0x04);
+                        done = true;
                         break;
                     case 0x97:
                         executeBitOperation(BitOperationType.Reset, 'A', 0x04);
+                        done = true;
                         break;
                     case 0x98:
                         executeBitOperation(BitOperationType.Reset, 'B', 0x08);
+                        done = true;
                         break;
                     case 0x99:
                         executeBitOperation(BitOperationType.Reset, 'C', 0x08);
+                        done = true;
                         break;
                     case 0x9A:
                         executeBitOperation(BitOperationType.Reset, 'D', 0x08);
+                        done = true;
                         break;
                     case 0x9B:
                         executeBitOperation(BitOperationType.Reset, 'E', 0x08);
+                        done = true;
                         break;
                     case 0x9C:
                         executeBitOperation(BitOperationType.Reset, 'H', 0x08);
+                        done = true;
                         break;
                     case 0x9D:
                         executeBitOperation(BitOperationType.Reset, 'L', 0x08);
+                        done = true;
                         break;
                     case 0x9E:
                         executeBitOperation(BitOperationType.Reset, 'M', 0x08);
+                        done = true;
                         break;
                     case 0x9F:
                         executeBitOperation(BitOperationType.Reset, 'A', 0x08);
+                        done = true;
                         break;
                     case 0xA0:
                         executeBitOperation(BitOperationType.Reset, 'B', 0x10);
+                        done = true;
                         break;
                     case 0xA1:
                         executeBitOperation(BitOperationType.Reset, 'C', 0x10);
+                        done = true;
                         break;
                     case 0xA2:
                         executeBitOperation(BitOperationType.Reset, 'D', 0x10);
+                        done = true;
                         break;
                     case 0xA3:
                         executeBitOperation(BitOperationType.Reset, 'E', 0x10);
+                        done = true;
                         break;
                     case 0xA4:
                         executeBitOperation(BitOperationType.Reset, 'H', 0x10);
+                        done = true;
                         break;
                     case 0xA5:
                         executeBitOperation(BitOperationType.Reset, 'L', 0x10);
+                        done = true;
                         break;
                     case 0xA6:
                         executeBitOperation(BitOperationType.Reset, 'M', 0x10);
+                        done = true;
                         break;
                     case 0xA7:
                         executeBitOperation(BitOperationType.Reset, 'A', 0x10);
+                        done = true;
                         break;
                     case 0xA8:
                         executeBitOperation(BitOperationType.Reset, 'B', 0x20);
+                        done = true;
                         break;
                     case 0xA9:
                         executeBitOperation(BitOperationType.Reset, 'C', 0x20);
+                        done = true;
                         break;
                     case 0xAA:
                         executeBitOperation(BitOperationType.Reset, 'D', 0x20);
+                        done = true;
                         break;
                     case 0xAB:
                         executeBitOperation(BitOperationType.Reset, 'E', 0x20);
+                        done = true;
                         break;
                     case 0xAC:
                         executeBitOperation(BitOperationType.Reset, 'H', 0x20);
+                        done = true;
                         break;
                     case 0xAD:
                         executeBitOperation(BitOperationType.Reset, 'L', 0x20);
+                        done = true;
                         break;
                     case 0xAE:
                         executeBitOperation(BitOperationType.Reset, 'M', 0x20);
+                        done = true;
                         break;
                     case 0xAF:
                         executeBitOperation(BitOperationType.Reset, 'A', 0x20);
+                        done = true;
                         break;
                     case 0xB0:
                         executeBitOperation(BitOperationType.Reset, 'B', 0x40);
+                        done = true;
                         break;
                     case 0xB1:
                         executeBitOperation(BitOperationType.Reset, 'C', 0x40);
+                        done = true;
                         break;
                     case 0xB2:
                         executeBitOperation(BitOperationType.Reset, 'D', 0x40);
+                        done = true;
                         break;
                     case 0xB3:
                         executeBitOperation(BitOperationType.Reset, 'E', 0x40);
+                        done = true;
                         break;
                     case 0xB4:
                         executeBitOperation(BitOperationType.Reset, 'H', 0x40);
+                        done = true;
                         break;
                     case 0xB5:
                         executeBitOperation(BitOperationType.Reset, 'L', 0x40);
+                        done = true;
                         break;
                     case 0xB6:
                         executeBitOperation(BitOperationType.Reset, 'M', 0x40);
+                        done = true;
                         break;
                     case 0xB7:
                         executeBitOperation(BitOperationType.Reset, 'A', 0x40);
+                        done = true;
                         break;
                     case 0xB8:
                         executeBitOperation(BitOperationType.Reset, 'B', 0x80);
+                        done = true;
                         break;
                     case 0xB9:
                         executeBitOperation(BitOperationType.Reset, 'C', 0x80);
+                        done = true;
                         break;
                     case 0xBA:
                         executeBitOperation(BitOperationType.Reset, 'D', 0x80);
+                        done = true;
                         break;
                     case 0xBB:
                         executeBitOperation(BitOperationType.Reset, 'E', 0x80);
+                        done = true;
                         break;
                     case 0xBC:
                         executeBitOperation(BitOperationType.Reset, 'H', 0x80);
+                        done = true;
                         break;
                     case 0xBD:
                         executeBitOperation(BitOperationType.Reset, 'L', 0x80);
+                        done = true;
                         break;
                     case 0xBE:
                         executeBitOperation(BitOperationType.Reset, 'M', 0x80);
+                        done = true;
                         break;
                     case 0xBF:
                         executeBitOperation(BitOperationType.Reset, 'A', 0x80);
+                        done = true;
                         break;
                     case 0xC0:
                         executeBitOperation(BitOperationType.Set, 'B', 0x01);
+                        done = true;
                         break;
                     case 0xC1:
                         executeBitOperation(BitOperationType.Set, 'C', 0x01);
+                        done = true;
                         break;
                     case 0xC2:
                         executeBitOperation(BitOperationType.Set, 'D', 0x01);
+                        done = true;
                         break;
                     case 0xC3:
                         executeBitOperation(BitOperationType.Set, 'E', 0x01);
+                        done = true;
                         break;
                     case 0xC4:
                         executeBitOperation(BitOperationType.Set, 'H', 0x01);
+                        done = true;
                         break;
                     case 0xC5:
                         executeBitOperation(BitOperationType.Set, 'L', 0x01);
+                        done = true;
                         break;
                     case 0xC6:
                         executeBitOperation(BitOperationType.Set, 'M', 0x01);
+                        done = true;
                         break;
                     case 0xC7:
                         executeBitOperation(BitOperationType.Set, 'A', 0x01);
+                        done = true;
                         break;
                     case 0xC8:
                         executeBitOperation(BitOperationType.Set, 'B', 0x02);
+                        done = true;
                         break;
                     case 0xC9:
                         executeBitOperation(BitOperationType.Set, 'C', 0x02);
+                        done = true;
                         break;
                     case 0xCA:
                         executeBitOperation(BitOperationType.Set, 'D', 0x02);
+                        done = true;
                         break;
                     case 0xCB:
                         executeBitOperation(BitOperationType.Set, 'E', 0x02);
+                        done = true;
                         break;
                     case 0xCC:
                         executeBitOperation(BitOperationType.Set, 'H', 0x02);
+                        done = true;
                         break;
                     case 0xCD:
                         executeBitOperation(BitOperationType.Set, 'L', 0x02);
+                        done = true;
                         break;
                     case 0xCE:
                         executeBitOperation(BitOperationType.Set, 'M', 0x02);
+                        done = true;
                         break;
                     case 0xCF:
                         executeBitOperation(BitOperationType.Set, 'A', 0x02);
+                        done = true;
                         break;
                     case 0xD0:
                         executeBitOperation(BitOperationType.Set, 'B', 0x04);
+                        done = true;
                         break;
                     case 0xD1:
                         executeBitOperation(BitOperationType.Set, 'C', 0x04);
+                        done = true;
                         break;
                     case 0xD2:
                         executeBitOperation(BitOperationType.Set, 'D', 0x04);
+                        done = true;
                         break;
                     case 0xD3:
                         executeBitOperation(BitOperationType.Set, 'E', 0x04);
+                        done = true;
                         break;
                     case 0xD4:
                         executeBitOperation(BitOperationType.Set, 'H', 0x04);
+                        done = true;
                         break;
                     case 0xD5:
                         executeBitOperation(BitOperationType.Set, 'L', 0x04);
+                        done = true;
                         break;
                     case 0xD6:
                         executeBitOperation(BitOperationType.Set, 'M', 0x04);
+                        done = true;
                         break;
                     case 0xD7:
                         executeBitOperation(BitOperationType.Set, 'A', 0x04);
+                        done = true;
                         break;
                     case 0xD8:
                         executeBitOperation(BitOperationType.Set, 'B', 0x08);
+                        done = true;
                         break;
                     case 0xD9:
                         executeBitOperation(BitOperationType.Set, 'C', 0x08);
+                        done = true;
                         break;
                     case 0xDA:
                         executeBitOperation(BitOperationType.Set, 'D', 0x08);
+                        done = true;
                         break;
                     case 0xDB:
                         executeBitOperation(BitOperationType.Set, 'E', 0x08);
+                        done = true;
                         break;
                     case 0xDC:
                         executeBitOperation(BitOperationType.Set, 'H', 0x08);
+                        done = true;
                         break;
                     case 0xDD:
                         executeBitOperation(BitOperationType.Set, 'L', 0x08);
+                        done = true;
                         break;
                     case 0xDE:
                         executeBitOperation(BitOperationType.Set, 'M', 0x08);
+                        done = true;
                         break;
                     case 0xDF:
                         executeBitOperation(BitOperationType.Set, 'A', 0x08);
+                        done = true;
                         break;
                     case 0xE0:
                         executeBitOperation(BitOperationType.Set, 'B', 0x10);
+                        done = true;
                         break;
                     case 0xE1:
                         executeBitOperation(BitOperationType.Set, 'C', 0x10);
+                        done = true;
                         break;
                     case 0xE2:
                         executeBitOperation(BitOperationType.Set, 'D', 0x10);
+                        done = true;
                         break;
                     case 0xE3:
                         executeBitOperation(BitOperationType.Set, 'E', 0x10);
+                        done = true;
                         break;
                     case 0xE4:
                         executeBitOperation(BitOperationType.Set, 'H', 0x10);
+                        done = true;
                         break;
                     case 0xE5:
                         executeBitOperation(BitOperationType.Set, 'L', 0x10);
+                        done = true;
                         break;
                     case 0xE6:
                         executeBitOperation(BitOperationType.Set, 'M', 0x10);
+                        done = true;
                         break;
                     case 0xE7:
                         executeBitOperation(BitOperationType.Set, 'A', 0x10);
+                        done = true;
                         break;
                     case 0xE8:
                         executeBitOperation(BitOperationType.Set, 'B', 0x20);
+                        done = true;
                         break;
                     case 0xE9:
                         executeBitOperation(BitOperationType.Set, 'C', 0x20);
+                        done = true;
                         break;
                     case 0xEA:
                         executeBitOperation(BitOperationType.Set, 'D', 0x20);
+                        done = true;
                         break;
                     case 0xEB:
                         executeBitOperation(BitOperationType.Set, 'E', 0x20);
+                        done = true;
                         break;
                     case 0xEC:
                         executeBitOperation(BitOperationType.Set, 'H', 0x20);
+                        done = true;
                         break;
                     case 0xED:
                         executeBitOperation(BitOperationType.Set, 'L', 0x20);
+                        done = true;
                         break;
                     case 0xEE:
                         executeBitOperation(BitOperationType.Set, 'M', 0x20);
+                        done = true;
                         break;
                     case 0xEF:
                         executeBitOperation(BitOperationType.Set, 'A', 0x20);
+                        done = true;
                         break;
                     case 0xF0:
                         executeBitOperation(BitOperationType.Set, 'B', 0x40);
+                        done = true;
                         break;
                     case 0xF1:
                         executeBitOperation(BitOperationType.Set, 'C', 0x40);
+                        done = true;
                         break;
                     case 0xF2:
                         executeBitOperation(BitOperationType.Set, 'D', 0x40);
+                        done = true;
                         break;
                     case 0xF3:
                         executeBitOperation(BitOperationType.Set, 'E', 0x40);
+                        done = true;
                         break;
                     case 0xF4:
                         executeBitOperation(BitOperationType.Set, 'H', 0x40);
+                        done = true;
                         break;
                     case 0xF5:
                         executeBitOperation(BitOperationType.Set, 'L', 0x40);
+                        done = true;
                         break;
                     case 0xF6:
                         executeBitOperation(BitOperationType.Set, 'M', 0x40);
+                        done = true;
                         break;
                     case 0xF7:
                         executeBitOperation(BitOperationType.Set, 'A', 0x40);
+                        done = true;
                         break;
                     case 0xF8:
                         executeBitOperation(BitOperationType.Set, 'B', 0x80);
+                        done = true;
                         break;
                     case 0xF9:
                         executeBitOperation(BitOperationType.Set, 'C', 0x80);
+                        done = true;
                         break;
                     case 0xFA:
                         executeBitOperation(BitOperationType.Set, 'D', 0x80);
+                        done = true;
                         break;
                     case 0xFB:
                         executeBitOperation(BitOperationType.Set, 'E', 0x80);
+                        done = true;
                         break;
                     case 0xFC:
                         executeBitOperation(BitOperationType.Set, 'H', 0x80);
+                        done = true;
                         break;
                     case 0xFD:
                         executeBitOperation(BitOperationType.Set, 'L', 0x80);
+                        done = true;
                         break;
                     case 0xFE:
                         executeBitOperation(BitOperationType.Set, 'M', 0x80);
+                        done = true;
                         break;
                     case 0xFF:
                         executeBitOperation(BitOperationType.Set, 'A', 0x80);
+                        done = true;
                         break;
                 }
             }
+            return done;
         }
         #endregion
 
@@ -2398,13 +2715,15 @@ namespace trentGB
         #endregion
 
         #region CPU Instructions
-        private void opNOP() // OP Code 0x00
+        private bool opNOP() // OP Code 0x00
         {
-            return;
+			bool done = true;
+            return done;
         }
 
-        private void ldBC16() // 0x01
+        private bool ldBC16() // 0x01
         {
+			bool done = false;
             if (currentInstruction.getCycleCount() == 8)
             {
                 // load C
@@ -2416,18 +2735,26 @@ namespace trentGB
                 // load B
                 Byte value = fetch();
                 setB(value);
+                done = true;
             }
+
+            return done;
         }
-        private void ldAToMemBC() //0x02
+        private bool ldAToMemBC() //0x02
         {
+			bool done = false;
             if (currentInstruction.getCycleCount() == 8)
             {
                 Byte value = getA();
                 mem.setByte(getBC(), value);
+                done = true;
             }
+
+            return done;
         }
-        private void incBC() //0x03
+        private bool incBC() //0x03
         {
+			bool done = false;
             if (currentInstruction.getCycleCount() == 4)
             {
                 ushort value = getBC();
@@ -2439,10 +2766,14 @@ namespace trentGB
             else if (currentInstruction.getCycleCount() == 8)
             {
                 setB(getMSB((ushort)currentInstruction.storage));
+                done = true;
             }
+
+            return done;
         }
-        private void incB() // 0x04
+        private bool incB() // 0x04
         {
+			bool done = false;
             if (currentInstruction.getCycleCount() == 4)
             {
                 Byte value = getB();
@@ -2450,31 +2781,45 @@ namespace trentGB
                 value = increment(value);
 
                 setB(value);
+                done = true;
             }
 
+            return done;
         }
-        private void decB() // 0x05
+        private bool decB() // 0x05
         {
+			bool done = false;
             Byte value = getB();
 
             value = decrement(value);
 
             setB(value);
+
+            done = true;
+            return done;
         }
-        private void ldB() // 0x06
+        private bool ldB() // 0x06
         {
+			bool done = false;
             if (currentInstruction.getCycleCount() == 8)
             {
                 Byte value = fetch();
                 setB(value);
+                done = true;
             }
+
+            return done;
         }
-        private void rlcA() // 0x07
+        private bool rlcA() // 0x07
         {
-            setA(rotateLeftCarry(getA()));
+			bool done = false;
+            setA(rotateLeftCarry(getA(), updateZeroFlag: false));
+            done = true;
+            return done;
         }
-        private void ldSPFromMem16() // 0x08
+        private bool ldSPFromMem16() // 0x08
         {
+			bool done = false;
 
             if (currentInstruction.getCycleCount() == 8)
             {
@@ -2492,10 +2837,14 @@ namespace trentGB
             else if (currentInstruction.getCycleCount() == 20)
             {
                 setSP((ushort)currentInstruction.storage);
-            }           
+                done = true;
+            }
+
+            return done;
         }
-        private void addBCtoHL() //0x09
+        private bool addBCtoHL() //0x09
         {
+			bool done = false;
             if (currentInstruction.getCycleCount() == 4)
             {
                 currentInstruction.storage = add16(getHL(), getBC(), Add16Type.HL);
@@ -2504,18 +2853,26 @@ namespace trentGB
             else if (currentInstruction.getCycleCount() == 8)
             {
                 setH(getMSB((ushort)currentInstruction.storage));
+                done = true;
             }
+
+            return done;
         }
-        private void ldAMemBC() // 0x0A
+        private bool ldAMemBC() // 0x0A
         {
+			bool done = false;
             if (currentInstruction.getCycleCount() == 8)
             {
                 Byte value = mem.getByte(getBC());
                 setA(value);
+                done = true;
             }
+
+            return done;
         }
-        private void decBC() //0x0B
+        private bool decBC() //0x0B
         {
+			bool done = false;
             if (currentInstruction.getCycleCount() == 4)
             {
                 ushort value = getBC();
@@ -2527,10 +2884,14 @@ namespace trentGB
             else if (currentInstruction.getCycleCount() == 8)
             {
                 setB(getMSB((ushort)currentInstruction.storage));
+                done = true;
             }
+
+            return done;
         }
-        private void incC() // 0x0C
+        private bool incC() // 0x0C
         {
+			bool done = false;
             if (currentInstruction.getCycleCount() == 4)
             {
                 Byte value = getC();
@@ -2538,10 +2899,14 @@ namespace trentGB
                 value = increment(value);
 
                 setC(value);
+                done = true;
             }
+
+            return done;
         }
-        private void decC() // 0x0D
+        private bool decC() // 0x0D
         {
+			bool done = false;
             if (currentInstruction.getCycleCount() == 4)
             {
                 Byte value = getC();
@@ -2549,27 +2914,39 @@ namespace trentGB
                 value = decrement(value);
 
                 setC(value);
+                done = true;
             }
+
+            return done;
         }
-        private void ldC() // 0x0E
+        private bool ldC() // 0x0E
         {
+			bool done = false;
             if (currentInstruction.getCycleCount() == 8)
             {
                 Byte value = fetch();
                 setC(value);
+                done = true;
             }
+
+            return done;
         }
-        private void rrcA() // 0x0F
+        private bool rrcA() // 0x0F
         {
+			bool done = false;
             if (currentInstruction.getCycleCount() == 4)
             {
-                setA(rotateRightCarry(getA()));
+                setA(rotateRightCarry(getA(), updateZeroFlag: false));
+                done = true;
             }
+
+            return done;
         }
         // TODO: Trent You Stopped here. Cycle Accuracy Stops Here
 
-        private void stopCPU() // 0x10
+        private bool stopCPU() // 0x10
         {
+			bool done = false;
             Byte command = fetch();
 
             if (command == 0x00)
@@ -2580,1185 +2957,1931 @@ namespace trentGB
             {
                 //throw new NotImplementedException($"0x10 prefix Command 0x{command.ToString("X2")} is not implented.");
             }
+
+            done = true;
+            return done;
         }
-        private void ldDE16() // 0x11
+        private bool ldDE16() // 0x11
         {
+			bool done = false;
             int value = fetch();
             int value2 = fetch();
             ushort rv = (ushort)((value2 << 8) + value);
 
             setDE(rv);
+
+            // This needs to be updated when updating for cycle accurracy
+            done = true;
+            return done;
         }
-        private void ldAIntoMemDE16() // 0x12
+        private bool ldAIntoMemDE16() // 0x12
         {
+			bool done = false;
             mem.setByte(getDE(), getA());
+
+            // This needs to be updated when updating for cycle accurracy
+            done = true;
+            return done;
         }
-        private void incDE() //0x03
+        private bool incDE() //0x13
         {
+			bool done = false;
             ushort value = getDE();
 
             value = increment16(value);
 
             setDE(value);
+
+            // This needs to be updated when updating for cycle accurracy
+            done = true;
+            return done;
         }
-        private void incD() // 0x14
+        private bool incD() // 0x14
         {
+			bool done = false;
             Byte value = getD();
 
             value = increment(value);
 
             setD(value);
+            done = true;
+            return done;
         }
-        private void decD() // 0x15
+        private bool decD() // 0x15
         {
+			bool done = false;
             Byte value = getD();
 
             value = decrement(value);
 
             setD(value);
+            done = true;
+            return done;
         }
-        private void ldD() // 0x16
+        private bool ldD() // 0x16
         {
+			bool done = false;
             Byte value = fetch();
             setD(value);
+
+            // This needs to be updated when updating for cycle accurracy
+            done = true;
+            return done;
         }
-        private void rlA() // 0x17
+        private bool rlA() // 0x17
         {
-            setA(rotateLeft(getA()));
+			bool done = false;
+            setA(rotateLeft(getA(), updateZeroFlag: false));
+            done = true;
+            return done;
         }
-        private void jumpPCPlusN() // 0x18
+        private bool jumpPCPlusN() // 0x18
         {
+			bool done = false;
             SByte offset = (SByte)fetch();
             ushort address = add16IgnoreFlags(PC, offset);
 
             setPC(address);
+
+            // This needs to be updated when updating for cycle accurracy
+            done = true;
+            return done;
         }
-        private void addDEtoHL() //0x19
+        private bool addDEtoHL() //0x19
         {
+			bool done = false;
             setHL(add16(getHL(), getDE(), Add16Type.HL));
+            // This needs to be updated when updating for cycle accurracy
+            done = true;
+            return done;
         }
-        private void ldAMemDE() // 0x1A
+        private bool ldAMemDE() // 0x1A
         {
+			bool done = false;
             Byte value = mem.getByte(getDE());
             setA(value);
+
+            // This needs to be updated when updating for cycle accurracy
+            done = true;
+            return done;
         }
-        private void decDE() //0x1B
+        private bool decDE() //0x1B
         {
+			bool done = false;
             ushort value = getDE();
 
             value = decrement16(value);
 
             setDE(value);
+
+            // This needs to be updated when updating for cycle accurracy
+            done = true;
+            return done;
         }
-        private void incE() // 0x1C
+        private bool incE() // 0x1C
         {
+			bool done = false;
             Byte value = getE();
 
             value = increment(value);
 
             setE(value);
+            done = true;
+            return done;
         }
-        private void decE() // 0x1D
+        private bool decE() // 0x1D
         {
+			bool done = false;
             Byte value = getE();
 
             value = decrement(value);
 
             setE(value);
+            done = true;
+            return done;
         }
-        private void ldE() // 0x1E
+        private bool ldE() // 0x1E
         {
+			bool done = false;
             Byte value = fetch();
             setE(value);
+
+            // This needs to be updated when updating for cycle accurracy
+            done = true;
+            return done;
         }
-        private void rrA() // 0x1F
+        private bool rrA() // 0x1F
         {
-            setA(rotateRight(getA()));
+			bool done = false;
+            setA(rotateRight(getA(), updateZeroFlag: false));
+            done = true;
+            return done;
         }
-        private void jumpIfZeroFlagResetPlusN() // 0x20
+        private bool jumpIfZeroFlagResetPlusN() // 0x20
         {
+			bool done = false;
             SByte offset = (SByte)fetch();
             ushort value = add16IgnoreFlags(getPC(), offset);
             if (!getZeroFlag())
             {
                 setPC(value);
             }
-            else
-            {
 
-            }
+            // This needs to be updated when updating for cycle accurracy
+            done = true;
+            return done;
         }
-        private void ldHL16() // 0x21
+        private bool ldHL16() // 0x21
         {
+			bool done = false;
             int value = fetch();
             int value2 = fetch();
             ushort rv = (ushort)((value2 << 8) + value);
 
             setHL(rv);
+
+            // This needs to be updated when updating for cycle accurracy
+            done = true;
+            return done;
         }
-        private void ldiMemHLWithA() // 0x22
+        private bool ldiMemHLWithA() // 0x22 8 Cycles
         {
+			bool done = false;
             Byte value = getA();
             mem.setByte(getHL(), value);
 
             incrementHL();
+
+            // This needs to be updated when updating for cycle accurracy
+            done = true;
+            return done;
         }
-        private void incHL() //0x23
+        private bool incHL() //0x23
         {
+			bool done = false;
             ushort value = getHL();
 
             value = increment16(value);
 
             setHL(value);
+
+            // This needs to be updated when updating for cycle accurracy
+            done = true;
+            return done;
         }
-        private void incH() // 0x24
+        private bool incH() // 0x24
         {
+			bool done = false;
             Byte value = getH();
 
             value = increment(value);
 
             setH(value);
+            done = true;
+            return done;
         }
-        private void decH() // 0x25
+        private bool decH() // 0x25
         {
+			bool done = false;
             Byte value = getH();
 
             value = decrement(value);
 
             setH(value);
+            done = true;
+            return done;
         }
-        private void ldH() // 0x26
+        private bool ldH() // 0x26
         {
+			bool done = false;
             Byte value = fetch();
             setH(value);
+
+            // This needs to be updated when updating for cycle accurracy
+            done = true;
+            return done;
         }
-        private void daaRegA() // 0x27
+        private bool daaRegA() // 0x27
         {
+			bool done = false;
             Byte value = 0;
 
             value = daa(getA());
 
             setA(value);
+            done = true;
+            return done;
         }
-        private void jumpIfZeroFlagSetPlusN() // 0x28
+        private bool jumpIfZeroFlagSetPlusN() // 0x28
         {
+			bool done = false;
             SByte offset = (SByte)fetch();
             ushort value = add16IgnoreFlags(getPC(), offset);
             if (getZeroFlag())
             {
                 setPC(value);
             }
+
+            // This needs to be updated when updating for cycle accurracy
+            done = true;
+            return done;
         }
-        private void addHLtoHL() //0x29
+        private bool addHLtoHL() //0x29
         {
+			bool done = false;
             setHL(add16(getHL(), getHL(), Add16Type.HL));
+
+            // This needs to be updated when updating for cycle accurracy
+            done = true;
+            return done;
         }
-        private void ldiAMemHL() // 0x2A
+        private bool ldiAMemHL() // 0x2A
         {
+			bool done = false;
             Byte value = mem.getByte(getHL());
             setA(value);
 
             incrementHL();
+
+            // This needs to be updated when updating for cycle accurracy
+            done = true;
+            return done;
         }
-        private void decHL() //0x2B
+        private bool decHL() //0x2B
         {
+			bool done = false;
             ushort value = getHL();
 
             value = decrement16(value);
 
             setHL(value);
+
+            // This needs to be updated when updating for cycle accurracy
+            done = true;
+            return done;
         }
-        private void incL() // 0x2C
+        private bool incL() // 0x2C
         {
+			bool done = false;
             Byte value = getL();
 
             value = increment(value);
 
             setL(value);
+
+            done = true;
+            return done;
         }
-        private void decL() // 0x2D
+        private bool decL() // 0x2D
         {
+			bool done = false;
             Byte value = getL();
 
             value = decrement(value);
 
             setL(value);
+
+            done = true;
+            return done;
         }
-        private void ldL() // 0x2E
+        private bool ldL() // 0x2E
         {
+			bool done = false;
             Byte value = fetch();
             setL(value);
+
+            // This needs to be updated when updating for cycle accurracy
+            done = true;
+            return done;
         }
-        private void complementA() // 0x2F
+        private bool complementA() // 0x2F
         {
+			bool done = false;
             Byte value = (Byte)((~getA()) & 0xFF);
 
             setSubtractFlag(true);
             setHalfCarryFlag(true);
             setA(value);
+
+            done = true;
+            return done;
         }
-        private void jumpIfCarryFlagResetPlusN() // 0x30
+        private bool jumpIfCarryFlagResetPlusN() // 0x30
         {
+			bool done = false;
             SByte offset = (SByte)fetch();
             ushort value = add16IgnoreFlags(getPC(), offset);
             if (!getCarryFlag())
             {
                 setPC(value);
             }
+
+            // This needs to be updated when updating for cycle accurracy
+            done = true;
+            return done;
         }
-        private void ldSP16() // 0x31
+        private bool ldSP16() // 0x31
         {
+			bool done = false;
             int value = fetch();
             int value2 = fetch();
             ushort rv = (ushort)((value2 << 8) + value);
 
             setSP(rv);
+
+            // This needs to be updated when updating for cycle accurracy
+            done = true;
+            return done;
         }
-        private void lddMemHLWithA() // 0x32
+        private bool lddMemHLWithA() // 0x32
         {
+			bool done = false;
             Byte value = getA();
             mem.setByte(getHL(), value);
 
             decrementHL();
+
+            done = true;
+            return done;
         }
-        private void incSP() //0x03
+        private bool incSP() //0x03
         {
+			bool done = false;
             ushort value = getSP();
 
             value = increment16(value);
 
             setSP(value);
+
+            done = true;
+            return done;
         }
-        private void incHLMem() // 0x34
+        private bool incHLMem() // 0x34
         {
+			bool done = false;
             Byte value = mem.getByte(getHL());
 
             value = increment(value);
 
             mem.setByte(getHL(), value);
+
+            // This needs to be updated when updating for cycle accurracy
+            done = true;
+            return done;
         }
-        private void decHLMem() // 0x35
+        private bool decHLMem() // 0x35
         {
+			bool done = false;
             Byte value = mem.getByte(getHL());
 
             value = decrement(value);
 
             mem.setByte(getHL(), value);
+
+            // This needs to be updated when updating for cycle accurracy
+            done = true;
+            return done;
         }
-        private void ldHLMem() // 0x36
+        private bool ldHLMem() // 0x36
         {
+			bool done = false;
             Byte value = fetch();
             mem.setByte(getHL(), value);
+
+            // This needs to be updated when updating for cycle accurracy
+            done = true;
+            return done;
         }
-        private void highCarryFlag() // 0x37
+        private bool highCarryFlag() // 0x37
         {
+			bool done = false;
             setSubtractFlag(false);
             setHalfCarryFlag(false);
 
             setCarryFlag(true);
+            done = true;
+            return done;
         }
-        private void jumpIfCarryFlagSetPlusN() // 0x38
+        private bool jumpIfCarryFlagSetPlusN() // 0x38
         {
+			bool done = false;
             SByte offset = (SByte)fetch();
             ushort value = add16IgnoreFlags(getPC(), offset);
             if (getCarryFlag())
             {
                 setPC(value);
             }
+
+            // This needs to be updated when updating for cycle accurracy
+            done = true;
+            return done;
         }
-        private void addSPtoHL() //0x39
+        private bool addSPtoHL() //0x39
         {
+			bool done = false;
             setHL(add16(getHL(), getSP(), Add16Type.HL));
+
+            // This needs to be updated when updating for cycle accurracy
+            done = true;
+            return done;
         }
-        private void lddAMemHL() // 0x3A
+        private bool lddAMemHL() // 0x3A
         {
+			bool done = false;
             Byte value = mem.getByte(getHL());
             setA(value);
 
             decrementHL();
+
+            // This needs to be updated when updating for cycle accurracy
+            done = true;
+            return done;
         }
-        private void decSP() //0x3B
+        private bool decSP() //0x3B
         {
+			bool done = false;
             ushort value = getSP();
 
             value = decrement16(value);
 
             setSP(value);
+
+            // This needs to be updated when updating for cycle accurracy
+            done = true;
+            return done;
         }
-        private void incA() // 0x04
+        private bool incA() // 0x04
         {
+			bool done = false;
             Byte value = getA();
 
             value = increment(value);
 
             setA(value);
+            done = true;
+            return done;
         }
-        private void decA() // 0x3D
+        private bool decA() // 0x3D
         {
+			bool done = false;
             Byte value = getA();
 
             value = decrement(value);
 
             setA(value);
+            done = true;
+            return done;
         }
-        private void ldA() //0x3E
+        private bool ldA() //0x3E
         {
+			bool done = false;
             Byte value = fetch();
             setA(value);
+
+            // This needs to be updated when updating for cycle accurracy
+            done = true;
+            return done;
         }
-        private void complementCarryFlag() // 0x3F
+        private bool complementCarryFlag() // 0x3F
         {
+			bool done = false;
             setSubtractFlag(false);
             setHalfCarryFlag(false);
 
             setCarryFlag(!getCarryFlag());
+
+            done = true;
+            return done;
         }
-        private void ldrBB() // 0x40
+        private bool ldrBB() // 0x40
         {
+			bool done = false;
             Byte value = getB();
             setB(value);
+            done = true;
+            return done;
         }
-        private void ldrBC() // 0x41
+        private bool ldrBC() // 0x41
         {
+			bool done = false;
             Byte value = getC();
             setB(value);
+            done = true;
+            return done;
         }
-        private void ldrBD() // 0x42
+        private bool ldrBD() // 0x42
         {
+			bool done = false;
             Byte value = getD();
             setB(value);
+
+            done = true;
+            return done;
         }
-        private void ldrBE() // 0x43
+        private bool ldrBE() // 0x43
         {
+			bool done = false;
             Byte value = getE();
             setB(value);
+
+            done = true;
+            return done;
         }
-        private void ldrBH() // 0x44
+        private bool ldrBH() // 0x44
         {
+			bool done = false;
             Byte value = getH();
             setB(value);
+
+            done = true;
+            return done;
         }
-        private void ldrBL() // 0x45
+        private bool ldrBL() // 0x45
         {
+			bool done = false;
             Byte value = getL();
             setB(value);
+
+            done = true;
+            return done;
         }
-        private void ldrBFromMemHL() // 0x46
+        private bool ldrBFromMemHL() // 0x46
         {
+			bool done = false;
             Byte value = mem.getByte(getHL());
             setB(value);
+
+            // This needs to be updated when updating for cycle accurracy
+            done = true;
+            return done;
         }
-        private void ldrBA() // 0x47
+        private bool ldrBA() // 0x47
         {
+			bool done = false;
             Byte value = getA();
             setB(value);
+            done = true;
+            return done;
+
         }
-        private void ldrCB() // 0x48
+        private bool ldrCB() // 0x48
         {
+			bool done = false;
             Byte value = getB();
             setC(value);
+
+            done = true;
+            return done;
         }
-        private void ldrCC() // 0x49
+        private bool ldrCC() // 0x49
         {
+			bool done = false;
             Byte value = getC();
             setC(value);
+
+            done = true;
+            return done;
         }
-        private void ldrCD() // 0x4A
+        private bool ldrCD() // 0x4A
         {
+			bool done = false;
             Byte value = getD();
             setC(value);
+
+            done = true;
+            return done;
         }
-        private void ldrCE() // 0x4B
+        private bool ldrCE() // 0x4B
         {
+			bool done = false;
             Byte value = getE();
             setC(value);
+
+            done = true;
+            return done;
         }
-        private void ldrCH() // 0x4C
+        private bool ldrCH() // 0x4C
         {
+			bool done = false;
             Byte value = getH();
             setC(value);
+
+            done = true;
+            return done;
         }
-        private void ldrCL() // 0x4D
+        private bool ldrCL() // 0x4D
         {
+			bool done = false;
             Byte value = getL();
             setC(value);
+
+            done = true;
+            return done;
         }
-        private void ldrCFromMemHL() // 0x4E
+        private bool ldrCFromMemHL() // 0x4E
         {
+			bool done = false;
             Byte value = mem.getByte(getHL());
             setC(value);
+
+            // This needs to be updated when updating for cycle accurracy
+            done = true;
+            return done;
         }
-        private void ldrCA() // 0x4F
+        private bool ldrCA() // 0x4F
         {
+			bool done = false;
             Byte value = getA();
             setC(value);
+
+            done = true;
+            return done;
         }
-        private void ldrDB() // 0x50
+        private bool ldrDB() // 0x50
         {
+			bool done = false;
             Byte value = getB();
             setD(value);
+
+            done = true;
+            return done;
         }
-        private void ldrDC() // 0x51
+        private bool ldrDC() // 0x51
         {
+			bool done = false;
             Byte value = getC();
             setD(value);
+
+            done = true;
+            return done;
         }
-        private void ldrDD() // 0x52
+        private bool ldrDD() // 0x52
         {
+			bool done = false;
             Byte value = getD();
             setD(value);
+
+            done = true;
+            return done;
         }
-        private void ldrDE() // 0x53
+        private bool ldrDE() // 0x53
         {
+			bool done = false;
             Byte value = getE();
             setD(value);
+
+            done = true;
+            return done;
         }
-        private void ldrDH() // 0x54
+        private bool ldrDH() // 0x54
         {
+			bool done = false;
             Byte value = getH();
             setD(value);
+
+            done = true;
+            return done;
         }
-        private void ldrDL() // 0x55
+        private bool ldrDL() // 0x55
         {
+			bool done = false;
             Byte value = getL();
             setD(value);
+
+            done = true;
+            return done;
         }
-        private void ldrDFromMemHL() // 0x56
+        private bool ldrDFromMemHL() // 0x56
         {
+			bool done = false;
             Byte value = mem.getByte(getHL());
             setD(value);
+
+            // This needs to be updated when updating for cycle accurracy
+            done = true;
+            return done;
         }
-        private void ldrDA() // 0x57
+        private bool ldrDA() // 0x57
         {
+			bool done = false;
             Byte value = getA();
             setD(value);
+
+            done = true;
+            return done;
         }
-        private void ldrEB() // 0x58
+        private bool ldrEB() // 0x58
         {
+			bool done = false;
             Byte value = getB();
             setE(value);
+
+            done = true;
+            return done;
         }
-        private void ldrEC() // 0x59
+        private bool ldrEC() // 0x59
         {
+			bool done = false;
             Byte value = getC();
             setE(value);
+
+            done = true;
+            return done;
         }
-        private void ldrED() // 0x5A
+        private bool ldrED() // 0x5A
         {
+			bool done = false;
             Byte value = getD();
             setE(value);
+
+            done = true;
+            return done;
         }
-        private void ldrEE() // 0x5B
+        private bool ldrEE() // 0x5B
         {
+			bool done = false;
             Byte value = getE();
             setE(value);
+
+            done = true;
+            return done;
         }
-        private void ldrEH() // 0x5C
+        private bool ldrEH() // 0x5C
         {
+			bool done = false;
             Byte value = getH();
             setE(value);
+
+            done = true;
+            return done;
         }
-        private void ldrEL() // 0x5D
+        private bool ldrEL() // 0x5D
         {
+			bool done = false;
             Byte value = getL();
             setE(value);
+
+            done = true;
+            return done;
         }
-        private void ldrEFromMemHL() // 0x5E
+        private bool ldrEFromMemHL() // 0x5E
         {
+			bool done = false;
             Byte value = mem.getByte(getHL());
             setE(value);
+
+            // This needs to be updated when updating for cycle accurracy
+            done = true;
+            return done;
         }
-        private void ldrEA() // 0x5F
+        private bool ldrEA() // 0x5F
         {
+			bool done = false;
             Byte value = getA();
             setE(value);
+
+            done = true;
+            return done;
         }
-        private void ldrHB() // 0x60
+        private bool ldrHB() // 0x60
         {
+			bool done = false;
             Byte value = getB();
             setH(value);
+
+            done = true;
+            return done;
         }
-        private void ldrHC() // 0x61
+        private bool ldrHC() // 0x61
         {
+			bool done = false;
             Byte value = getC();
             setH(value);
+
+            done = true;
+            return done;
         }
-        private void ldrHD() // 0x62
+        private bool ldrHD() // 0x62
         {
+			bool done = false;
             Byte value = getD();
             setH(value);
+
+            done = true;
+            return done;
         }
-        private void ldrHE() // 0x63
+        private bool ldrHE() // 0x63
         {
+			bool done = false;
             Byte value = getE();
             setH(value);
+
+            done = true;
+            return done;
         }
-        private void ldrHH() // 0x64
+        private bool ldrHH() // 0x64
         {
+			bool done = false;
             Byte value = getH();
             setH(value);
+
+            done = true;
+            return done;
         }
-        private void ldrHL() // 0x65
+        private bool ldrHL() // 0x65
         {
+			bool done = false;
             Byte value = getL();
             setH(value);
+
+            done = true;
+            return done;
         }
-        private void ldrHFromMemHL() // 0x66
+        private bool ldrHFromMemHL() // 0x66
         {
+			bool done = false;
             Byte value = mem.getByte(getHL());
             setH(value);
+
+            // This needs to be updated when updating for cycle accurracy
+            done = true;
+            return done;
         }
-        private void ldrHA() // 0x67
+        private bool ldrHA() // 0x67
         {
+			bool done = false;
             Byte value = getA();
             setH(value);
+
+            done = true;
+            return done;
         }
-        private void ldrLB() // 0x68
+        private bool ldrLB() // 0x68
         {
+			bool done = false;
             Byte value = getB();
             setL(value);
+
+            done = true;
+            return done;
         }
-        private void ldrLC() // 0x69
+        private bool ldrLC() // 0x69
         {
+			bool done = false;
             Byte value = getC();
             setL(value);
+
+            done = true;
+            return done;
         }
-        private void ldrLD() // 0x6A
+        private bool ldrLD() // 0x6A
         {
+			bool done = false;
             Byte value = getD();
             setL(value);
+
+            done = true;
+            return done;
         }
-        private void ldrLE() // 0x6B
+        private bool ldrLE() // 0x6B
         {
+			bool done = false;
             Byte value = getE();
             setL(value);
+
+            done = true;
+            return done;
         }
-        private void ldrLH() // 0x6C
+        private bool ldrLH() // 0x6C
         {
+			bool done = false;
             Byte value = getH();
             setL(value);
+
+            done = true;
+            return done;
         }
-        private void ldrLL() // 0x6D
+        private bool ldrLL() // 0x6D
         {
+			bool done = false;
             Byte value = getL();
             setL(value);
+
+            done = true;
+            return done;
         }
-        private void ldrLFromMemHL() // 0x6E
+        private bool ldrLFromMemHL() // 0x6E
         {
+			bool done = false;
             Byte value = mem.getByte(getHL());
             setL(value);
+
+            // This needs to be updated when updating for cycle accurracy
+            done = true;
+            return done;
         }
-        private void ldrLA() // 0x6F
+        private bool ldrLA() // 0x6F
         {
+			bool done = false;
             Byte value = getA();
             setL(value);
+
+            done = true;
+            return done;
         }
-        private void ldHLMemFromB() // 0x70
+        private bool ldHLMemFromB() // 0x70
         {
+			bool done = false;
             Byte value = getB();
             mem.setByte(getHL(), value);
+
+            // This needs to be updated when updating for cycle accurracy
+            done = true;
+            return done;
         }
-        private void ldHLMemFromC() // 0x71
+        private bool ldHLMemFromC() // 0x71
         {
+			bool done = false;
             Byte value = getC();
             mem.setByte(getHL(), value);
+
+            // This needs to be updated when updating for cycle accurracy
+            done = true;
+            return done;
         }
-        private void ldHLMemFromD() // 0x72
+        private bool ldHLMemFromD() // 0x72
         {
+			bool done = false;
             Byte value = getD();
             mem.setByte(getHL(), value);
+
+            // This needs to be updated when updating for cycle accurracy
+            done = true;
+            return done;
         }
-        private void ldHLMemFromE() // 0x73
+        private bool ldHLMemFromE() // 0x73
         {
+			bool done = false;
             Byte value = getE();
             mem.setByte(getHL(), value);
+
+            // This needs to be updated when updating for cycle accurracy
+            done = true;
+            return done;
         }
-        private void ldHLMemFromH() // 0x74
+        private bool ldHLMemFromH() // 0x74
         {
+			bool done = false;
             Byte value = getH();
             mem.setByte(getHL(), value);
+
+            // This needs to be updated when updating for cycle accurracy
+            done = true;
+            return done;
         }
-        private void ldHLMemFromL() // 0x75
+        private bool ldHLMemFromL() // 0x75
         {
+			bool done = false;
             Byte value = getL();
             mem.setByte(getHL(), value);
+
+            // This needs to be updated when updating for cycle accurracy
+            done = true;
+            return done;
         }
-        private void haltCPU() // 0x76
+        private bool haltCPU() // 0x76
         {
+			bool done = false;
             state = CPUState.Halted;
+
+            done = true;
+            return done;
         }
-        private void ldAIntoMemHL16() // 0x77
+        private bool ldAIntoMemHL16() // 0x77
         {
+			bool done = false;
             mem.setByte(getHL(), getA());
+
+            // This needs to be updated when updating for cycle accurracy
+            done = true;
+            return done;
         }
-        private void ldrAB() // 0x78
+        private bool ldrAB() // 0x78
         {
+			bool done = false;
             Byte value = getB();
             setA(value);
+
+            done = true;
+            return done;
         }
-        private void ldrAC() // 0x79
+        private bool ldrAC() // 0x79
         {
+			bool done = false;
             Byte value = getC();
             setA(value);
+
+            done = true;
+            return done;
         }
-        private void ldrAD() // 0x7A
+        private bool ldrAD() // 0x7A
         {
+			bool done = false;
             Byte value = getD();
             setA(value);
+
+            done = true;
+            return done;
         }
-        private void ldrAE() // 0x7B
+        private bool ldrAE() // 0x7B
         {
+			bool done = false;
             Byte value = getE();
             setA(value);
+
+            done = true;
+            return done;
         }
-        private void ldrAH() // 0x7C
+        private bool ldrAH() // 0x7C
         {
+			bool done = false;
             Byte value = getH();
             setA(value);
+
+            done = true;
+            return done;
         }
-        private void ldrAL() // 0x7D
+        private bool ldrAL() // 0x7D
         {
+			bool done = false;
             Byte value = getL();
             setA(value);
+
+            done = true;
+            return done;
         }
-        private void ldrAFromMemHL() // 0x7E
+        private bool ldrAFromMemHL() // 0x7E
         {
+			bool done = false;
             Byte value = mem.getByte(getHL());
             setA(value);
+
+            // This needs to be updated when updating for cycle accurracy
+            done = true;
+            return done;
         }
-        private void ldrAA() // 0x7F
+        private bool ldrAA() // 0x7F
         {
+			bool done = false;
             Byte value = getA();
             setA(value);
+
+            done = true;
+            return done;
         }
-        private void addBtoA() // 0x80
+        private bool addBtoA() // 0x80
         {
+			bool done = false;
             Byte value = 0;
             value = add(getA(), getB());
 
             setA(value);
+
+            done = true;
+            return done;
         }
-        private void addCtoA() // 0x81
+        private bool addCtoA() // 0x81
         {
+			bool done = false;
             Byte value = 0;
             value = add(getA(), getC());
 
             setA(value);
+
+            done = true;
+            return done;
         }
-        private void addDtoA() // 0x82
+        private bool addDtoA() // 0x82
         {
+			bool done = false;
             Byte value = 0;
             value = add(getA(), getD());
 
             setA(value);
+
+            done = true;
+            return done;
         }
-        private void addEtoA() // 0x83
+        private bool addEtoA() // 0x83
         {
+			bool done = false;
             Byte value = 0;
             value = add(getA(), getE());
 
             setA(value);
+
+            done = true;
+            return done;
         }
-        private void addHtoA() // 0x84
+        private bool addHtoA() // 0x84
         {
+			bool done = false;
             Byte value = 0;
             value = add(getA(), getH());
 
             setA(value);
+
+            done = true;
+            return done;
         }
-        private void addLtoA() // 0x85
+        private bool addLtoA() // 0x85
         {
+			bool done = false;
             Byte value = 0;
             value = add(getA(), getL());
 
             setA(value);
+
+            done = true;
+            return done;
         }
-        private void addMemAtHLtoA() // 0x86
+        private bool addMemAtHLtoA() // 0x86
         {
+			bool done = false;
             Byte value = mem.getByte(getHL());
             value = add(getA(), value);
 
             setA(value);
+
+            // This needs to be updated when updating for cycle accurracy
+            done = true;
+            return done;
         }
-        private void addAtoA() // 0x87
+        private bool addAtoA() // 0x87
         {
+			bool done = false;
             Byte value = getA();
             value = add(value, value);
 
             setA(value);
+
+            done = true;
+            return done;
         }
-        private void addCarryBtoA() // 0x88
+        private bool addCarryBtoA() // 0x88
         {
+			bool done = false;
             Byte value = 0;
             value = addCarry(getA(), getB());
 
             setA(value);
+
+            done = true;
+            return done;
         }
-        private void addCarryCtoA() // 0x89
+        private bool addCarryCtoA() // 0x89
         {
+			bool done = false;
             Byte value = 0;
             value = addCarry(getA(), getC());
 
             setA(value);
+
+            done = true;
+            return done;
         }
-        private void addCarryDtoA() // 0x8A
+        private bool addCarryDtoA() // 0x8A
         {
+			bool done = false;
             Byte value = 0;
             value = addCarry(getA(), getD());
 
             setA(value);
+
+            done = true;
+            return done;
         }
-        private void addCarryEtoA() // 0x8B
+        private bool addCarryEtoA() // 0x8B
         {
+			bool done = false;
             Byte value = 0;
             value = addCarry(getA(), getE());
 
             setA(value);
+
+            done = true;
+            return done;
         }
-        private void addCarryHtoA() // 0x8C
+        private bool addCarryHtoA() // 0x8C
         {
+			bool done = false;
             Byte value = 0;
             value = addCarry(getA(), getH());
 
             setA(value);
+
+            done = true;
+            return done;
         }
-        private void addCarryLtoA() // 0x8D
+        private bool addCarryLtoA() // 0x8D
         {
+			bool done = false;
             Byte value = 0;
             value = addCarry(getA(), getL());
 
             setA(value);
+
+            done = true;
+            return done;
         }
-        private void addCarryMemAtHLtoA() // 0x8E
+        private bool addCarryMemAtHLtoA() // 0x8E
         {
+			bool done = false;
             Byte value = mem.getByte(getHL());
             value = addCarry(getA(), value);
 
             setA(value);
+
+            // This needs to be updated when updating for cycle accurracy
+            done = true;
+            return done;
         }
-        private void addCarryAtoA() // 0x8F
+        private bool addCarryAtoA() // 0x8F
         {
+			bool done = false;
             Byte value = 0;
             value = addCarry(value, value);
 
             setA(value);
+
+            done = true;
+            return done;
         }
-        private void subBFromA() // 0x90
+        private bool subBFromA() // 0x90
         {
+			bool done = false;
             Byte value = 0;
 
             // subtract(n, A)
             value = subtract(getB(), getA());
 
             setA(value);
+
+            done = true;
+            return done;
         }
-        private void subCFromA() // 0x91
+        private bool subCFromA() // 0x91
         {
+			bool done = false;
             Byte value = 0;
 
             // subtract(n, A)
             value = subtract(getC(), getA());
 
             setA(value);
+
+            done = true;
+            return done;
         }
-        private void subDFromA() // 0x92
+        private bool subDFromA() // 0x92
         {
+			bool done = false;
             Byte value = 0;
 
             // subtract(n, A)
             value = subtract(getD(), getA());
 
             setA(value);
+
+            done = true;
+            return done;
         }
-        private void subEFromA() // 0x93
+        private bool subEFromA() // 0x93
         {
+			bool done = false;
             Byte value = 0;
 
             // subtract(n, A)
             value = subtract(getE(), getA());
 
             setA(value);
+
+            done = true;
+            return done;
         }
-        private void subHFromA() // 0x94
+        private bool subHFromA() // 0x94
         {
+			bool done = false;
             Byte value = 0;
 
             // subtract(n, A)
             value = subtract(getH(), getA());
 
             setA(value);
+
+            done = true;
+            return done;
         }
-        private void subLFromA() // 0x95
+        private bool subLFromA() // 0x95
         {
+			bool done = false;
             Byte value = 0;
 
             // subtract(n, A)
             value = subtract(getL(), getA());
 
             setA(value);
+
+            done = true;
+            return done;
         }
-        private void subMemAtHLFromA() // 0x96
+        private bool subMemAtHLFromA() // 0x96
         {
+			bool done = false;
             Byte value = 0;
 
             // subtract(n, A)
             value = subtract(mem.getByte(getHL()), getA());
 
             setA(value);
+
+            // This needs to be updated when updating for cycle accurracy
+            done = true;
+            return done;
         }
-        private void subAFromA() // 0x97
+        private bool subAFromA() // 0x97
         {
+			bool done = false;
             Byte value = 0;
 
             // subtract(n, A)
             value = subtract(getA(), getA());
 
             setA(value);
+
+            done = true;
+            return done;
         }
-        private void subCarryBFromA() // 0x98
+        private bool subCarryBFromA() // 0x98
         {
+			bool done = false;
             Byte value = 0;
 
             // subtract(n, A)
             value = subtractCarry(getB(), getA());
 
             setA(value);
+
+            done = true;
+            return done;
         }
-        private void subCarryCFromA() // 0x99
+        private bool subCarryCFromA() // 0x99
         {
+			bool done = false;
             Byte value = 0;
 
             // subtract(n, A)
             value = subtractCarry(getC(), getA());
 
             setA(value);
+
+            done = true;
+            return done;
         }
-        private void subCarryDFromA() // 0x9A
+        private bool subCarryDFromA() // 0x9A
         {
+			bool done = false;
             Byte value = 0;
 
             // subtractCarry(n, A)
             value = subtractCarry(getD(), getA());
 
             setA(value);
+
+            done = true;
+            return done;
         }
-        private void subCarryEFromA() // 0x9B
+        private bool subCarryEFromA() // 0x9B
         {
+			bool done = false;
             Byte value = 0;
 
             // subtractCarry(n, A)
             value = subtractCarry(getE(), getA());
 
             setA(value);
+
+            done = true;
+            return done;
         }
-        private void subCarryHFromA() // 0x9C
+        private bool subCarryHFromA() // 0x9C
         {
+			bool done = false;
             Byte value = 0;
 
             // subtractCarry(n, A)
             value = subtractCarry(getH(), getA());
 
             setA(value);
+
+            done = true;
+            return done;
         }
-        private void subCarryLFromA() // 0x9D
+        private bool subCarryLFromA() // 0x9D
         {
+			bool done = false;
             Byte value = 0;
 
             // subtractCarry(n, A)
             value = subtractCarry(getL(), getA());
 
             setA(value);
+
+            done = true;
+            return done;
         }
-        private void subCarryMemAtHLFromA() // 0x9E
+        private bool subCarryMemAtHLFromA() // 0x9E
         {
+			bool done = false;
             Byte value = 0;
 
             // subtractCarry(n, A)
             value = subtractCarry(mem.getByte(getHL()), getA());
 
             setA(value);
+
+            // This needs to be updated when updating for cycle accurracy
+            done = true;
+            return done;
         }
-        private void subCarryAFromA() // 0x9F
+        private bool subCarryAFromA() // 0x9F
         {
+			bool done = false;
             Byte value = 0;
 
             // subtractCarry(n, A)
             value = subtractCarry(getA(), getA());
 
             setA(value);
+
+            done = true;
+            return done;
         }
-        private void andABinA() // 0xA0
+        private bool andABinA() // 0xA0
         {
+			bool done = false;
             Byte value = 0;
             // and(n,A)
             value = and(getB(), getA());
 
             setA(value);
+
+            done = true;
+            return done;
         }
-        private void andACinA() // 0xA1
+        private bool andACinA() // 0xA1
         {
+			bool done = false;
             Byte value = 0;
             // and(n,A)
             value = and(getC(), getA());
 
             setA(value);
+
+            done = true;
+            return done;
         }
-        private void andADinA() // 0xA2
+        private bool andADinA() // 0xA2
         {
+			bool done = false;
             Byte value = 0;
             // and(n,A)
             value = and(getD(), getA());
 
             setA(value);
+
+            done = true;
+            return done;
         }
-        private void andAEinA() // 0xA3
+        private bool andAEinA() // 0xA3
         {
+			bool done = false;
             Byte value = 0;
             // and(n,A)
             value = and(getE(), getA());
 
             setA(value);
+
+            done = true;
+            return done;
         }
-        private void andAHinA() // 0xA4
+        private bool andAHinA() // 0xA4
         {
+			bool done = false;
             Byte value = 0;
             // and(n,A)
             value = and(getH(), getA());
 
             setA(value);
+
+            done = true;
+            return done;
         }
-        private void andALinA() // 0xA5
+        private bool andALinA() // 0xA5
         {
+			bool done = false;
             Byte value = 0;
             // and(n,A)
             value = and(getL(), getA());
 
             setA(value);
+
+            done = true;
+            return done;
         }
-        private void andAMemHLinA() // 0xA6
+        private bool andAMemHLinA() // 0xA6
         {
+			bool done = false;
             Byte value = mem.getByte(getHL());
             // and(n,A)
             value = and(value, getA());
 
             setA(value);
+
+            // This needs to be updated when updating for cycle accurracy
+            done = true;
+            return done;
         }
-        private void andAAinA() // 0xA7
+        private bool andAAinA() // 0xA7
         {
+			bool done = false;
             Byte value = 0;
             // and(n,A)
             value = and(getA(), getA());
 
             setA(value);
+
+            done = true;
+            return done;
         }
-        private void xorABinA() // 0xA8
+        private bool xorABinA() // 0xA8
         {
+			bool done = false;
             Byte value = 0;
             // xor(n,A)
             value = xor(getB(), getA());
 
             setA(value);
+
+            done = true;
+            return done;
         }
-        private void xorACinA() // 0xA9
+        private bool xorACinA() // 0xA9
         {
+			bool done = false;
             Byte value = 0;
             // xor(n,A)
             value = xor(getC(), getA());
 
             setA(value);
+
+            done = true;
+            return done;
         }
-        private void xorADinA() // 0xAA
+        private bool xorADinA() // 0xAA
         {
+			bool done = false;
             Byte value = 0;
             // xor(n,A)
             value = xor(getD(), getA());
 
             setA(value);
+
+            done = true;
+            return done;
         }
-        private void xorAEinA() // 0xAB
+        private bool xorAEinA() // 0xAB
         {
+			bool done = false;
             Byte value = 0;
             // xor(n,A)
             value = xor(getE(), getA());
 
             setA(value);
+
+            done = true;
+            return done;
         }
-        private void xorAHinA() // 0xAC
+        private bool xorAHinA() // 0xAC
         {
+			bool done = false;
             Byte value = 0;
             // xor(n,A)
             value = xor(getH(), getA());
 
             setA(value);
+
+            done = true;
+            return done;
         }
-        private void xorALinA() // 0xAD
+        private bool xorALinA() // 0xAD
         {
+			bool done = false;
             Byte value = 0;
             // xor(n,A)
             value = xor(getL(), getA());
 
             setA(value);
+
+            done = true;
+            return done;
         }
-        private void xorAMemHLinA() // 0xAE
+        private bool xorAMemHLinA() // 0xAE
         {
+			bool done = false;
             Byte value = mem.getByte(getHL());
             // xor(n,A)
             value = xor(value, getA());
 
             setA(value);
+
+            // This needs to be updated when updating for cycle accurracy
+            done = true;
+            return done;
         }
-        private void xorAAinA() // 0xAF
+        private bool xorAAinA() // 0xAF
         {
+			bool done = false;
             Byte value = 0;
             // xor(n,A)
             value = xor(getA(), getA());
 
             setA(value);
+
+            done = true;
+            return done;
         }
-        private void orABinA() // 0xB0
+        private bool orABinA() // 0xB0
         {
+			bool done = false;
             Byte value = 0;
             // or(n,A)
             value = or(getB(), getA());
 
             setA(value);
+
+            done = true;
+            return done;
         }
-        private void orACinA() // 0xB1
+        private bool orACinA() // 0xB1
         {
+			bool done = false;
             Byte value = 0;
             // or(n,A)
             value = or(getC(), getA());
 
             setA(value);
+
+            done = true;
+            return done;
         }
-        private void orADinA() // 0xB2
+        private bool orADinA() // 0xB2
         {
+			bool done = false;
             Byte value = 0;
             // or(n,A)
             value = or(getD(), getA());
 
             setA(value);
+
+            done = true;
+            return done;
         }
-        private void orAEinA() // 0xB3
+        private bool orAEinA() // 0xB3
         {
+			bool done = false;
             Byte value = 0;
             // or(n,A)
             value = or(getE(), getA());
 
             setA(value);
+
+            done = true;
+            return done;
         }
-        private void orAHinA() // 0xB4
+        private bool orAHinA() // 0xB4
         {
+			bool done = false;
             Byte value = 0;
             // or(n,A)
             value = or(getH(), getA());
 
             setA(value);
+
+            done = true;
+            return done;
         }
-        private void orALinA() // 0xB5
+        private bool orALinA() // 0xB5
         {
+			bool done = false;
             Byte value = 0;
             // or(n,A)
             value = or(getL(), getA());
 
             setA(value);
+
+            done = true;
+            return done;
         }
-        private void orAMemHLinA() // 0xB6
+        private bool orAMemHLinA() // 0xB6
         {
+			bool done = false;
             Byte value = mem.getByte(getHL());
             // or(n,A)
             value = or(value, getA());
 
             setA(value);
+
+            // This needs to be updated when updating for cycle accurracy
+            done = true;
+            return done;
         }
-        private void orAAinA() // 0xB7
+        private bool orAAinA() // 0xB7
         {
+			bool done = false;
             Byte value = 0;
             // or(n,A)
             value = or(getA(), getA());
 
             setA(value);
+
+            done = true;
+            return done;
         }
-        private void cmpAB() // 0xB8
+        private bool cmpAB() // 0xB8
         {
+			bool done = false;
             Byte value = 0;
             // cmp(n,A)
             value = cmp(getB(), getA());
 
             setA(value);
+
+            done = true;
+            return done;
         }
-        private void cmpAC() // 0xB9
+        private bool cmpAC() // 0xB9
         {
+			bool done = false;
             Byte value = 0;
             // cmp(n,A)
             value = cmp(getC(), getA());
 
             setA(value);
+
+            done = true;
+            return done;
         }
-        private void cmpAD() // 0xBA
+        private bool cmpAD() // 0xBA
         {
+			bool done = false;
             Byte value = 0;
             // cmp(n,A)
             value = cmp(getD(), getA());
 
             setA(value);
+
+            done = true;
+            return done;
         }
-        private void cmpAE() // 0xBB
+        private bool cmpAE() // 0xBB
         {
+			bool done = false;
             Byte value = 0;
             // cmp(n,A)
             value = cmp(getE(), getA());
 
             setA(value);
+
+            done = true;
+            return done;
         }
-        private void cmpAH() // 0xBC
+        private bool cmpAH() // 0xBC
         {
+			bool done = false;
             Byte value = 0;
             // cmp(n,A)
             value = cmp(getH(), getA());
 
             setA(value);
+
+            done = true;
+            return done;
         }
-        private void cmpAL() // 0xBD
+        private bool cmpAL() // 0xBD
         {
+			bool done = false;
             Byte value = 0;
             // cmp(n,A)
             value = cmp(getL(), getA());
 
             setA(value);
+
+            done = true;
+            return done;
         }
-        private void cmpAMemHL() // 0xBE
+        private bool cmpAMemHL() // 0xBE
         {
+			bool done = false;
             Byte value = mem.getByte(getHL());
             // cmp(n,A)
             value = cmp(value, getA());
 
             setA(value);
+
+            // This needs to be updated when updating for cycle accurracy
+            done = true;
+            return done;
         }
-        private void cmpAA() // 0xBF
+        private bool cmpAA() // 0xBF
         {
+			bool done = false;
             Byte value = 0;
             // cmp(n,A)
             value = cmp(getA(), getA());
 
             setA(value);
+
+            done = true;
+            return done;
         }
-        private void retIfZReset() // 0xC0
+        private bool retIfZReset() // 0xC0
         {
+			bool done = false;
             if (!getZeroFlag())
             {
                 setPC(pop16OffStack());
             }
+
+            // This needs to be updated when updating for cycle accurracy
+            done = true;
+            return done;
         }
-        private void popIntoBC() //0xC1
+        private bool popIntoBC() //0xC1
         {
+			bool done = false;
 
             ushort value = pop16OffStack();
 
             setBC(value);
+
+            // This needs to be updated when updating for cycle accurracy
+            done = true;
+            return done;
         }
-        private void jumpIfZeroFlagReset() // 0xC2
+        private bool jumpIfZeroFlagReset() // 0xC2
         {
+			bool done = false;
             Byte lsb = fetch();
             Byte msb = fetch();
             ushort value = (ushort)((msb << 8) + lsb);
@@ -3766,16 +4889,26 @@ namespace trentGB
             {
                 setPC(value);
             }
+
+            // This needs to be updated when updating for cycle accurracy
+            done = true;
+            return done;
         }
-        private void jumpToNN() // 0xC3
+        private bool jumpToNN() // 0xC3
         {
+			bool done = false;
             Byte lsb = fetch();
             Byte msb = fetch();
             ushort value = (ushort)((msb << 8) + lsb);
             setPC(value);
+
+            // This needs to be updated when updating for cycle accurracy
+            done = true;
+            return done;
         }
-        private void callNNIfZReset() //0xC4
+        private bool callNNIfZReset() //0xC4
         {
+			bool done = false;
             Byte lsb = fetch();
             Byte msb = fetch();
             if (!getZeroFlag())
@@ -3783,37 +4916,66 @@ namespace trentGB
                 pushOnStack(getPC());
                 setPC(getUInt16ForBytes(lsb, msb));
             }
+
+            // This needs to be updated when updating for cycle accurracy
+            done = true;
+            return done;
         }
-        private void pushBCToStack() //0xC5
+        private bool pushBCToStack() //0xC5
         {
+			bool done = false;
             byte[] value = getByteArrayForUInt16(getBC());
             pushOnStack(value);
+
+            // This needs to be updated when updating for cycle accurracy
+            done = true;
+            return done;
         }
-        private void addNtoA() // 0xC6
+        private bool addNtoA() // 0xC6
         {
+			bool done = false;
             Byte value = fetch();
             value = add(getA(), value);
 
             setA(value);
+
+            // This needs to be updated when updating for cycle accurracy
+            done = true;
+            return done;
         }
-        private void rst00() // 0xC7
+        private bool rst00() // 0xC7
         {
+			bool done = false;
             pushOnStack(getPC());
             setPC(0x0000);
+
+            // This needs to be updated when updating for cycle accurracy
+            done = true;
+            return done;
         }
-        private void retIfZSet() // 0xC8
+        private bool retIfZSet() // 0xC8
         {
+			bool done = false;
             if (getZeroFlag())
             {
                 setPC(pop16OffStack());
             }
+
+            // This needs to be updated when updating for cycle accurracy
+            done = true;
+            return done;
         }
-        private void ret() // 0xC9
+        private bool ret() // 0xC9
         {
+			bool done = false;
             setPC(pop16OffStack());
+            // This needs to be updated when updating for cycle accurracy
+            done = true;
+            return done;
         }
-        private void jumpIfZeroFlagSet() // 0xCA
+        private bool jumpIfZeroFlagSet() // 0xCA
         {
+			bool done = false;
             Byte lsb = fetch();
             Byte msb = fetch();
             ushort value = (ushort)((msb << 8) + lsb);
@@ -3821,13 +4983,19 @@ namespace trentGB
             {
                 setPC(value);
             }
+
+            // This needs to be updated when updating for cycle accurracy
+            done = true;
+            return done;
         }
-        private void executeCBPrefixedOpCode() // 0xCB
+        private bool executeCBPrefixedOpCode() // 0xCB
         {
-            executeCBOperation();
+			
+            return executeCBOperation();
         }
-        private void callNNIfZSet() //0xCC
+        private bool callNNIfZSet() //0xCC
         {
+			bool done = false;
             Byte lsb = fetch();
             Byte msb = fetch();
             if (getZeroFlag())
@@ -3835,42 +5003,72 @@ namespace trentGB
                 pushOnStack(getPC());
                 setPC(getUInt16ForBytes(lsb, msb));
             }
+
+            // This needs to be updated when updating for cycle accurracy
+            done = true;
+            return done;
         }
-        private void callNN() //0xCD
+        private bool callNN() //0xCD
         {
+			bool done = false;
             Byte lsb = fetch();
             Byte msb = fetch();
             pushOnStack(getPC());
             setPC(getUInt16ForBytes(lsb,msb));
+
+            // This needs to be updated when updating for cycle accurracy
+            done = true;
+            return done;
         }
-        private void addCarryNtoA() // 0xCE
+        private bool addCarryNtoA() // 0xCE
         {
+			bool done = false;
             Byte value = fetch();
             Byte rv = 0;
             rv = addCarry(getA(), value);
 
             setA(rv);
+
+            // This needs to be updated when updating for cycle accurracy
+            done = true;
+            return done;
         }
-        private void rst08() // 0xCF
+        private bool rst08() // 0xCF
         {
+			bool done = false;
             pushOnStack(getPC());
             setPC(0x0008);
+
+            // This needs to be updated when updating for cycle accurracy
+            done = true;
+            return done;
         }
-        private void retIfCarryReset() // 0xD0
+        private bool retIfCarryReset() // 0xD0
         {
+			bool done = false;
             if (!getCarryFlag())
             {
                 setPC(pop16OffStack());
             }
+
+            // This needs to be updated when updating for cycle accurracy
+            done = true;
+            return done;
         }
-        private void popIntoDE() //0xD1
+        private bool popIntoDE() //0xD1
         {
+			bool done = false;
             ushort value = pop16OffStack();
 
             setDE(value);
+
+            // This needs to be updated when updating for cycle accurracy
+            done = true;
+            return done;
         }
-        private void jumpIfCarryFlagReset() // 0xD2
+        private bool jumpIfCarryFlagReset() // 0xD2
         {
+			bool done = false;
             Byte lsb = fetch();
             Byte msb = fetch();
             ushort value = (ushort)((msb << 8) + lsb);
@@ -3878,13 +5076,18 @@ namespace trentGB
             {
                 setPC(value);
             }
+
+            // This needs to be updated when updating for cycle accurracy
+            done = true;
+            return done;
         }
-        private void unusedD3() // 0xD3
+        private bool unusedD3() // 0xD3
         {
             throw new NotImplementedException(" 0xD3 is Unused");
         }
-        private void callNNIfCReset() //0xD4
+        private bool callNNIfCReset() //0xD4
         {
+			bool done = false;
             Byte lsb = fetch();
             Byte msb = fetch();
             if (!getCarryFlag())
@@ -3892,40 +5095,70 @@ namespace trentGB
                 pushOnStack(getPC());
                 setPC(getUInt16ForBytes(lsb, msb));
             }
+
+            // This needs to be updated when updating for cycle accurracy
+            done = true;
+            return done;
         }
-        private void pushDEToStack() //0xD5
+        private bool pushDEToStack() //0xD5
         {
+			bool done = false;
             byte[] value = getByteArrayForUInt16(getDE());
             pushOnStack(value);
+
+            // This needs to be updated when updating for cycle accurracy
+            done = true;
+            return done;
         }
-        private void subNFromA() // 0xD6
+        private bool subNFromA() // 0xD6
         {
+			bool done = false;
             Byte value = fetch();
 
             // subtract(n, A)
             value = subtract(value, getA());
 
             setA(value);
+
+            // This needs to be updated when updating for cycle accurracy
+            done = true;
+            return done;
         }
-        private void rst10() // 0xD7
+        private bool rst10() // 0xD7
         {
+			bool done = false;
             pushOnStack(getPC());
             setPC(0x0010);
+
+            // This needs to be updated when updating for cycle accurracy
+            done = true;
+            return done;
         }
-        private void retIfCarrySet() // 0xD8
+        private bool retIfCarrySet() // 0xD8
         {
+			bool done = false;
             if (getCarryFlag())
             {
                 setPC(pop16OffStack());
             }
+
+            // This needs to be updated when updating for cycle accurracy
+            done = true;
+            return done;
         }
-        private void retEnableInterrupts() // 0xD9
+        private bool retEnableInterrupts() // 0xD9
         {
+			bool done = false;
             setPC(pop16OffStack());
             shouldEnableInterrupts = true;
+
+            // This needs to be updated when updating for cycle accurracy
+            done = true;
+            return done;
         }
-        private void jumpIfCarryFlagSet() // 0xDA
+        private bool jumpIfCarryFlagSet() // 0xDA
         {
+			bool done = false;
             Byte lsb = fetch();
             Byte msb = fetch();
             ushort value = (ushort)((msb << 8) + lsb);
@@ -3933,13 +5166,18 @@ namespace trentGB
             {
                 setPC(value);
             }
+
+            // This needs to be updated when updating for cycle accurracy
+            done = true;
+            return done;
         }
-        private void unusedDB() // 0xDB
+        private bool unusedDB() // 0xDB
         {
             throw new NotImplementedException(" 0xDB is Unused");
         }
-        private void callNNIfCSet() //0xDC
+        private bool callNNIfCSet() //0xDC
         {
+			bool done = false;
             Byte lsb = fetch();
             Byte msb = fetch();
             if (getCarryFlag())
@@ -3947,201 +5185,338 @@ namespace trentGB
                 pushOnStack(getPC());
                 setPC(getUInt16ForBytes(lsb, msb));
             }
+
+            // This needs to be updated when updating for cycle accurracy
+            done = true;
+            return done;
         }
-        private void unusedDD() // 0xDD
+        private bool unusedDD() // 0xDD
         {
             throw new NotImplementedException(" 0xDD is Unused");
         }
-        private void subCarryNFromA() // 0xDE
+        private bool subCarryNFromA() // 0xDE
         {
+			bool done = false;
             Byte value = fetch();
 
             // subtractCarry(n, A)
             value = subtractCarry(value, getA());
 
             setA(value);
+
+            // This needs to be updated when updating for cycle accurracy
+            done = true;
+            return done;
         }
-        private void rst18() // 0xDF
+        private bool rst18() // 0xDF
         {
+			bool done = false;
             pushOnStack(getPC());
             setPC(0x0018);
+
+            // This needs to be updated when updating for cycle accurracy
+            done = true;
+            return done;
         }
-        private void putAIntoIOPlusMem() // 0xE0
+        private bool putAIntoIOPlusMem() // 0xE0
         {
+			bool done = false;
             Byte value = getA();
             Byte offset = fetch();
             mem.setByte((ushort)(0xFF00 + offset), value);
+
+            // This needs to be updated when updating for cycle accurracy
+            done = true;
+            return done;
         }
-        private void popIntoHL() //0xE1
+        private bool popIntoHL() //0xE1
         {
+			bool done = false;
             ushort value = pop16OffStack();
 
             setHL(value);
+
+            // This needs to be updated when updating for cycle accurracy
+            done = true;
+            return done;
         }
-        private void ldAIntoIOPlusC() // 0xE2
+        private bool ldAIntoIOPlusC() // 0xE2
         {
+			bool done = false;
             Byte value = getA();
             mem.setByte((ushort)(0xFF00 + getC()), value);
+
+            // This needs to be updated when updating for cycle accurracy
+            done = true;
+            return done;
         }
-        private void unusedE3() // 0xE3
+        private bool unusedE3() // 0xE3
         {
             throw new NotImplementedException(" 0xE3 is Unused");
         }
-        private void unusedE4() // 0xE4
+        private bool unusedE4() // 0xE4
         {
             throw new NotImplementedException(" 0xE4 is Unused");
         }
-        private void pushHLToStack() //0xE5
+        private bool pushHLToStack() //0xE5
         {
+			bool done = false;
             byte[] value = getByteArrayForUInt16(getHL());
             pushOnStack(value);
+
+            // This needs to be updated when updating for cycle accurracy
+            done = true;
+            return done;
         }
-        private void andANinA() // 0xE6
+        private bool andANinA() // 0xE6
         {
+			bool done = false;
             Byte value = fetch();
             // and(n,A)
             value = and(value, getA());
 
             setA(value);
+
+            // This needs to be updated when updating for cycle accurracy
+            done = true;
+            return done;
         }
-        private void rst20() // 0xE7
+        private bool rst20() // 0xE7
         {
+			bool done = false;
             pushOnStack(getPC());
             setPC(0x0020);
+
+            // This needs to be updated when updating for cycle accurracy
+            done = true;
+            return done;
         }
-        private void addNtoSP() // 0xE8
+        private bool addNtoSP() // 0xE8
         {
+			bool done = false;
             SByte offset = (SByte)fetch();
             ushort compValue = addSP(getSP(), offset);
 
             setSP(compValue);
+
+            // This needs to be updated when updating for cycle accurracy
+            done = true;
+            return done;
         }
-        private void jumpHL() // 0xE9
+        private bool jumpHL() // 0xE9
         {
+			bool done = false;
             if (getCurrentInstruction().getCycleCount() == 4)
             {
                 setPC(getHL());
             }
-            
+
+            done = true;
+            return done;
+
         }
-        private void ldAIntoNN16() // 0xEA
+        private bool ldAIntoNN16() // 0xEA
         {
+			bool done = false;
             Byte lsb = fetch();
             Byte msb = fetch();
             mem.setByte(getUInt16ForBytes(lsb, msb), getA());
+
+            // This needs to be updated when updating for cycle accurracy
+            done = true;
+            return done;
         }
-        private void unusedEB() // 0xEB
+        private bool unusedEB() // 0xEB
         {
             throw new NotImplementedException(" 0xEB is Unused");
         }
-        private void unusedEC() // 0xEC
+        private bool unusedEC() // 0xEC
         {
             throw new NotImplementedException(" 0xEC is Unused");
         }
-        private void unusedED() // 0xED
+        private bool unusedED() // 0xED
         {
             throw new NotImplementedException(" 0xED is Unused");
         }
-        private void xorANinA() // 0xEE
+        private bool xorANinA() // 0xEE
         {
+			bool done = false;
             Byte value = fetch();
             // xor(n,A)
             value = xor(value, getA());
 
             setA(value);
+
+            // This needs to be updated when updating for cycle accurracy
+            done = true;
+            return done;
         }
-        private void rst28() // 0xEF
+        private bool rst28() // 0xEF
         {
+			bool done = false;
             pushOnStack(getPC());
             setPC(0x0028);
+
+            // This needs to be updated when updating for cycle accurracy
+            done = true;
+            return done;
         }
-        private void putIOPlusMemIntoA() // 0xF0
+        private bool putIOPlusMemIntoA() // 0xF0
         {
+			bool done = false;
             Byte offset = fetch();
             Byte value = mem.getByte((ushort)(0xFF00 + offset));
             
             setA(value);
+
+            // This needs to be updated when updating for cycle accurracy
+            done = true;
+            return done;
         }
-        private void popIntoAF() //0xF1
+        private bool popIntoAF() //0xF1
         {
+			bool done = false;
             ushort value = pop16OffStack();
 
             setAF(value);
+
+            // This needs to be updated when updating for cycle accurracy
+            done = true;
+            return done;
         }
-        private void ldIOPlusCToA() // 0xF2
+        private bool ldIOPlusCToA() // 0xF2
         {
+			bool done = false;
             Byte value = mem.getByte((ushort)(0xFF00 + getC()));
             setA(value);
+
+            // This needs to be updated when updating for cycle accurracy
+            done = true;
+            return done;
         }
-        private void disableInterruptsAfterNextIns() // 0xF3
+        private bool disableInterruptsAfterNextIns() // 0xF3
         {
+			bool done = false;
             shouldDisableInterrupts = true;
+
+            done = true;
+            return done;
         }
-        private void unusedF4() // 0xF4
+        private bool unusedF4() // 0xF4
         {
             throw new NotImplementedException(" 0xF4 is Unused");
         }
-        private void pushAFToStack() //0xF5
+        private bool pushAFToStack() //0xF5
         {
+			bool done = false;
             byte[] value = getByteArrayForUInt16(getAF());
             pushOnStack(value);
+
+            // This needs to be updated when updating for cycle accurracy
+            done = true;
+            return done;
         }
-        private void orANinA() // 0xF6
+        private bool orANinA() // 0xF6
         {
+			bool done = false;
             Byte value = fetch();
             // add(n,A)
             value = or(value, getA());
 
             setA(value);
+
+            // This needs to be updated when updating for cycle accurracy
+            done = true;
+            return done;
         }
-        private void rst30() // 0xF7
+        private bool rst30() // 0xF7
         {
+			bool done = false;
             pushOnStack(getPC());
             setPC(0x0030);
+
+            // This needs to be updated when updating for cycle accurracy
+            done = true;
+            return done;
         }
-        private void ldHLFromSPPlusN() // 0xF8
+        private bool ldHLFromSPPlusN() // 0xF8
         {
+			bool done = false;
             SByte offset = (SByte)fetch();
             ushort compValue = addSP(getSP(), offset);
 
             setHL(compValue);
+
+            // This needs to be updated when updating for cycle accurracy
+            done = true;
+            return done;
         }
-        private void ldSPFromHL() // 0xF9
+        private bool ldSPFromHL() // 0xF9
         {
+			bool done = false;
             setSP(getHL());
+
+            // This needs to be updated when updating for cycle accurracy
+            done = true;
+            return done;
         }
-        private void ld16A() // 0xFA
+        private bool ld16A() // 0xFA
         {
-            int value1 = fetch();
-            int value2 = fetch();
-            ushort value = (ushort)((value2 << 8) + value1);
-            setAF(value);
-            // HACK this May Not Work??
+			bool done = false;
+            if (getCurrentInstruction().getCycleCount() == 8)
+            {
+                currentInstruction.storage = setByteInUInt16(fetch(), BytePlacement.LSB, currentInstruction.storage);
+            }
+            else if(getCurrentInstruction().getCycleCount() == 12)
+            {
+                currentInstruction.storage = setByteInUInt16(fetch(), BytePlacement.MSB, currentInstruction.storage);
+            }
+            else if (getCurrentInstruction().getCycleCount() == 16)
+            {
+                setA(mem.getByte(getCurrentInstruction().storage));
+                done = true;
+            }
+
+            return done;
         }
-        private void enableInterruptsAfterNextIns() // 0xFB
+        private bool enableInterruptsAfterNextIns() // 0xFB
         {
+			bool done = false;
             shouldEnableInterrupts = true;
+
+            done = true;
+            return done;
         }
-        private void unusedFC() // 0xFC
+        private bool unusedFC() // 0xFC
         {
             throw new NotImplementedException(" 0xFC is Unused");
         }
-        private void unusedFD() // 0xFD
+        private bool unusedFD() // 0xFD
         {
             throw new NotImplementedException(" 0xFD is Unused");
         }
-        private void cmpAN() // 0xFE
+        private bool cmpAN() // 0xFE
         {
+			bool done = false;
             Byte value = fetch();
             // cmp(n,A)
             value = cmp(value, getA());
 
             setA(value);
+
+            // This needs to be updated when updating for cycle accurracy
+            done = true;
+            return done;
         }
-        private void rst38() // 0xFF
+        private bool rst38() // 0xFF
         {
+			bool done = false;
             pushOnStack(getPC());
             setPC(0x0038);
+
+            // This needs to be updated when updating for cycle accurracy
+            done = true;
+            return done;
         }
 
 
@@ -4403,7 +5778,7 @@ namespace trentGB
             return rv;
         }
 
-        public Byte rotateLeftCarry(Byte op1)
+        public Byte rotateLeftCarry(Byte op1, bool updateZeroFlag = true)
         {
             Byte result = (byte) ((op1 << 1) & 0xFF);
             if ((op1 & 0x80) != 0)
@@ -4417,26 +5792,41 @@ namespace trentGB
                 // rotated off a 0
                 setCarryFlag(false);
             }
-            setZeroFlag(false);
+            if (updateZeroFlag)
+            {
+                setZeroFlag((result == 0));
+            }
+            else
+            {
+                setZeroFlag(false);
+            }
+            
             setSubtractFlag(false);
             setHalfCarryFlag(false);
             return result;
         }
 
-        public Byte rotateLeft(Byte op1)
+        public Byte rotateLeft(Byte op1, bool updateZeroFlag = true)
         {
             int carryFlag = (getCarryFlag()) ? 1 : 0;
             Byte result = (byte)((op1 << 1) & 0xFF);
             result = (byte)(result | carryFlag);
             setCarryFlag((op1 & 0x80) != 0);
 
-            setZeroFlag(false);
+            if (updateZeroFlag)
+            {
+                setZeroFlag((result == 0));
+            }
+            else
+            {
+                setZeroFlag(false);
+            }
             setSubtractFlag(false);
             setHalfCarryFlag(false);
             return result;
         }
 
-        public Byte rotateRightCarry(Byte op1)
+        public Byte rotateRightCarry(Byte op1, bool updateZeroFlag = true)
         {
             Byte result = (byte)((op1 >> 1));
             if ((op1 & 0x01) == 1)
@@ -4450,20 +5840,34 @@ namespace trentGB
                 // rotated off a 0
                 setCarryFlag(false);
             }
-            setZeroFlag(false);
+            if (updateZeroFlag)
+            {
+                setZeroFlag((result == 0));
+            }
+            else
+            {
+                setZeroFlag(false);
+            }
             setSubtractFlag(false);
             setHalfCarryFlag(false);
             return result;
         }
 
-        public Byte rotateRight(Byte op1)
+        public Byte rotateRight(Byte op1, bool updateZeroFlag = true)
         {
             Byte carryFlagAdj =(Byte) ((getCarryFlag()) ? 0x80 : 0);
             Byte result = (byte)((op1 >> 1));
             result = (byte)(result | carryFlagAdj);
             setCarryFlag((op1 & 0x01) != 0);
 
-            setZeroFlag(false);
+            if (updateZeroFlag)
+            {
+                setZeroFlag((result == 0));
+            }
+            else
+            {
+                setZeroFlag(false);
+            }
             setSubtractFlag(false);
             setHalfCarryFlag(false);
             return result;
@@ -4704,6 +6108,58 @@ namespace trentGB
             }
 
             return value;
+        }
+        public enum BytePlacement
+        {
+            MSB,
+            LSB
+        }
+
+        public static Byte getByteInUInt16(BytePlacement pos, ushort storage)
+        {
+            Byte MSB = (Byte)((storage & 0xFF00) >> 8);
+            Byte LSB = (Byte)(storage & 0x00FF);
+
+            Byte rv = 0;
+
+            if (pos == BytePlacement.MSB)
+            {
+                rv = MSB;
+            }
+            else if (pos == BytePlacement.LSB)
+            {
+                rv = LSB;
+            }
+            else
+            {
+                throw new NotImplementedException("Invalid Byte Placement Type");
+            }
+
+            return rv;
+        }
+        public static ushort setByteInUInt16( Byte set, BytePlacement pos, ushort storage)
+        {
+            Byte MSB = (Byte)((storage & 0xFF00) >> 8);
+            Byte LSB = (Byte)(storage & 0x00FF);
+
+            ushort rv = 0;
+
+            if (pos == BytePlacement.MSB)
+            {
+                int setVal = (int)set;
+                rv = (ushort)((setVal << 8) + LSB);
+            }
+            else if(pos == BytePlacement.LSB)
+            {
+                int setVal = (int)MSB;
+                rv = (ushort)((setVal << 8) + set);
+            }
+            else
+            {
+                throw new NotImplementedException("Invalid Byte Placement Type");
+            }
+
+            return rv;
         }
 
         public Byte incrementIgnoreFlags(Byte value)

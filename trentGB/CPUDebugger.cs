@@ -172,7 +172,7 @@ namespace trentGB
                 Color textColor = romView.ForeColor;
 
                 ListViewItem c = new ListViewItem(ins.ToString());
-                c.ForeColor = (!ins.isCompleted()) ? Color.LightGreen : romView.ForeColor;
+                c.ForeColor = (!ins.getOpFuncReportedState()) ? Color.LightGreen : romView.ForeColor;
                 //c.Font = new Font(c.Font, FontStyle.Bold);
                 romView.Items.Add(c);
             }
