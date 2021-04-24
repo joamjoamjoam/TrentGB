@@ -223,7 +223,7 @@ namespace trentGB
                 }
             }
             
-            return $"Addr: {address.ToString("X4")}: OP: {desc} - 0x{opCode} {((parameters.Length > 0) ? "0x" : "")}{String.Join(", 0x", parameters.Select(b => b.ToString("X2")))}{paramRealValue}, Cycles: {getCycleCount()}/{cycles} {((getOpFuncReportedState()) ? "Done" : "")} Cycle Accurate Emulation: {((isCompleted()) ? "True" : "False")}";
+            return $"Addr: {address.ToString("X4")}: OP: 0x{(opCode.ToString("X2"))} - {desc} {((parameters.Length > 0) ? "0x" : "")}{String.Join(", 0x", parameters.Select(b => b.ToString("X2")))}{paramRealValue}, Cycles: {getCycleCount()}/{cycles} {((getOpFuncReportedState()) ? "Done" : "")} Cycle Accurate Emulation: {((isCompleted()) ? "True" : "False")}";
         }
 
         private Byte getCBOpLength()
@@ -1410,7 +1410,8 @@ namespace trentGB
                         done = true;
                         break;
                     case 0x1E:
-                        mem.setByte(getHL(), rotateRight(mem.getByte(getHL())));
+                        ushort hl = getHL();
+                        mem.setByte(hl, rotateRight(mem.getByte(hl)));
                         done = true;
                         break;
                     case 0x1F:
@@ -1442,7 +1443,8 @@ namespace trentGB
                         done = true;
                         break;
                     case 0x26:
-                        mem.setByte(getHL(), sla(mem.getByte(getHL())));
+                        hl = getHL();
+                        mem.setByte(hl, sla(mem.getByte(hl)));
                         done = true;
                         break;
                     case 0x27:
@@ -1474,7 +1476,8 @@ namespace trentGB
                         done = true;
                         break;
                     case 0x2E:
-                        mem.setByte(getHL(), sra(mem.getByte(getHL())));
+                        hl = getHL();
+                        mem.setByte(hl, sra(mem.getByte(hl)));
                         done = true;
                         break;
                     case 0x2F:
@@ -1506,7 +1509,8 @@ namespace trentGB
                         done = true;
                         break;
                     case 0x36:
-                        mem.setByte(getHL(), swapNibbles(mem.getByte(getHL())));
+                        hl = getHL();
+                        mem.setByte(hl, swapNibbles(mem.getByte(hl)));
                         done = true;
                         break;
                     case 0x37:
@@ -1538,7 +1542,8 @@ namespace trentGB
                         done = true;
                         break;
                     case 0x3E:
-                        mem.setByte(getHL(), srl(mem.getByte(getHL())));
+                        hl = getHL();
+                        mem.setByte(hl, srl(mem.getByte(hl)));
                         done = true;
                         break;
                     case 0x3F:
@@ -4353,15 +4358,14 @@ namespace trentGB
         private bool subMemAtHLFromA() // 0x96
         {
 			bool done = false;
-            Byte value = 0;
 
-            // subtract(n, A)
-            value = subtract(mem.getByte(getHL()), getA());
-
-            setA(value);
-
-            // This needs to be updated when updating for cycle accurracy
-            done = true;
+            if (currentInstruction.getCycleCount() == 8)
+            {
+                done = true;
+                // subtract(n, A)
+                setA(subtract(mem.getByte(getHL()), getA()));
+            }
+            
             return done;
         }
         private bool subAFromA() // 0x97
@@ -4380,12 +4384,9 @@ namespace trentGB
         private bool subCarryBFromA() // 0x98
         {
 			bool done = false;
-            Byte value = 0;
 
-            // subtract(n, A)
-            value = subtractCarry(getB(), getA());
-
-            setA(value);
+            // subtractCarry(n, A)
+            setA(subtractCarry(getB(), getA()));
 
             done = true;
             return done;
@@ -4458,15 +4459,13 @@ namespace trentGB
         private bool subCarryMemAtHLFromA() // 0x9E
         {
 			bool done = false;
-            Byte value = 0;
 
-            // subtractCarry(n, A)
-            value = subtractCarry(mem.getByte(getHL()), getA());
+            if (currentInstruction.getCycleCount() == 8)
+            {
+                setA(subtractCarry(mem.getByte(getHL()), getA()));
+                done = true;
+            }
 
-            setA(value);
-
-            // This needs to be updated when updating for cycle accurracy
-            done = true;
             return done;
         }
         private bool subCarryAFromA() // 0x9F
@@ -5128,15 +5127,14 @@ namespace trentGB
         private bool subNFromA() // 0xD6
         {
 			bool done = false;
-            Byte value = fetch();
-
-            // subtract(n, A)
-            value = subtract(value, getA());
-
-            setA(value);
-
-            // This needs to be updated when updating for cycle accurracy
-            done = true;
+            if (currentInstruction.getCycleCount() == 8)
+            {
+                fetch();
+                // subtract(n, A)
+                setA(subtract(currentInstruction.parameters[0], getA()));
+                done = true;
+            }
+            
             return done;
         }
         private bool rst10() // 0xD7
@@ -5651,11 +5649,11 @@ namespace trentGB
             {
                 setZeroFlag(true);
             }
-            if (((op2 & 0xF) > (op1 & 0xF))) // Lower Nible of op2 is higher we need to borrow
+            if (((op1 & 0xF) > (op2 & 0xF))) // Lower Nible of op2 is higher we need to borrow
             {
                 setHalfCarryFlag(true);
             }
-            if (op2 > op1) // Lower Nible of op2 is higher we need to borrow
+            if (op1 > op2) // Lower Nible of op2 is higher we need to borrow
             {
                 setCarryFlag(true);
             }
@@ -5742,7 +5740,7 @@ namespace trentGB
 
         public Byte cmp(Byte op1, Byte a)
         {
-            return subtract(a, op1);
+            return subtract(op1, a);
         }
 
         public Byte daa(byte arg)

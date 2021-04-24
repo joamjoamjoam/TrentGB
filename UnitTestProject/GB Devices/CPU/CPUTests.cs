@@ -253,6 +253,20 @@ namespace trentGB.Tests
         #endregion
 
         #region CPU Data Tests
+
+
+
+        [TestMethod]
+        [Timeout(20000)]
+        [TestCategory("CPU Data Tests")]
+        public void getStateDict()
+        {
+            CPU cpu = setupOpCode(0x00, MethodBase.GetCurrentMethod().Name);
+            Dictionary<String, String> snap = cpu.getStateDict();
+            Assert.IsNotNull(snap);
+        }
+
+
         // Test Cycle Counts in Intruction Dictionary matches lengths used
         [DataTestMethod]
         [Timeout(10000)]
@@ -1122,6 +1136,8 @@ namespace trentGB.Tests
                 if (opCode != 0xCB)
                 {
                     executeCurrentInstruction(cpu);
+                    // Check Number of Cycles
+                    Assert.That.AreEqual(cpu.getLastExecutedInstruction().getExpectedCycles(), cpu.getLastExecutedInstruction().getCycleCount());
                 }
                 else
                 {
@@ -1129,8 +1145,7 @@ namespace trentGB.Tests
                 }
             }
 
-            // Check Number of Cycles
-            Assert.That.AreEqual(cpu.getLastExecutedInstruction().getExpectedCycles(), cpu.getLastExecutedInstruction().getCycleCount());
+            
         }
 
         [DataTestMethod]
@@ -1948,6 +1963,461 @@ namespace trentGB.Tests
             {
                 Assert.IsFalse(cpu.getCarryFlag());
             }
+
+            Assert.That.FlagsEqual(cpu, expectedFlags);
+
+        }
+        #endregion
+
+        #region 0x90 - Subtract B from A
+        [DataRow((byte)0xFF, (Byte)0xFF, (Byte)0x00, (Byte)0xF0, (Byte)0xC0)]
+        [DataRow((byte)0x01, (Byte)0xFF, (Byte)0xFE, (Byte)0xF0, (Byte)0x40)]
+        [DataRow((byte)0x01, (Byte)0x00, (Byte)0xFF, (Byte)0xF0, (Byte)0x70)]
+        [DataRow((byte)0x01, (Byte)0x10, (Byte)0x0F, (Byte)0xF0, (Byte)0x60)]
+        [DataRow((byte)0x00, (Byte)0x00, (Byte)0x00, (Byte)0xF0, (Byte)0xC0)]
+        [DataTestMethod]
+        [TestCategory("OP Codes")]
+        [TestCategory("OP Code 0x90 - Subtract B from A")]
+        public void decodeAndExecute_subBFromA(byte b, byte a, Byte result, byte initialFlags, byte expectedFlags)
+        {
+            byte opCode = 0x90;
+
+            CPU cpu = setupOpCode(opCode, MethodBase.GetCurrentMethod().Name);
+            cpu.setF(initialFlags);
+            cpu.setA(a);
+            cpu.setB(b);
+
+            fetchAndLoadInstruction(cpu, opCode);
+            assertInstructionFinished(cpu, opCode);
+            Assert.That.AreEqual(result, cpu.getA());
+
+            Assert.That.FlagsEqual(cpu, expectedFlags);
+
+        }
+        #endregion
+
+        #region 0x91 - Subtract C from A
+        [DataRow((byte)0xFF, (Byte)0xFF, (Byte)0x00, (Byte)0xF0, (Byte)0xC0)]
+        [DataRow((byte)0x01, (Byte)0xFF, (Byte)0xFE, (Byte)0xF0, (Byte)0x40)]
+        [DataRow((byte)0x01, (Byte)0x00, (Byte)0xFF, (Byte)0xF0, (Byte)0x70)]
+        [DataRow((byte)0x01, (Byte)0x10, (Byte)0x0F, (Byte)0xF0, (Byte)0x60)]
+        [DataRow((byte)0x00, (Byte)0x00, (Byte)0x00, (Byte)0xF0, (Byte)0xC0)]
+        [DataTestMethod]
+        [TestCategory("OP Codes")]
+        [TestCategory("OP Code 0x91 - Subtract C from A")]
+        public void decodeAndExecute_subCFromA(byte c, byte a, Byte result, byte initialFlags, byte expectedFlags)
+        {
+            byte opCode = 0x91;
+
+            CPU cpu = setupOpCode(opCode, MethodBase.GetCurrentMethod().Name);
+            cpu.setF(initialFlags);
+            cpu.setA(a);
+            cpu.setC(c);
+
+            fetchAndLoadInstruction(cpu, opCode);
+            assertInstructionFinished(cpu, opCode);
+            Assert.That.AreEqual(result, cpu.getA());
+
+            Assert.That.FlagsEqual(cpu, expectedFlags);
+
+        }
+        #endregion
+
+        #region 0x92 - Subtract D from A
+        [DataRow((byte)0xFF, (Byte)0xFF, (Byte)0x00, (Byte)0xF0, (Byte)0xC0)]
+        [DataRow((byte)0x01, (Byte)0xFF, (Byte)0xFE, (Byte)0xF0, (Byte)0x40)]
+        [DataRow((byte)0x01, (Byte)0x00, (Byte)0xFF, (Byte)0xF0, (Byte)0x70)]
+        [DataRow((byte)0x01, (Byte)0x10, (Byte)0x0F, (Byte)0xF0, (Byte)0x60)]
+        [DataRow((byte)0x00, (Byte)0x00, (Byte)0x00, (Byte)0xF0, (Byte)0xC0)]
+        [DataTestMethod]
+        [TestCategory("OP Codes")]
+        [TestCategory("OP Code 0x92 - Subtract D from A")]
+        public void decodeAndExecute_subDFromA(byte d, byte a, Byte result, byte initialFlags, byte expectedFlags)
+        {
+            byte opCode = 0x92;
+
+            CPU cpu = setupOpCode(opCode, MethodBase.GetCurrentMethod().Name);
+            cpu.setF(initialFlags);
+            cpu.setA(a);
+            cpu.setD(d);
+
+            fetchAndLoadInstruction(cpu, opCode);
+            assertInstructionFinished(cpu, opCode);
+            Assert.That.AreEqual(result, cpu.getA());
+
+            Assert.That.FlagsEqual(cpu, expectedFlags);
+
+        }
+        #endregion
+
+        #region 0x93 - Subtract E from A
+        [DataRow((byte)0xFF, (Byte)0xFF, (Byte)0x00, (Byte)0xF0, (Byte)0xC0)]
+        [DataRow((byte)0x01, (Byte)0xFF, (Byte)0xFE, (Byte)0xF0, (Byte)0x40)]
+        [DataRow((byte)0x01, (Byte)0x00, (Byte)0xFF, (Byte)0xF0, (Byte)0x70)]
+        [DataRow((byte)0x01, (Byte)0x10, (Byte)0x0F, (Byte)0xF0, (Byte)0x60)]
+        [DataRow((byte)0x00, (Byte)0x00, (Byte)0x00, (Byte)0xF0, (Byte)0xC0)]
+        [DataTestMethod]
+        [TestCategory("OP Codes")]
+        [TestCategory("OP Code 0x93 - Subtract E from A")]
+        public void decodeAndExecute_subEFromA(byte e, byte a, Byte result, byte initialFlags, byte expectedFlags)
+        {
+            byte opCode = 0x93;
+
+            CPU cpu = setupOpCode(opCode, MethodBase.GetCurrentMethod().Name);
+            cpu.setF(initialFlags);
+            cpu.setA(a);
+            cpu.setE(e);
+
+            fetchAndLoadInstruction(cpu, opCode);
+            assertInstructionFinished(cpu, opCode);
+            Assert.That.AreEqual(result, cpu.getA());
+
+            Assert.That.FlagsEqual(cpu, expectedFlags);
+
+        }
+        #endregion
+
+        #region 0x94 - Subtract H from A
+        [DataRow((byte)0xFF, (Byte)0xFF, (Byte)0x00, (Byte)0xF0, (Byte)0xC0)]
+        [DataRow((byte)0x01, (Byte)0xFF, (Byte)0xFE, (Byte)0xF0, (Byte)0x40)]
+        [DataRow((byte)0x01, (Byte)0x00, (Byte)0xFF, (Byte)0xF0, (Byte)0x70)]
+        [DataRow((byte)0x01, (Byte)0x10, (Byte)0x0F, (Byte)0xF0, (Byte)0x60)]
+        [DataRow((byte)0x00, (Byte)0x00, (Byte)0x00, (Byte)0xF0, (Byte)0xC0)]
+        [DataTestMethod]
+        [TestCategory("OP Codes")]
+        [TestCategory("OP Code 0x93 - Subtract H from A")]
+        public void decodeAndExecute_subHFromA(byte h, byte a, Byte result, byte initialFlags, byte expectedFlags)
+        {
+            byte opCode = 0x94;
+
+            CPU cpu = setupOpCode(opCode, MethodBase.GetCurrentMethod().Name);
+            cpu.setF(initialFlags);
+            cpu.setA(a);
+            cpu.setH(h);
+
+            fetchAndLoadInstruction(cpu, opCode);
+            assertInstructionFinished(cpu, opCode);
+            Assert.That.AreEqual(result, cpu.getA());
+
+            Assert.That.FlagsEqual(cpu, expectedFlags);
+
+        }
+        #endregion
+
+        #region 0x95 - Subtract L from A
+        [DataRow((byte)0xFF, (Byte)0xFF, (Byte)0x00, (Byte)0xF0, (Byte)0xC0)]
+        [DataRow((byte)0x01, (Byte)0xFF, (Byte)0xFE, (Byte)0xF0, (Byte)0x40)]
+        [DataRow((byte)0x01, (Byte)0x00, (Byte)0xFF, (Byte)0xF0, (Byte)0x70)]
+        [DataRow((byte)0x01, (Byte)0x10, (Byte)0x0F, (Byte)0xF0, (Byte)0x60)]
+        [DataRow((byte)0x00, (Byte)0x00, (Byte)0x00, (Byte)0xF0, (Byte)0xC0)]
+        [DataTestMethod]
+        [TestCategory("OP Codes")]
+        [TestCategory("OP Code 0x95 - Subtract L from A")]
+        public void decodeAndExecute_subLFromA(byte l, byte a, Byte result, byte initialFlags, byte expectedFlags)
+        {
+            byte opCode = 0x95;
+
+            CPU cpu = setupOpCode(opCode, MethodBase.GetCurrentMethod().Name);
+            cpu.setF(initialFlags);
+            cpu.setA(a);
+            cpu.setL(l);
+
+            fetchAndLoadInstruction(cpu, opCode);
+            assertInstructionFinished(cpu, opCode);
+            Assert.That.AreEqual(result, cpu.getA());
+
+            Assert.That.FlagsEqual(cpu, expectedFlags);
+
+        }
+        #endregion
+
+        #region 0x96 - Subtract Mem HL from A
+        [DataRow((byte)0xFF, (Byte)0xFF, (Byte)0x00, (Byte)0xF0, (Byte)0xC0)]
+        [DataRow((byte)0x01, (Byte)0xFF, (Byte)0xFE, (Byte)0xF0, (Byte)0x40)]
+        [DataRow((byte)0x01, (Byte)0x00, (Byte)0xFF, (Byte)0xF0, (Byte)0x70)]
+        [DataRow((byte)0x01, (Byte)0x10, (Byte)0x0F, (Byte)0xF0, (Byte)0x60)]
+        [DataRow((byte)0x00, (Byte)0x00, (Byte)0x00, (Byte)0xF0, (Byte)0xC0)]
+        [DataTestMethod]
+        [TestCategory("OP Codes")]
+        [TestCategory("OP Code 0x96 - Subtract Mem HL from A")]
+        public void decodeAndExecute_subMemHLFromA(byte hl, byte a, Byte result, byte initialFlags, byte expectedFlags)
+        {
+            byte opCode = 0x96;
+
+            CPU cpu = setupOpCode(opCode, MethodBase.GetCurrentMethod().Name);
+            cpu.setF(initialFlags);
+            cpu.setA(a);
+            cpu.setHL(0xC000);
+            cpu.mem.setByte(0xC000, hl); 
+
+            fetchAndLoadInstruction(cpu, opCode);
+            Assert.That.AreEqual(hl, cpu.mem.getByte(0xC000), "X2", "Byte was modified when it shouldnt be");
+            Assert.That.AreEqual(a, cpu.getA(), "X2", "A was modified when it shouldnt be");
+            tick(cpu);
+            assertInstructionFinished(cpu, opCode);
+            Assert.That.AreEqual(result, cpu.getA());
+
+            Assert.That.FlagsEqual(cpu, expectedFlags);
+
+        }
+        #endregion
+
+        #region 0xD6 - Subtract N from A
+        [DataRow((byte)0xFF, (Byte)0xFF, (Byte)0x00, (Byte)0xF0, (Byte)0xC0)]
+        [DataRow((byte)0x01, (Byte)0xFF, (Byte)0xFE, (Byte)0xF0, (Byte)0x40)]
+        [DataRow((byte)0x01, (Byte)0x00, (Byte)0xFF, (Byte)0xF0, (Byte)0x70)]
+        [DataRow((byte)0x01, (Byte)0x10, (Byte)0x0F, (Byte)0xF0, (Byte)0x60)]
+        [DataRow((byte)0x00, (Byte)0x00, (Byte)0x00, (Byte)0xF0, (Byte)0xC0)]
+        [DataTestMethod]
+        [TestCategory("OP Codes")]
+        [TestCategory("OP Code 0xD6 - Subtract N from A")]
+        public void decodeAndExecute_subNFromA(byte n, byte a, Byte result, byte initialFlags, byte expectedFlags)
+        {
+            byte opCode = 0xD6;
+
+            CPU cpu = setupOpCode(opCode, MethodBase.GetCurrentMethod().Name, n);
+            cpu.setF(initialFlags);
+            cpu.setA(a);
+
+            fetchAndLoadInstruction(cpu, opCode);
+            tick(cpu);
+            assertInstructionFinished(cpu, opCode);
+            Assert.That.AreEqual(result, cpu.getA());
+
+            Assert.That.FlagsEqual(cpu, expectedFlags);
+
+        }
+        #endregion
+
+        #region 0x98 - Subtract Carry B from A
+        [DataRow((byte)0x01, (Byte)0x00, (Byte)0xFE, (Byte)0xF0, (Byte)0x70)]
+        [DataRow((byte)0x01, (Byte)0x00, (Byte)0xFF, (Byte)0xE0, (Byte)0x70)]
+        [DataRow((byte)0x01, (Byte)0xFF, (Byte)0xFD, (Byte)0xF0, (Byte)0x40)]
+        [DataRow((byte)0x01, (Byte)0xFF, (Byte)0xFE, (Byte)0xE0, (Byte)0x40)]
+        [DataRow((byte)0xFF, (Byte)0xFF, (Byte)0xFF, (Byte)0xF0, (Byte)0x70)]
+        [DataRow((byte)0xFF, (Byte)0xFF, (Byte)0x00, (Byte)0xE0, (Byte)0xC0)]
+        [DataRow((byte)0x01, (Byte)0x10, (Byte)0x0E, (Byte)0xF0, (Byte)0x60)]
+        [DataRow((byte)0x01, (Byte)0x10, (Byte)0x0F, (Byte)0xE0, (Byte)0x60)]
+        [DataRow((byte)0x00, (Byte)0x10, (Byte)0x0F, (Byte)0xF0, (Byte)0x60)]
+        [DataRow((byte)0x00, (Byte)0x00, (Byte)0x00, (Byte)0xE0, (Byte)0xC0)]
+        [DataRow((byte)0x00, (Byte)0x01, (Byte)0x00, (Byte)0xF0, (Byte)0xC0)]
+        [DataTestMethod]
+        [TestCategory("OP Codes")]
+        [TestCategory("OP Code 0x98 - Subtract Carry B from A")]
+        public void decodeAndExecute_subCarryBFromA(byte b, byte a, Byte result, byte initialFlags, byte expectedFlags)
+        {
+            byte opCode = 0x98;
+
+            CPU cpu = setupOpCode(opCode, MethodBase.GetCurrentMethod().Name);
+            cpu.setF(initialFlags);
+            cpu.setA(a);
+            cpu.setB(b);
+
+            fetchAndLoadInstruction(cpu, opCode);
+            assertInstructionFinished(cpu, opCode);
+            Assert.That.AreEqual(result, cpu.getA());
+
+            Assert.That.FlagsEqual(cpu, expectedFlags);
+
+        }
+        #endregion
+
+        #region 0x99 - Subtract Carry C from A
+        [DataRow((byte)0x01, (Byte)0x00, (Byte)0xFE, (Byte)0xF0, (Byte)0x70)]
+        [DataRow((byte)0x01, (Byte)0x00, (Byte)0xFF, (Byte)0xE0, (Byte)0x70)]
+        [DataRow((byte)0x01, (Byte)0xFF, (Byte)0xFD, (Byte)0xF0, (Byte)0x40)]
+        [DataRow((byte)0x01, (Byte)0xFF, (Byte)0xFE, (Byte)0xE0, (Byte)0x40)]
+        [DataRow((byte)0xFF, (Byte)0xFF, (Byte)0xFF, (Byte)0xF0, (Byte)0x70)]
+        [DataRow((byte)0xFF, (Byte)0xFF, (Byte)0x00, (Byte)0xE0, (Byte)0xC0)]
+        [DataRow((byte)0x01, (Byte)0x10, (Byte)0x0E, (Byte)0xF0, (Byte)0x60)]
+        [DataRow((byte)0x01, (Byte)0x10, (Byte)0x0F, (Byte)0xE0, (Byte)0x60)]
+        [DataRow((byte)0x00, (Byte)0x10, (Byte)0x0F, (Byte)0xF0, (Byte)0x60)]
+        [DataRow((byte)0x00, (Byte)0x00, (Byte)0x00, (Byte)0xE0, (Byte)0xC0)]
+        [DataRow((byte)0x00, (Byte)0x01, (Byte)0x00, (Byte)0xF0, (Byte)0xC0)]
+        [DataTestMethod]
+        [TestCategory("OP Codes")]
+        [TestCategory("OP Code 0x99 - Subtract Carry C from A")]
+        public void decodeAndExecute_subCarryCFromA(byte c, byte a, Byte result, byte initialFlags, byte expectedFlags)
+        {
+            byte opCode = 0x99;
+
+            CPU cpu = setupOpCode(opCode, MethodBase.GetCurrentMethod().Name);
+            cpu.setF(initialFlags);
+            cpu.setA(a);
+            cpu.setC(c);
+
+            fetchAndLoadInstruction(cpu, opCode);
+            assertInstructionFinished(cpu, opCode);
+            Assert.That.AreEqual(result, cpu.getA());
+
+            Assert.That.FlagsEqual(cpu, expectedFlags);
+
+        }
+        #endregion
+
+        #region 0x9A - Subtract Carry D from A
+        [DataRow((byte)0x01, (Byte)0x00, (Byte)0xFE, (Byte)0xF0, (Byte)0x70)]
+        [DataRow((byte)0x01, (Byte)0x00, (Byte)0xFF, (Byte)0xE0, (Byte)0x70)]
+        [DataRow((byte)0x01, (Byte)0xFF, (Byte)0xFD, (Byte)0xF0, (Byte)0x40)]
+        [DataRow((byte)0x01, (Byte)0xFF, (Byte)0xFE, (Byte)0xE0, (Byte)0x40)]
+        [DataRow((byte)0xFF, (Byte)0xFF, (Byte)0xFF, (Byte)0xF0, (Byte)0x70)]
+        [DataRow((byte)0xFF, (Byte)0xFF, (Byte)0x00, (Byte)0xE0, (Byte)0xC0)]
+        [DataRow((byte)0x01, (Byte)0x10, (Byte)0x0E, (Byte)0xF0, (Byte)0x60)]
+        [DataRow((byte)0x01, (Byte)0x10, (Byte)0x0F, (Byte)0xE0, (Byte)0x60)]
+        [DataRow((byte)0x00, (Byte)0x10, (Byte)0x0F, (Byte)0xF0, (Byte)0x60)]
+        [DataRow((byte)0x00, (Byte)0x00, (Byte)0x00, (Byte)0xE0, (Byte)0xC0)]
+        [DataRow((byte)0x00, (Byte)0x01, (Byte)0x00, (Byte)0xF0, (Byte)0xC0)]
+        [DataTestMethod]
+        [TestCategory("OP Codes")]
+        [TestCategory("OP Code 0x9A - Subtract Carry D from A")]
+        public void decodeAndExecute_subCarryDFromA(byte d, byte a, Byte result, byte initialFlags, byte expectedFlags)
+        {
+            byte opCode = 0x9A;
+
+            CPU cpu = setupOpCode(opCode, MethodBase.GetCurrentMethod().Name);
+            cpu.setF(initialFlags);
+            cpu.setA(a);
+            cpu.setD(d);
+
+            fetchAndLoadInstruction(cpu, opCode);
+            assertInstructionFinished(cpu, opCode);
+            Assert.That.AreEqual(result, cpu.getA());
+
+            Assert.That.FlagsEqual(cpu, expectedFlags);
+
+        }
+        #endregion
+
+        #region 0x9B - Subtract Carry E from A
+        [DataRow((byte)0x01, (Byte)0x00, (Byte)0xFE, (Byte)0xF0, (Byte)0x70)]
+        [DataRow((byte)0x01, (Byte)0x00, (Byte)0xFF, (Byte)0xE0, (Byte)0x70)]
+        [DataRow((byte)0x01, (Byte)0xFF, (Byte)0xFD, (Byte)0xF0, (Byte)0x40)]
+        [DataRow((byte)0x01, (Byte)0xFF, (Byte)0xFE, (Byte)0xE0, (Byte)0x40)]
+        [DataRow((byte)0xFF, (Byte)0xFF, (Byte)0xFF, (Byte)0xF0, (Byte)0x70)]
+        [DataRow((byte)0xFF, (Byte)0xFF, (Byte)0x00, (Byte)0xE0, (Byte)0xC0)]
+        [DataRow((byte)0x01, (Byte)0x10, (Byte)0x0E, (Byte)0xF0, (Byte)0x60)]
+        [DataRow((byte)0x01, (Byte)0x10, (Byte)0x0F, (Byte)0xE0, (Byte)0x60)]
+        [DataRow((byte)0x00, (Byte)0x10, (Byte)0x0F, (Byte)0xF0, (Byte)0x60)]
+        [DataRow((byte)0x00, (Byte)0x00, (Byte)0x00, (Byte)0xE0, (Byte)0xC0)]
+        [DataRow((byte)0x00, (Byte)0x01, (Byte)0x00, (Byte)0xF0, (Byte)0xC0)]
+        [DataTestMethod]
+        [TestCategory("OP Codes")]
+        [TestCategory("OP Code 0x9B - Subtract Carry E from A")]
+        public void decodeAndExecute_subCarryEFromA(byte e, byte a, Byte result, byte initialFlags, byte expectedFlags)
+        {
+            byte opCode = 0x9B;
+
+            CPU cpu = setupOpCode(opCode, MethodBase.GetCurrentMethod().Name);
+            cpu.setF(initialFlags);
+            cpu.setA(a);
+            cpu.setE(e);
+
+            fetchAndLoadInstruction(cpu, opCode);
+            assertInstructionFinished(cpu, opCode);
+            Assert.That.AreEqual(result, cpu.getA());
+
+            Assert.That.FlagsEqual(cpu, expectedFlags);
+
+        }
+        #endregion
+
+        #region 0x9C - Subtract Carry H from A
+        [DataRow((byte)0x01, (Byte)0x00, (Byte)0xFE, (Byte)0xF0, (Byte)0x70)]
+        [DataRow((byte)0x01, (Byte)0x00, (Byte)0xFF, (Byte)0xE0, (Byte)0x70)]
+        [DataRow((byte)0x01, (Byte)0xFF, (Byte)0xFD, (Byte)0xF0, (Byte)0x40)]
+        [DataRow((byte)0x01, (Byte)0xFF, (Byte)0xFE, (Byte)0xE0, (Byte)0x40)]
+        [DataRow((byte)0xFF, (Byte)0xFF, (Byte)0xFF, (Byte)0xF0, (Byte)0x70)]
+        [DataRow((byte)0xFF, (Byte)0xFF, (Byte)0x00, (Byte)0xE0, (Byte)0xC0)]
+        [DataRow((byte)0x01, (Byte)0x10, (Byte)0x0E, (Byte)0xF0, (Byte)0x60)]
+        [DataRow((byte)0x01, (Byte)0x10, (Byte)0x0F, (Byte)0xE0, (Byte)0x60)]
+        [DataRow((byte)0x00, (Byte)0x10, (Byte)0x0F, (Byte)0xF0, (Byte)0x60)]
+        [DataRow((byte)0x00, (Byte)0x00, (Byte)0x00, (Byte)0xE0, (Byte)0xC0)]
+        [DataRow((byte)0x00, (Byte)0x01, (Byte)0x00, (Byte)0xF0, (Byte)0xC0)]
+        [DataTestMethod]
+        [TestCategory("OP Codes")]
+        [TestCategory("OP Code 0x9C - Subtract Carry H from A")]
+        public void decodeAndExecute_subCarryHFromA(byte h, byte a, Byte result, byte initialFlags, byte expectedFlags)
+        {
+            byte opCode = 0x9C;
+
+            CPU cpu = setupOpCode(opCode, MethodBase.GetCurrentMethod().Name);
+            cpu.setF(initialFlags);
+            cpu.setA(a);
+            cpu.setH(h);
+
+            fetchAndLoadInstruction(cpu, opCode);
+            assertInstructionFinished(cpu, opCode);
+            Assert.That.AreEqual(result, cpu.getA());
+
+            Assert.That.FlagsEqual(cpu, expectedFlags);
+
+        }
+        #endregion
+
+        #region 0x9D - Subtract Carry L from A
+        [DataRow((byte)0x01, (Byte)0x00, (Byte)0xFE, (Byte)0xF0, (Byte)0x70)]
+        [DataRow((byte)0x01, (Byte)0x00, (Byte)0xFF, (Byte)0xE0, (Byte)0x70)]
+        [DataRow((byte)0x01, (Byte)0xFF, (Byte)0xFD, (Byte)0xF0, (Byte)0x40)]
+        [DataRow((byte)0x01, (Byte)0xFF, (Byte)0xFE, (Byte)0xE0, (Byte)0x40)]
+        [DataRow((byte)0xFF, (Byte)0xFF, (Byte)0xFF, (Byte)0xF0, (Byte)0x70)]
+        [DataRow((byte)0xFF, (Byte)0xFF, (Byte)0x00, (Byte)0xE0, (Byte)0xC0)]
+        [DataRow((byte)0x01, (Byte)0x10, (Byte)0x0E, (Byte)0xF0, (Byte)0x60)]
+        [DataRow((byte)0x01, (Byte)0x10, (Byte)0x0F, (Byte)0xE0, (Byte)0x60)]
+        [DataRow((byte)0x00, (Byte)0x10, (Byte)0x0F, (Byte)0xF0, (Byte)0x60)]
+        [DataRow((byte)0x00, (Byte)0x00, (Byte)0x00, (Byte)0xE0, (Byte)0xC0)]
+        [DataRow((byte)0x00, (Byte)0x01, (Byte)0x00, (Byte)0xF0, (Byte)0xC0)]
+        [DataTestMethod]
+        [TestCategory("OP Codes")]
+        [TestCategory("OP Code 0x9D - Subtract Carry L from A")]
+        public void decodeAndExecute_subCarryLFromA(byte l, byte a, Byte result, byte initialFlags, byte expectedFlags)
+        {
+            byte opCode = 0x9D;
+
+            CPU cpu = setupOpCode(opCode, MethodBase.GetCurrentMethod().Name);
+            cpu.setF(initialFlags);
+            cpu.setA(a);
+            cpu.setL(l);
+
+            fetchAndLoadInstruction(cpu, opCode);
+            assertInstructionFinished(cpu, opCode);
+            Assert.That.AreEqual(result, cpu.getA());
+
+            Assert.That.FlagsEqual(cpu, expectedFlags);
+
+        }
+        #endregion
+
+        #region 0x9E - Subtract Carry Mem HL from A
+        [DataRow((byte)0x01, (Byte)0x00, (Byte)0xFE, (Byte)0xF0, (Byte)0x70)]
+        [DataRow((byte)0x01, (Byte)0x00, (Byte)0xFF, (Byte)0xE0, (Byte)0x70)]
+        [DataRow((byte)0x01, (Byte)0xFF, (Byte)0xFD, (Byte)0xF0, (Byte)0x40)]
+        [DataRow((byte)0x01, (Byte)0xFF, (Byte)0xFE, (Byte)0xE0, (Byte)0x40)]
+        [DataRow((byte)0xFF, (Byte)0xFF, (Byte)0xFF, (Byte)0xF0, (Byte)0x70)]
+        [DataRow((byte)0xFF, (Byte)0xFF, (Byte)0x00, (Byte)0xE0, (Byte)0xC0)]
+        [DataRow((byte)0x01, (Byte)0x10, (Byte)0x0E, (Byte)0xF0, (Byte)0x60)]
+        [DataRow((byte)0x01, (Byte)0x10, (Byte)0x0F, (Byte)0xE0, (Byte)0x60)]
+        [DataRow((byte)0x00, (Byte)0x10, (Byte)0x0F, (Byte)0xF0, (Byte)0x60)]
+        [DataRow((byte)0x00, (Byte)0x00, (Byte)0x00, (Byte)0xE0, (Byte)0xC0)]
+        [DataRow((byte)0x00, (Byte)0x01, (Byte)0x00, (Byte)0xF0, (Byte)0xC0)]
+        [DataTestMethod]
+        [TestCategory("OP Codes")]
+        [TestCategory("OP Code 0x9E - Subtract Carry Mem HL from A")]
+        public void decodeAndExecute_subCarryMemHLFromA(byte hl, byte a, Byte result, byte initialFlags, byte expectedFlags)
+        {
+            byte opCode = 0x9E;
+
+            CPU cpu = setupOpCode(opCode, MethodBase.GetCurrentMethod().Name);
+            cpu.setF(initialFlags);
+            cpu.setA(a);
+            cpu.setHL(0xC000);
+            cpu.mem.setByte(0xC000, hl);
+
+            fetchAndLoadInstruction(cpu, opCode);
+            Assert.That.AreEqual(hl, cpu.mem.getByte(0xC000), "X2", "Byte was modified when it shouldnt be");
+            Assert.That.AreEqual(a, cpu.getA(), "X2", "A was modified when it shouldnt be");
+            tick(cpu);
+            assertInstructionFinished(cpu, opCode);
+            Assert.That.AreEqual(result, cpu.getA());
 
             Assert.That.FlagsEqual(cpu, expectedFlags);
 

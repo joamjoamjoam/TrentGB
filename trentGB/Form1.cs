@@ -16,13 +16,28 @@ namespace trentGB
 {
     public partial class Form1 : Form
     {
-        
+        System.Windows.Forms.Timer fpsUpdateTimer = new System.Windows.Forms.Timer();
         public Form1()
         {
             InitializeComponent();
+
+            fpsUpdateTimer.Interval = 1000;
+            fpsUpdateTimer.Tick += updateFPSLabel;
+            fpsUpdateTimer.Start();
         }
 
         private Gameboy gb = null;
+
+        private void updateFPSLabel(object sender, EventArgs e)
+        {
+            double fps = 0.0;
+            if (gb != null)
+            {
+                fps = gb.getFPS();
+            }
+
+            fpsCountLbl.Text = fps.ToString("F1");
+        }
 
         private void loadRomToolStripMenuItem_Click(object sender, EventArgs e)
         {

@@ -80,5 +80,10 @@ namespace trentGB
             // 4.194 MHz Dot Clock
             lcdController.tick();
         }
+
+        public double getFPS()
+        {
+            return lcdController.getFPS();
+        }
     }
 }
