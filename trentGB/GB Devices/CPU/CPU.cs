@@ -5493,14 +5493,14 @@ namespace trentGB
         private bool cmpAN() // 0xFE
         {
 			bool done = false;
-            Byte value = fetch();
-            // cmp(n,A)
-            value = cmp(value, getA());
-
-            setA(value);
-
-            // This needs to be updated when updating for cycle accurracy
-            done = true;
+            if (currentInstruction.getCycleCount() == 8)
+            {
+                Byte value = fetch();
+                // cmp(n,A)
+                cmp(value, getA());
+                done = true;
+            }
+            
             return done;
         }
         private bool rst38() // 0xFF
