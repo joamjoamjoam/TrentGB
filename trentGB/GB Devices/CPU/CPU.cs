@@ -4775,11 +4775,8 @@ namespace trentGB
         private bool cmpAB() // 0xB8
         {
 			bool done = false;
-            Byte value = 0;
             // cmp(n,A)
-            value = cmp(getB(), getA());
-
-            setA(value);
+            cmp(getB(), getA());
 
             done = true;
             return done;
@@ -4787,11 +4784,8 @@ namespace trentGB
         private bool cmpAC() // 0xB9
         {
 			bool done = false;
-            Byte value = 0;
             // cmp(n,A)
-            value = cmp(getC(), getA());
-
-            setA(value);
+            cmp(getC(), getA());
 
             done = true;
             return done;
@@ -4799,11 +4793,8 @@ namespace trentGB
         private bool cmpAD() // 0xBA
         {
 			bool done = false;
-            Byte value = 0;
             // cmp(n,A)
-            value = cmp(getD(), getA());
-
-            setA(value);
+            cmp(getD(), getA());
 
             done = true;
             return done;
@@ -4811,11 +4802,8 @@ namespace trentGB
         private bool cmpAE() // 0xBB
         {
 			bool done = false;
-            Byte value = 0;
             // cmp(n,A)
-            value = cmp(getE(), getA());
-
-            setA(value);
+            cmp(getE(), getA());
 
             done = true;
             return done;
@@ -4823,11 +4811,8 @@ namespace trentGB
         private bool cmpAH() // 0xBC
         {
 			bool done = false;
-            Byte value = 0;
             // cmp(n,A)
-            value = cmp(getH(), getA());
-
-            setA(value);
+            cmp(getH(), getA());
 
             done = true;
             return done;
@@ -4835,11 +4820,8 @@ namespace trentGB
         private bool cmpAL() // 0xBD
         {
 			bool done = false;
-            Byte value = 0;
             // cmp(n,A)
-            value = cmp(getL(), getA());
-
-            setA(value);
+            cmp(getL(), getA());
 
             done = true;
             return done;
@@ -4847,24 +4829,24 @@ namespace trentGB
         private bool cmpAMemHL() // 0xBE
         {
 			bool done = false;
-            Byte value = mem.getByte(getHL());
-            // cmp(n,A)
-            value = cmp(value, getA());
 
-            setA(value);
+            if (currentInstruction.getCycleCount() == 8)
+            {
+                Byte value = mem.getByte(getHL());
+                // cmp(n,A)
+                cmp(value, getA());
 
-            // This needs to be updated when updating for cycle accurracy
-            done = true;
+                done = true;
+            }
+
             return done;
         }
         private bool cmpAA() // 0xBF
         {
 			bool done = false;
-            Byte value = 0;
             // cmp(n,A)
-            value = cmp(getA(), getA());
+            cmp(getA(), getA());
 
-            setA(value);
 
             done = true;
             return done;
@@ -5769,7 +5751,7 @@ namespace trentGB
             }
             else
             {
-                if (halfCarryFlag || (result & 0xf) > 9)
+                if (halfCarryFlag || ((result & 0xf) > 9))
                 {
                     result += 0x06;
                 }
@@ -5783,13 +5765,69 @@ namespace trentGB
             {
                 setCarryFlag(true);
             }
-            rv = (Byte) (result & 0xff);
+            rv = (Byte)(result & 0xff);
 
             setZeroFlag(rv == 0);
 
-            
+
             return rv;
         }
+
+        //        // note: assumes a is a uint8_t and wraps from 0xff to 0
+        //if (!n_flag) {  // after an addition, adjust if (half-)carry occurred or if result is out of bounds
+        //  if (c_flag || a > 0x99) { a += 0x60; c_flag = 1; }
+        //  if (h_flag || (a & 0x0f) > 0x09) { a += 0x6; }
+        //} else
+        //{  // after a subtraction, only adjust if (half-)carry occurred
+        //    if (c_flag) { a -= 0x60; }
+        //    if (h_flag) { a -= 0x6; }
+        //}
+        //// these flags are always updated
+        //z_flag = (a == 0); // the usual z flag
+        //h_flag = 0; // h flag is always cleared
+
+        //public Byte daa(byte arg)
+        //        {
+        //            Byte result = arg;
+        //            Byte rv = 0;
+        //            bool carryFlag = getCarryFlag();
+        //            bool halfCarryFlag = getHalfCarryFlag();
+        //            bool subFlag = getSubtractFlag();
+        //            bool zeroFlag = getZeroFlag();
+
+        //            setHalfCarryFlag(false);
+        //            setZeroFlag(false);
+        //            setCarryFlag(false);
+
+        //            if (subFlag)
+        //            {
+        //                if (carryFlag)
+        //                {
+        //                    result = subIgnoreFlags(0x60, result);
+        //                }
+        //                if (halfCarryFlag)
+        //                {
+        //                    result = subIgnoreFlags(0x06, result);
+        //                }
+        //            }
+        //            else
+        //            {
+        //                if (carryFlag || (result > 0x99))
+        //                {
+        //                    result = addIgnoreFlags(0x60, result);
+        //                    setCarryFlag(true);
+        //                }
+        //                if (halfCarryFlag || ((result & 0x0f) > 0x09))
+        //                {
+        //                    result = addIgnoreFlags( 0x06, result);
+        //                }
+        //            }
+        //            setHalfCarryFlag(false);
+        //            setZeroFlag(result == 0);
+
+
+        //            return rv;
+        //        }
 
         public Byte rotateLeftCarry(Byte op1, bool updateZeroFlag = true)
         {
@@ -5890,8 +5928,14 @@ namespace trentGB
         {
             Byte msn =(Byte) ((value & 0x0F) << 4);
             Byte lsn = (Byte) ((value & 0xF0) >> 4);
+            Byte res = (Byte)(msn | lsn);
 
-            return ((Byte) (msn | lsn));
+            setCarryFlag(false);
+            setHalfCarryFlag(false);
+            setSubtractFlag(false);
+            setZeroFlag(res == 0);
+
+            return res;
         }
 
         public Byte sla(byte value)
@@ -6197,6 +6241,11 @@ namespace trentGB
         public Byte addIgnoreFlags(Byte value1, Byte value2)
         {
             return (Byte)((value1 + value2) & 0xFF);
+        }
+
+        public Byte subIgnoreFlags(Byte value1, Byte value2)
+        {
+            return (Byte)((value2 - value1) & 0xFF);
         }
 
         public ushort add16IgnoreFlags(Byte value1, ushort value2)

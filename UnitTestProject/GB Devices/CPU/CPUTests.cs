@@ -2458,6 +2458,297 @@ namespace trentGB.Tests
             fetchAndLoadInstruction(cpu, opCode);
             assertInstructionFinished(cpu, opCode);
 
+            Assert.That.AreEqual(a, cpu.getA());
+
+            Assert.That.FlagsEqual(cpu, afterFlags);
+
+        }
+        #endregion
+
+        #region 0xB9 - Compare A with C
+        [DataRow((byte)0x01, (Byte)0x00, (Byte)0x00, (Byte)0x40)]
+        [DataRow((byte)0x00, (Byte)0x01, (Byte)0x00, (Byte)0x70)]
+        [DataRow((byte)0x25, (Byte)0xFF, (Byte)0x00, (Byte)0x70)]
+        [DataRow((byte)0xFF, (Byte)0x25, (Byte)0x00, (Byte)0x40)]
+        [DataRow((byte)0x00, (Byte)0x00, (Byte)0x00, (Byte)0xC0)]
+        [DataRow((byte)0x25, (Byte)0x25, (Byte)0x00, (Byte)0xC0)]
+        [DataRow((byte)0xFF, (Byte)0xFE, (Byte)0x00, (Byte)0x40)]
+        [DataRow((byte)0xFE, (Byte)0xFF, (Byte)0x00, (Byte)0x70)]
+
+        [DataRow((byte)0x01, (Byte)0x00, (Byte)0xF0, (Byte)0x40)]
+        [DataRow((byte)0x00, (Byte)0x01, (Byte)0xF0, (Byte)0x70)]
+        [DataRow((byte)0x25, (Byte)0xFF, (Byte)0xF0, (Byte)0x70)]
+        [DataRow((byte)0xFF, (Byte)0x25, (Byte)0xF0, (Byte)0x40)]
+        [DataRow((byte)0x00, (Byte)0x00, (Byte)0xF0, (Byte)0xC0)]
+        [DataRow((byte)0x25, (Byte)0x25, (Byte)0xF0, (Byte)0xC0)]
+        [DataRow((byte)0xFF, (Byte)0xFE, (Byte)0xF0, (Byte)0x40)]
+        [DataRow((byte)0xFE, (Byte)0xFF, (Byte)0xF0, (Byte)0x70)]
+
+        [DataTestMethod]
+        [TestCategory("OP Codes")]
+        [TestCategory("OP Code 0xB9 - Compare A with C")]
+        public void decodeAndExecute_cpAC(byte a, byte c, byte initFlags, byte afterFlags)
+        {
+            byte opCode = 0xB9;
+
+            CPU cpu = setupOpCode(opCode, MethodBase.GetCurrentMethod().Name);
+            cpu.setF(initFlags);
+            cpu.setA(a);
+            cpu.setC(c);
+
+            fetchAndLoadInstruction(cpu, opCode);
+            assertInstructionFinished(cpu, opCode);
+
+            Assert.That.AreEqual(a, cpu.getA());
+
+            Assert.That.FlagsEqual(cpu, afterFlags);
+
+        }
+        #endregion
+
+        #region 0xBA - Compare A with D
+        [DataRow((byte)0x01, (Byte)0x00, (Byte)0x00, (Byte)0x40)]
+        [DataRow((byte)0x00, (Byte)0x01, (Byte)0x00, (Byte)0x70)]
+        [DataRow((byte)0x25, (Byte)0xFF, (Byte)0x00, (Byte)0x70)]
+        [DataRow((byte)0xFF, (Byte)0x25, (Byte)0x00, (Byte)0x40)]
+        [DataRow((byte)0x00, (Byte)0x00, (Byte)0x00, (Byte)0xC0)]
+        [DataRow((byte)0x25, (Byte)0x25, (Byte)0x00, (Byte)0xC0)]
+        [DataRow((byte)0xFF, (Byte)0xFE, (Byte)0x00, (Byte)0x40)]
+        [DataRow((byte)0xFE, (Byte)0xFF, (Byte)0x00, (Byte)0x70)]
+
+        [DataRow((byte)0x01, (Byte)0x00, (Byte)0xF0, (Byte)0x40)]
+        [DataRow((byte)0x00, (Byte)0x01, (Byte)0xF0, (Byte)0x70)]
+        [DataRow((byte)0x25, (Byte)0xFF, (Byte)0xF0, (Byte)0x70)]
+        [DataRow((byte)0xFF, (Byte)0x25, (Byte)0xF0, (Byte)0x40)]
+        [DataRow((byte)0x00, (Byte)0x00, (Byte)0xF0, (Byte)0xC0)]
+        [DataRow((byte)0x25, (Byte)0x25, (Byte)0xF0, (Byte)0xC0)]
+        [DataRow((byte)0xFF, (Byte)0xFE, (Byte)0xF0, (Byte)0x40)]
+        [DataRow((byte)0xFE, (Byte)0xFF, (Byte)0xF0, (Byte)0x70)]
+
+        [DataTestMethod]
+        [TestCategory("OP Codes")]
+        [TestCategory("OP Code 0xBA - Compare A with D")]
+        public void decodeAndExecute_cpAD(byte a, byte d, byte initFlags, byte afterFlags)
+        {
+            byte opCode = 0xBA;
+
+            CPU cpu = setupOpCode(opCode, MethodBase.GetCurrentMethod().Name);
+            cpu.setF(initFlags);
+            cpu.setA(a);
+            cpu.setD(d);
+
+            fetchAndLoadInstruction(cpu, opCode);
+            assertInstructionFinished(cpu, opCode);
+
+            Assert.That.AreEqual(a, cpu.getA());
+
+            Assert.That.FlagsEqual(cpu, afterFlags);
+
+        }
+        #endregion
+
+        #region 0xBB - Compare A with E
+        [DataRow((byte)0x01, (Byte)0x00, (Byte)0x00, (Byte)0x40)]
+        [DataRow((byte)0x00, (Byte)0x01, (Byte)0x00, (Byte)0x70)]
+        [DataRow((byte)0x25, (Byte)0xFF, (Byte)0x00, (Byte)0x70)]
+        [DataRow((byte)0xFF, (Byte)0x25, (Byte)0x00, (Byte)0x40)]
+        [DataRow((byte)0x00, (Byte)0x00, (Byte)0x00, (Byte)0xC0)]
+        [DataRow((byte)0x25, (Byte)0x25, (Byte)0x00, (Byte)0xC0)]
+        [DataRow((byte)0xFF, (Byte)0xFE, (Byte)0x00, (Byte)0x40)]
+        [DataRow((byte)0xFE, (Byte)0xFF, (Byte)0x00, (Byte)0x70)]
+
+        [DataRow((byte)0x01, (Byte)0x00, (Byte)0xF0, (Byte)0x40)]
+        [DataRow((byte)0x00, (Byte)0x01, (Byte)0xF0, (Byte)0x70)]
+        [DataRow((byte)0x25, (Byte)0xFF, (Byte)0xF0, (Byte)0x70)]
+        [DataRow((byte)0xFF, (Byte)0x25, (Byte)0xF0, (Byte)0x40)]
+        [DataRow((byte)0x00, (Byte)0x00, (Byte)0xF0, (Byte)0xC0)]
+        [DataRow((byte)0x25, (Byte)0x25, (Byte)0xF0, (Byte)0xC0)]
+        [DataRow((byte)0xFF, (Byte)0xFE, (Byte)0xF0, (Byte)0x40)]
+        [DataRow((byte)0xFE, (Byte)0xFF, (Byte)0xF0, (Byte)0x70)]
+
+        [DataTestMethod]
+        [TestCategory("OP Codes")]
+        [TestCategory("OP Code 0xBB - Compare A with E")]
+        public void decodeAndExecute_cpAE(byte a, byte e, byte initFlags, byte afterFlags)
+        {
+            byte opCode = 0xBB;
+
+            CPU cpu = setupOpCode(opCode, MethodBase.GetCurrentMethod().Name);
+            cpu.setF(initFlags);
+            cpu.setA(a);
+            cpu.setE(e);
+
+            fetchAndLoadInstruction(cpu, opCode);
+            assertInstructionFinished(cpu, opCode);
+
+            Assert.That.AreEqual(a, cpu.getA());
+
+            Assert.That.FlagsEqual(cpu, afterFlags);
+
+        }
+        #endregion
+
+        #region 0xBC - Compare A with H
+        [DataRow((byte)0x01, (Byte)0x00, (Byte)0x00, (Byte)0x40)]
+        [DataRow((byte)0x00, (Byte)0x01, (Byte)0x00, (Byte)0x70)]
+        [DataRow((byte)0x25, (Byte)0xFF, (Byte)0x00, (Byte)0x70)]
+        [DataRow((byte)0xFF, (Byte)0x25, (Byte)0x00, (Byte)0x40)]
+        [DataRow((byte)0x00, (Byte)0x00, (Byte)0x00, (Byte)0xC0)]
+        [DataRow((byte)0x25, (Byte)0x25, (Byte)0x00, (Byte)0xC0)]
+        [DataRow((byte)0xFF, (Byte)0xFE, (Byte)0x00, (Byte)0x40)]
+        [DataRow((byte)0xFE, (Byte)0xFF, (Byte)0x00, (Byte)0x70)]
+
+        [DataRow((byte)0x01, (Byte)0x00, (Byte)0xF0, (Byte)0x40)]
+        [DataRow((byte)0x00, (Byte)0x01, (Byte)0xF0, (Byte)0x70)]
+        [DataRow((byte)0x25, (Byte)0xFF, (Byte)0xF0, (Byte)0x70)]
+        [DataRow((byte)0xFF, (Byte)0x25, (Byte)0xF0, (Byte)0x40)]
+        [DataRow((byte)0x00, (Byte)0x00, (Byte)0xF0, (Byte)0xC0)]
+        [DataRow((byte)0x25, (Byte)0x25, (Byte)0xF0, (Byte)0xC0)]
+        [DataRow((byte)0xFF, (Byte)0xFE, (Byte)0xF0, (Byte)0x40)]
+        [DataRow((byte)0xFE, (Byte)0xFF, (Byte)0xF0, (Byte)0x70)]
+
+        [DataTestMethod]
+        [TestCategory("OP Codes")]
+        [TestCategory("OP Code 0xBC - Compare A with H")]
+        public void decodeAndExecute_cpAH(byte a, byte h, byte initFlags, byte afterFlags)
+        {
+            byte opCode = 0xBC;
+
+            CPU cpu = setupOpCode(opCode, MethodBase.GetCurrentMethod().Name);
+            cpu.setF(initFlags);
+            cpu.setA(a);
+            cpu.setH(h);
+
+            fetchAndLoadInstruction(cpu, opCode);
+            assertInstructionFinished(cpu, opCode);
+
+            Assert.That.AreEqual(a, cpu.getA());
+
+            Assert.That.FlagsEqual(cpu, afterFlags);
+
+        }
+        #endregion
+
+        #region 0xBD - Compare A with L
+        [DataRow((byte)0x01, (Byte)0x00, (Byte)0x00, (Byte)0x40)]
+        [DataRow((byte)0x00, (Byte)0x01, (Byte)0x00, (Byte)0x70)]
+        [DataRow((byte)0x25, (Byte)0xFF, (Byte)0x00, (Byte)0x70)]
+        [DataRow((byte)0xFF, (Byte)0x25, (Byte)0x00, (Byte)0x40)]
+        [DataRow((byte)0x00, (Byte)0x00, (Byte)0x00, (Byte)0xC0)]
+        [DataRow((byte)0x25, (Byte)0x25, (Byte)0x00, (Byte)0xC0)]
+        [DataRow((byte)0xFF, (Byte)0xFE, (Byte)0x00, (Byte)0x40)]
+        [DataRow((byte)0xFE, (Byte)0xFF, (Byte)0x00, (Byte)0x70)]
+
+        [DataRow((byte)0x01, (Byte)0x00, (Byte)0xF0, (Byte)0x40)]
+        [DataRow((byte)0x00, (Byte)0x01, (Byte)0xF0, (Byte)0x70)]
+        [DataRow((byte)0x25, (Byte)0xFF, (Byte)0xF0, (Byte)0x70)]
+        [DataRow((byte)0xFF, (Byte)0x25, (Byte)0xF0, (Byte)0x40)]
+        [DataRow((byte)0x00, (Byte)0x00, (Byte)0xF0, (Byte)0xC0)]
+        [DataRow((byte)0x25, (Byte)0x25, (Byte)0xF0, (Byte)0xC0)]
+        [DataRow((byte)0xFF, (Byte)0xFE, (Byte)0xF0, (Byte)0x40)]
+        [DataRow((byte)0xFE, (Byte)0xFF, (Byte)0xF0, (Byte)0x70)]
+
+        [DataTestMethod]
+        [TestCategory("OP Codes")]
+        [TestCategory("OP Code 0xBD - Compare A with L")]
+        public void decodeAndExecute_cpAL(byte a, byte l, byte initFlags, byte afterFlags)
+        {
+            byte opCode = 0xBD;
+
+            CPU cpu = setupOpCode(opCode, MethodBase.GetCurrentMethod().Name);
+            cpu.setF(initFlags);
+            cpu.setA(a);
+            cpu.setL(l);
+
+            fetchAndLoadInstruction(cpu, opCode);
+            assertInstructionFinished(cpu, opCode);
+
+            Assert.That.AreEqual(a, cpu.getA());
+
+            Assert.That.FlagsEqual(cpu, afterFlags);
+
+        }
+        #endregion
+
+        #region 0xBE - Compare Mem HL from A
+        [DataRow((byte)0x01, (Byte)0x00, (Byte)0x00, (Byte)0x40)]
+        [DataRow((byte)0x00, (Byte)0x01, (Byte)0x00, (Byte)0x70)]
+        [DataRow((byte)0x25, (Byte)0xFF, (Byte)0x00, (Byte)0x70)]
+        [DataRow((byte)0xFF, (Byte)0x25, (Byte)0x00, (Byte)0x40)]
+        [DataRow((byte)0x00, (Byte)0x00, (Byte)0x00, (Byte)0xC0)]
+        [DataRow((byte)0x25, (Byte)0x25, (Byte)0x00, (Byte)0xC0)]
+        [DataRow((byte)0xFF, (Byte)0xFE, (Byte)0x00, (Byte)0x40)]
+        [DataRow((byte)0xFE, (Byte)0xFF, (Byte)0x00, (Byte)0x70)]
+
+        [DataRow((byte)0x01, (Byte)0x00, (Byte)0xF0, (Byte)0x40)]
+        [DataRow((byte)0x00, (Byte)0x01, (Byte)0xF0, (Byte)0x70)]
+        [DataRow((byte)0x25, (Byte)0xFF, (Byte)0xF0, (Byte)0x70)]
+        [DataRow((byte)0xFF, (Byte)0x25, (Byte)0xF0, (Byte)0x40)]
+        [DataRow((byte)0x00, (Byte)0x00, (Byte)0xF0, (Byte)0xC0)]
+        [DataRow((byte)0x25, (Byte)0x25, (Byte)0xF0, (Byte)0xC0)]
+        [DataRow((byte)0xFF, (Byte)0xFE, (Byte)0xF0, (Byte)0x40)]
+        [DataRow((byte)0xFE, (Byte)0xFF, (Byte)0xF0, (Byte)0x70)]
+
+        [DataTestMethod]
+        [TestCategory("OP Codes")]
+        [TestCategory("OP Code 0xBE - Compare Mem HL from A")]
+        public void decodeAndExecute_cmpMemHLToA(byte a, byte hl, byte initialFlags, byte expectedFlags)
+        {
+            byte opCode = 0xBE;
+
+            CPU cpu = setupOpCode(opCode, MethodBase.GetCurrentMethod().Name);
+            cpu.setF(initialFlags);
+            cpu.setA(a);
+            cpu.setHL(0xC000);
+            cpu.mem.setByte(0xC000, hl);
+
+            fetchAndLoadInstruction(cpu, opCode);
+            Assert.That.AreEqual(hl, cpu.mem.getByte(0xC000), "X2", "Byte was modified when it shouldnt be");
+            Assert.That.AreEqual(a, cpu.getA(), "X2", "A was modified when it shouldnt be");
+            tick(cpu);
+            assertInstructionFinished(cpu, opCode);
+            Assert.That.AreEqual(a, cpu.getA());
+
+            Assert.That.FlagsEqual(cpu, expectedFlags);
+
+        }
+        #endregion
+
+        #region 0xBF - Compare A with A
+        [DataRow((byte)0x01, (Byte)0x00, (Byte)0xC0)]
+        [DataRow((byte)0x00, (Byte)0x00, (Byte)0xC0)]
+        [DataRow((byte)0x25, (Byte)0x00, (Byte)0xC0)]
+        [DataRow((byte)0xFF, (Byte)0x00, (Byte)0xC0)]
+        [DataRow((byte)0x00, (Byte)0x00, (Byte)0xC0)]
+        [DataRow((byte)0x25, (Byte)0x00, (Byte)0xC0)]
+        [DataRow((byte)0xFF, (Byte)0x00, (Byte)0xC0)]
+        [DataRow((byte)0xFE, (Byte)0x00, (Byte)0xC0)]
+
+        [DataRow((byte)0x01, (Byte)0xF0, (Byte)0xC0)]
+        [DataRow((byte)0x00, (Byte)0xF0, (Byte)0xC0)]
+        [DataRow((byte)0x25, (Byte)0xF0, (Byte)0xC0)]
+        [DataRow((byte)0xFF, (Byte)0xF0, (Byte)0xC0)]
+        [DataRow((byte)0x00, (Byte)0xF0, (Byte)0xC0)]
+        [DataRow((byte)0x25, (Byte)0xF0, (Byte)0xC0)]
+        [DataRow((byte)0xFF, (Byte)0xF0, (Byte)0xC0)]
+        [DataRow((byte)0xFE, (Byte)0xF0, (Byte)0xC0)]
+
+        [DataTestMethod]
+        [TestCategory("OP Codes")]
+        [TestCategory("OP Code 0xBF - Compare A with A")]
+        public void decodeAndExecute_cpAA(byte a, byte initFlags, byte afterFlags)
+        {
+            byte opCode = 0xBF;
+
+            CPU cpu = setupOpCode(opCode, MethodBase.GetCurrentMethod().Name);
+            cpu.setF(initFlags);
+            cpu.setA(a);
+
+            fetchAndLoadInstruction(cpu, opCode);
+            assertInstructionFinished(cpu, opCode);
+
+            Assert.That.AreEqual(a, cpu.getA());
+
             Assert.That.FlagsEqual(cpu, afterFlags);
 
         }
