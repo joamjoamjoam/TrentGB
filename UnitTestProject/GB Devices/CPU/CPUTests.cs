@@ -1969,6 +1969,86 @@ namespace trentGB.Tests
         }
         #endregion
 
+        #region 0x27- DAA
+        [DataRow((byte)0x00, (Byte)0x00, (byte)0x00, (byte)0x80)]
+        [DataRow((byte)0x0F, (Byte)0x15, (byte)0x00, (byte)0x00)]
+        [DataRow((byte)0x10, (Byte)0x10, (byte)0x00, (byte)0x00)]
+        [DataRow((byte)0x1F, (Byte)0x25, (byte)0x00, (byte)0x00)]
+        [DataRow((byte)0x7F, (Byte)0x85, (byte)0x00, (byte)0x00)]
+        [DataRow((byte)0x80, (Byte)0x80, (byte)0x00, (byte)0x00)]
+        [DataRow((byte)0xF0, (Byte)0x50, (byte)0x00, (byte)0x10)]
+        [DataRow((byte)0xFF, (Byte)0x65, (byte)0x00, (byte)0x10)]
+        [DataRow((byte)0x02, (Byte)0x02, (byte)0x00, (byte)0x00)]
+        [DataRow((byte)0x04, (Byte)0x04, (byte)0x00, (byte)0x00)]
+        [DataRow((byte)0x08, (Byte)0x08, (byte)0x00, (byte)0x00)]
+        [DataRow((byte)0x20, (Byte)0x20, (byte)0x00, (byte)0x00)]
+        [DataRow((byte)0x40, (Byte)0x40, (byte)0x00, (byte)0x00)]
+
+        [DataRow((byte)0x00, (Byte)0x60, (byte)0x10, (byte)0x10)]
+        [DataRow((byte)0x01, (Byte)0x61, (byte)0x10, (byte)0x10)]
+        [DataRow((byte)0x0F, (Byte)0x75, (byte)0x10, (byte)0x10)]
+        [DataRow((byte)0x10, (Byte)0x70, (byte)0x10, (byte)0x10)]
+        [DataRow((byte)0x1F, (Byte)0x85, (byte)0x10, (byte)0x10)]
+        [DataRow((byte)0x7F, (Byte)0xE5, (byte)0x10, (byte)0x10)]
+        [DataRow((byte)0x80, (Byte)0xE0, (byte)0x10, (byte)0x10)]
+        [DataRow((byte)0xF0, (Byte)0x50, (byte)0x10, (byte)0x10)]
+        [DataRow((byte)0xFF, (Byte)0x65, (byte)0x10, (byte)0x10)]
+        [DataRow((byte)0x02, (Byte)0x62, (byte)0x10, (byte)0x10)]
+        [DataRow((byte)0x04, (Byte)0x64, (byte)0x10, (byte)0x10)]
+        [DataRow((byte)0x08, (Byte)0x68, (byte)0x10, (byte)0x10)]
+        [DataRow((byte)0x20, (Byte)0x80, (byte)0x10, (byte)0x10)]
+        [DataRow((byte)0x40, (Byte)0xA0, (byte)0x10, (byte)0x10)]
+
+        [DataRow((byte)0x00, (Byte)0xFA, (byte)0xE0, (byte)0x40)]
+        [DataRow((byte)0x01, (Byte)0xFB, (byte)0xE0, (byte)0x40)]
+        [DataRow((byte)0x0F, (Byte)0x09, (byte)0xE0, (byte)0x40)]
+        [DataRow((byte)0x10, (Byte)0x0A, (byte)0xE0, (byte)0x40)]
+        [DataRow((byte)0x1F, (Byte)0x19, (byte)0xE0, (byte)0x40)]
+        [DataRow((byte)0x7F, (Byte)0x79, (byte)0xE0, (byte)0x40)]
+        [DataRow((byte)0x80, (Byte)0x7A, (byte)0xE0, (byte)0x40)]
+        [DataRow((byte)0xF0, (Byte)0xEA, (byte)0xE0, (byte)0x40)]
+        [DataRow((byte)0xFF, (Byte)0xF9, (byte)0xE0, (byte)0x40)]
+        [DataRow((byte)0x02, (Byte)0xFC, (byte)0xE0, (byte)0x40)]
+        [DataRow((byte)0x04, (Byte)0xFE, (byte)0xE0, (byte)0x40)]
+        [DataRow((byte)0x08, (Byte)0x02, (byte)0xE0, (byte)0x40)]
+        [DataRow((byte)0x20, (Byte)0x1A, (byte)0xE0, (byte)0x40)]
+        [DataRow((byte)0x40, (Byte)0x3A, (byte)0xE0, (byte)0x40)]
+
+        [DataRow((byte)0x00, (Byte)0x9A, (byte)0xF0, (byte)0x50)]
+        [DataRow((byte)0x01, (Byte)0x9B, (byte)0xF0, (byte)0x50)]
+        [DataRow((byte)0x0F, (Byte)0xA9, (byte)0xF0, (byte)0x50)]
+        [DataRow((byte)0x10, (Byte)0xAA, (byte)0xF0, (byte)0x50)]
+        [DataRow((byte)0x1F, (Byte)0xB9, (byte)0xF0, (byte)0x50)]
+        [DataRow((byte)0x7F, (Byte)0x19, (byte)0xF0, (byte)0x50)]
+        [DataRow((byte)0x80, (Byte)0x1A, (byte)0xF0, (byte)0x50)]
+        [DataRow((byte)0xF0, (Byte)0x8A, (byte)0xF0, (byte)0x50)]
+        [DataRow((byte)0xFF, (Byte)0x99, (byte)0xF0, (byte)0x50)]
+        [DataRow((byte)0x02, (Byte)0x9C, (byte)0xF0, (byte)0x50)]
+        [DataRow((byte)0x04, (Byte)0x9E, (byte)0xF0, (byte)0x50)]
+        [DataRow((byte)0x08, (Byte)0xA2, (byte)0xF0, (byte)0x50)]
+        [DataRow((byte)0x20, (Byte)0xBA, (byte)0xF0, (byte)0x50)]
+        [DataRow((byte)0x40, (Byte)0xDA, (byte)0xF0, (byte)0x50)]
+
+        [DataTestMethod]
+        [TestCategory("OP Codes")]
+        [TestCategory("OP Code 0x27 DAA")]
+        public void decodeAndExecute_daa(byte a, byte result, byte initFlags, byte expectedFlags)
+        {
+            byte opCode = 0x27;
+
+            CPU cpu = setupOpCode(opCode, MethodBase.GetCurrentMethod().Name);
+            cpu.setF(initFlags);
+            cpu.setA(a);
+
+            fetchAndLoadInstruction(cpu, opCode);
+            assertInstructionFinished(cpu, opCode);
+            Assert.That.AreEqual(result, cpu.getA());
+
+            Assert.That.FlagsEqual(cpu, expectedFlags);
+
+        }
+        #endregion
+
         #region 0x90 - Subtract B from A
         [DataRow((byte)0xFF, (Byte)0xFF, (Byte)0x00, (Byte)0xF0, (Byte)0xC0)]
         [DataRow((byte)0x01, (Byte)0xFF, (Byte)0xFE, (Byte)0xF0, (Byte)0x40)]
@@ -2785,6 +2865,33 @@ namespace trentGB.Tests
             Assert.That.AreEqual(0x12, cpu.mem.getByte(op1));
             
             Assert.That.FlagsEqual(cpu, flagsByte);
+        }
+        #endregion
+
+        #region 0xEE - Xor A ^ N
+        [DataRow((byte)0xFF, (Byte)0x56, (Byte)0xA9, (Byte)0xF0, (Byte)0x00)]
+        [DataRow((byte)0xFF, (Byte)0xFF, (Byte)0x00, (Byte)0xF0, (Byte)0x80)]
+        [DataRow((byte)0xF0, (Byte)0x0F, (Byte)0xFF, (Byte)0xF0, (Byte)0x00)]
+        [DataRow((byte)0x00, (Byte)0x00, (Byte)0x00, (Byte)0xF0, (Byte)0x80)]
+
+        [DataTestMethod]
+        [TestCategory("OP Codes")]
+        [TestCategory("OP Code 0xEE - Xor A ^ N")]
+        public void decodeAndExecute_xorNA(byte n, byte a, Byte result, byte initialFlags, byte expectedFlags)
+        {
+            byte opCode = 0xEE;
+
+            CPU cpu = setupOpCode(opCode, MethodBase.GetCurrentMethod().Name, n);
+            cpu.setF(initialFlags);
+            cpu.setA(a);
+
+            fetchAndLoadInstruction(cpu, opCode);
+            tick(cpu);
+            assertInstructionFinished(cpu, opCode);
+            Assert.That.AreEqual(result, cpu.getA());
+
+            Assert.That.FlagsEqual(cpu, expectedFlags);
+
         }
         #endregion
 

@@ -891,16 +891,7 @@ namespace trentGB
 
 
 
-                if (enableInterrupts)
-                {
-                    IME = true;
-                    shouldEnableInterrupts = false;
-                }
-                if (disableInterrupts)
-                {
-                    IME = false;
-                    shouldDisableInterrupts = false;
-                }
+
 
                 // HACK: All Commands are 2 cycle for now when they are all fixed for cycle accuraccy removw this.
                 //if ((opCode != 0xCB) || (opCode == 0xCB && getCurrentInstruction().getCycleCount() >= 8 && getCurrentInstruction().parameters[0] <= 0x17)) // CB functions from 0x00 to 0x08 are cycle accurate
@@ -920,7 +911,16 @@ namespace trentGB
             {
                 // Store it and reset for a new instruction
                 commandHistoryList.Push(currentInstruction);
-
+                if (enableInterrupts)
+                {
+                    IME = true;
+                    shouldEnableInterrupts = false;
+                }
+                if (disableInterrupts)
+                {
+                    IME = false;
+                    shouldDisableInterrupts = false;
+                }
                 if (showAfterText)
                 {
                     clock.Stop();
@@ -2488,6 +2488,7 @@ namespace trentGB
 
             pushOnStack(getPC());
             setPC(handlerAddress);
+            state = CPUState.Running;
 
             return rv;
         }
@@ -3059,7 +3060,7 @@ namespace trentGB
         {
 			bool done = false;
             SByte offset = (SByte)fetch();
-            ushort address = add16IgnoreFlags(PC, offset);
+            ushort address = add16IgnoreFlags(getPC(), offset);
 
             setPC(address);
 
@@ -4269,7 +4270,7 @@ namespace trentGB
         private bool addCarryAtoA() // 0x8F
         {
 			bool done = false;
-            Byte value = 0;
+            Byte value = getA();
             value = addCarry(value, value);
 
             setA(value);
@@ -4880,7 +4881,7 @@ namespace trentGB
 			bool done = false;
             Byte lsb = fetch();
             Byte msb = fetch();
-            ushort value = (ushort)((msb << 8) + lsb);
+            ushort value = getUInt16ForBytes(lsb, msb);
             if (!getZeroFlag())
             {
                 setPC(value);
@@ -4895,7 +4896,7 @@ namespace trentGB
 			bool done = false;
             Byte lsb = fetch();
             Byte msb = fetch();
-            ushort value = (ushort)((msb << 8) + lsb);
+            ushort value = getUInt16ForBytes(lsb, msb);
             setPC(value);
 
             // This needs to be updated when updating for cycle accurracy
@@ -4920,8 +4921,7 @@ namespace trentGB
         private bool pushBCToStack() //0xC5
         {
 			bool done = false;
-            byte[] value = getByteArrayForUInt16(getBC());
-            pushOnStack(value);
+            pushOnStack(getBC());
 
             // This needs to be updated when updating for cycle accurracy
             done = true;
@@ -4974,7 +4974,7 @@ namespace trentGB
 			bool done = false;
             Byte lsb = fetch();
             Byte msb = fetch();
-            ushort value = (ushort)((msb << 8) + lsb);
+            ushort value = getUInt16ForBytes(lsb, msb);
             if (getZeroFlag())
             {
                 setPC(value);
@@ -5067,7 +5067,7 @@ namespace trentGB
 			bool done = false;
             Byte lsb = fetch();
             Byte msb = fetch();
-            ushort value = (ushort)((msb << 8) + lsb);
+            ushort value = getUInt16ForBytes(lsb, msb);
             if (!getCarryFlag())
             {
                 setPC(value);
@@ -5099,8 +5099,7 @@ namespace trentGB
         private bool pushDEToStack() //0xD5
         {
 			bool done = false;
-            byte[] value = getByteArrayForUInt16(getDE());
-            pushOnStack(value);
+            pushOnStack(getDE());
 
             // This needs to be updated when updating for cycle accurracy
             done = true;
@@ -5111,9 +5110,9 @@ namespace trentGB
 			bool done = false;
             if (currentInstruction.getCycleCount() == 8)
             {
-                fetch();
+                Byte value = fetch();
                 // subtract(n, A)
-                setA(subtract(currentInstruction.parameters[0], getA()));
+                setA(subtract(value, getA()));
                 done = true;
             }
             
@@ -5156,7 +5155,7 @@ namespace trentGB
 			bool done = false;
             Byte lsb = fetch();
             Byte msb = fetch();
-            ushort value = (ushort)((msb << 8) + lsb);
+            ushort value = getUInt16ForBytes(lsb, msb);
             if (getCarryFlag())
             {
                 setPC(value);
@@ -5255,9 +5254,8 @@ namespace trentGB
         }
         private bool pushHLToStack() //0xE5
         {
-			bool done = false;
-            byte[] value = getByteArrayForUInt16(getHL());
-            pushOnStack(value);
+            bool done = false;
+            pushOnStack(getHL());
 
             // This needs to be updated when updating for cycle accurracy
             done = true;
@@ -5336,14 +5334,16 @@ namespace trentGB
         private bool xorANinA() // 0xEE
         {
 			bool done = false;
-            Byte value = fetch();
-            // xor(n,A)
-            value = xor(value, getA());
+            if (currentInstruction.getCycleCount() == 8)
+            {
+                Byte value = fetch();
+                // xor(n,A)
+                value = xor(value, getA());
 
-            setA(value);
+                setA(value);
+                done = true;
+            }
 
-            // This needs to be updated when updating for cycle accurracy
-            done = true;
             return done;
         }
         private bool rst28() // 0xEF
@@ -5404,8 +5404,7 @@ namespace trentGB
         private bool pushAFToStack() //0xF5
         {
 			bool done = false;
-            byte[] value = getByteArrayForUInt16(getAF());
-            pushOnStack(value);
+            pushOnStack(getAF());
 
             // This needs to be updated when updating for cycle accurracy
             done = true;
@@ -5736,7 +5735,7 @@ namespace trentGB
 
             setHalfCarryFlag(false);
             setZeroFlag(false);
-            setCarryFlag(false);
+            //setCarryFlag(false); // Pass thorugh Carry Flag
 
             if (subFlag)
             {
@@ -5755,12 +5754,12 @@ namespace trentGB
                 {
                     result += 0x06;
                 }
-                if (carryFlag || result > 0x9f)
+                if (carryFlag || result > 0x99)
                 {
                     result += 0x60;
+                    setCarryFlag(true);
                 }
             }
-            setHalfCarryFlag(false);
             if (result > 0xff)
             {
                 setCarryFlag(true);
@@ -5785,49 +5784,6 @@ namespace trentGB
         //// these flags are always updated
         //z_flag = (a == 0); // the usual z flag
         //h_flag = 0; // h flag is always cleared
-
-        //public Byte daa(byte arg)
-        //        {
-        //            Byte result = arg;
-        //            Byte rv = 0;
-        //            bool carryFlag = getCarryFlag();
-        //            bool halfCarryFlag = getHalfCarryFlag();
-        //            bool subFlag = getSubtractFlag();
-        //            bool zeroFlag = getZeroFlag();
-
-        //            setHalfCarryFlag(false);
-        //            setZeroFlag(false);
-        //            setCarryFlag(false);
-
-        //            if (subFlag)
-        //            {
-        //                if (carryFlag)
-        //                {
-        //                    result = subIgnoreFlags(0x60, result);
-        //                }
-        //                if (halfCarryFlag)
-        //                {
-        //                    result = subIgnoreFlags(0x06, result);
-        //                }
-        //            }
-        //            else
-        //            {
-        //                if (carryFlag || (result > 0x99))
-        //                {
-        //                    result = addIgnoreFlags(0x60, result);
-        //                    setCarryFlag(true);
-        //                }
-        //                if (halfCarryFlag || ((result & 0x0f) > 0x09))
-        //                {
-        //                    result = addIgnoreFlags( 0x06, result);
-        //                }
-        //            }
-        //            setHalfCarryFlag(false);
-        //            setZeroFlag(result == 0);
-
-
-        //            return rv;
-        //        }
 
         public Byte rotateLeftCarry(Byte op1, bool updateZeroFlag = true)
         {
