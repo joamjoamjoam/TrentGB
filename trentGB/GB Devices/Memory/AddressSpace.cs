@@ -151,20 +151,74 @@ namespace trentGB
         {
             return bytes;
         }
-        public byte getByte(ushort address)
+        public byte getByte(object sender, ushort address)
         {
             Byte rv = 0;
             updateDebugRequests(address, DebugCheck.ReadOccurred);
+
+
+            if (address >= 0xFEA0 && address <= 0xFEFF)
+            {
+                throw new Exception("Nintendo Says this Address Space is off limits");
+            }
+
+
             // ROM Space
             if (address >= 0x0000 && address <= 0x7FFF)
             {
                 // get Byte From ROM
                 rv = rom.getByte(address);
             }
+            else if (sender.GetType() == typeof(CPU) && (address >= 0xFEA0 && address <= 0xFEFF))
+            {
+                if(true)    // hardCode GB DMG type
+                {
+                    // If OAM Blocked
+                    if ((bytes[0xFF41] & 0x03) > 1) // OAM is blockedif $FF41 has mode bits set to 0 or 1
+                    {
+                        // Start Sprite Bug
+                        Debug.WriteLine($"OAM Blocked when Accessing 0xFEA0 - 0xFEFF: Address {address}. This Starts a Sprite Bug but its not implemented yet");
+                    }
+                    else
+                    {
+                        rv = 0x00;
+                    }
+                }           
+            }
+            else if (sender.GetType() == typeof(CPU) && (address >= 0x8000 && address <= 0x9FFF))
+            {
+                // CPU Cant access VRAM If PPU is drawing to screen
+                int mode = (bytes[0xFF41] & 0x03);
+                if (mode > 2) // OAM is blocked if $FF41 has mode bits set to 0 or 1
+                {
+                    rv = 0xFF;
+                    Debug.WriteLine($"VRAM Read Blocked because PPU is Writing to Screen: {address}, $FF41 = {bytes[0xFF41].ToString("X2")}, Mode = {mode}");
+                }
+                else
+                {
+                    rv = bytes[address];
+                }
+            }
+            else if ((address >= 0xFE00 && address <= 0xFE9F))
+            {
+                int mode = (bytes[0xFF41] & 0x03);
+                // CPU Cant access VRAM or OAM If PPU is drawing to screen
+                if (mode > 1) // OAM is blocked if $FF41 has mode bits set to 0 or 1
+                {
+                    rv = 0xFF;
+                    Debug.WriteLine($"OAM Read Blocked because PPU is Writing to Screen: {address}, $FF41 = {bytes[0xFF41].ToString("X2")}, Mode = {mode}");
+                }
+                else
+                {
+                    rv = bytes[address];
+                }
+            }
             else
             {
                 rv = bytes[address];
             }
+
+
 
 
             return rv;
@@ -191,14 +245,57 @@ namespace trentGB
         //    return rv;
         //}
 
-        public void setByte(ushort address, Byte value)
+        public void setByte(object sender, ushort address, Byte value)
         {
             updateDebugRequests(address, DebugCheck.WriteOccurred);
-            bytes[address] = value;
 
-            if (address > 0x0000 && address <= 0x8000)
+
+            if (address > 0x0000 && address <= 0x7FFF)
             {
                 rom.setByte(address, value);
+            }
+            else if (address >= 0xC000 && address <= 0xDDFF)
+            {
+                bytes[address] = value;
+                bytes[(address + 0x2000)] = value;
+            }
+            else if (address >= 0xFEA0 && address <= 0xFEFF)
+            {
+                throw new Exception("Nintendo Says this Address Space is off limits");
+            }
+            else if (sender.GetType() == typeof(CPU) && ((address >= 0x8000 && address <= 0x9FFF)))
+            {
+                int mode = (bytes[0xFF41] & 0x03);
+                // CPU Cant access VRAM If PPU is drawing to screen
+                if (mode > 2) // OAM is blocked if $FF41 has mode bits set to 0 or 1
+                {
+                    // Write is Ignored PPU is blocked
+                    Debug.WriteLine($"VRAM Write Blocked because PPU is Writing to Screen: {address} = {value}, $FF41 = {bytes[0xFF41].ToString("X2")}, Mode = {mode}");
+
+                }
+                else
+                {
+                    bytes[address] = value;
+                }
+            }
+            else if (sender.GetType() == typeof(CPU) && (address >= 0xFE00 && address <= 0xFE9F))
+            {
+                int mode = (bytes[0xFF41] & 0x03);
+                // CPU Cant access OAM If PPU is drawing to screen
+                if (mode > 1) // OAM is blocked if $FF41 has mode bits set to 0 or 1
+                {
+                    // Write is Ignored PPU is blocked
+                    Debug.WriteLine($"OAM Write Blocked because PPU is Writing to Screen: {address} = {value}, $FF41 = {bytes[0xFF41].ToString("X2")}, Mode = {mode}");
+
+                }
+                else
+                {
+                    bytes[address] = value;
+                }
+            }
+            else
+            {
+                bytes[address] = value;
             }
 
             // No Graphics test Mode for Blargg Test Roms
@@ -220,7 +317,7 @@ namespace trentGB
 
         public void requestInterrupt(CPU.InterruptType type)
         {
-            setByte(0xFF0F, (Byte)((getByte(0xFF0F) | (int)type)));
+            setByte(this, 0xFF0F, (Byte)((getByte(this, 0xFF0F) | (int)type)));
         }
 
         //public void setBytes(ushort address, Byte[] values)
@@ -252,12 +349,12 @@ namespace trentGB
 
         //    for (ushort i = 0; i < end1; i++)
         //    {
-        //        setByte(i, rom.getByte(i)); // Copy 1st Rom bank to RAM. This is alwasy ROM Bank 0 for evry cart type
+        //        setByte(this, i, rom.getByte(this, i)); // Copy 1st Rom bank to RAM. This is alwasy ROM Bank 0 for evry cart type
         //    }
 
         //    for (ushort i = 0x4000; i < end2; i++)
         //    {
-        //        setByte(i, rom.getByte(i)); // Copy 2nd Rom bank to RAM. This is only for ROM_ONLY ROMs. This is the swappable bank for other 
+        //        setByte(this, i, rom.getByte(this, i)); // Copy 2nd Rom bank to RAM. This is only for ROM_ONLY ROMs. This is the swappable bank for other 
         //    }
         //}
 

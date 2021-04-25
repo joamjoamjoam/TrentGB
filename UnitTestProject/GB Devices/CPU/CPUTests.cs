@@ -41,11 +41,11 @@ namespace trentGB.Tests
             logMessage("Checking PC = 0x100");
             Assert.That.AreEqual(0x100, cpu.getPC(), "X4");
             logMessage("Checking Loaded Op Code");
-            Assert.That.AreEqual(opCode, cpu.mem.getByte(0x100), "X2");
+            Assert.That.AreEqual(opCode, cpu.mem.getByte(cpu, 0x100), "X2");
             logMessage("Checking Loaded Param 1");
-            Assert.That.AreEqual(param1, cpu.mem.getByte(0x101), "X2");
+            Assert.That.AreEqual(param1, cpu.mem.getByte(cpu, 0x101), "X2");
             logMessage("Checking Loaded Param 2");
-            Assert.That.AreEqual(param2, cpu.mem.getByte(0x102), "X2");
+            Assert.That.AreEqual(param2, cpu.mem.getByte(cpu, 0x102), "X2");
 
             logMessage($"\nStarting Test: {testName}");
 
@@ -1488,15 +1488,15 @@ namespace trentGB.Tests
             cpu.setF(0xF0);
             Byte flagsByte = cpu.getF();
             cpu.setA(op1);
-            cpu.mem.setByte(address, 0x00);
+            cpu.mem.setByte(cpu, address, 0x00);
             cpu.setBC(address);
             fetchAndLoadInstruction(cpu, opCode);
             Assert.That.AreEqual(address, cpu.getBC());
-            Assert.That.AreEqual(0x00, cpu.mem.getByte(cpu.getBC()));
+            Assert.That.AreEqual(0x00, cpu.mem.getByte(cpu, cpu.getBC()));
             tick(cpu);
             Assert.That.AreEqual(op1, cpu.getA());
             Assert.That.AreEqual(address, cpu.getBC());
-            Assert.That.AreEqual(op1, cpu.mem.getByte(cpu.getBC()));
+            Assert.That.AreEqual(op1, cpu.mem.getByte(cpu, cpu.getBC()));
             assertInstructionFinished(cpu, opCode);
             Assert.That.FlagsEqual(cpu, flagsByte);
         }
@@ -1778,7 +1778,7 @@ namespace trentGB.Tests
             cpu.setF(0xF0);
             Byte flagsByte = cpu.getF();
             cpu.setA(0x00);
-            cpu.mem.setByte(address, op1);
+            cpu.mem.setByte(cpu, address, op1);
             cpu.setBC(address);
             fetchAndLoadInstruction(cpu, opCode);
             Assert.That.AreEqual(address, cpu.getBC());
@@ -1786,7 +1786,7 @@ namespace trentGB.Tests
             tick(cpu);
             Assert.That.AreEqual(op1, cpu.getA());
             Assert.That.AreEqual(address, cpu.getBC());
-            Assert.That.AreEqual(op1, cpu.mem.getByte(cpu.getBC()));
+            Assert.That.AreEqual(op1, cpu.mem.getByte(cpu, cpu.getBC()));
 
 
             assertInstructionFinished(cpu, opCode);
@@ -1969,7 +1969,35 @@ namespace trentGB.Tests
         }
         #endregion
 
-        #region 0x27- DAA
+        #region 0x18 - Jump PC + N
+        [DataRow((ushort)0x0100, (Byte)0x00, (ushort)0x0102)]
+        [DataRow((ushort)0x0100, (Byte)0x01, (ushort)0x0103)]
+        [DataRow((ushort)0x0100, (Byte)0x10, (ushort)0x0112)]
+        [DataRow((ushort)0x0100, (Byte)0xFF, (ushort)0x0101)]
+
+        [DataTestMethod]
+        [TestCategory("OP Codes")]
+        [TestCategory("OP Code 0x18 - Jump PC + N")]
+        public void decodeAndExecute_jumpRelN(ushort pc, byte jump, ushort nextAddr)
+        {
+            byte opCode = 0x18;
+
+            CPU cpu = setupOpCode(opCode, MethodBase.GetCurrentMethod().Name, jump);
+            cpu.setPC(pc);
+            cpu.setF(0xF0);
+
+            fetchAndLoadInstruction(cpu, opCode);
+            tick(cpu);
+            tick(cpu);
+            assertInstructionFinished(cpu, opCode);
+            Assert.That.AreEqual(nextAddr, cpu.getPC(), "X4", "PC was not at the correct address after Jump");
+
+            Assert.That.FlagsEqual(cpu, 0xF0);
+
+        }
+        #endregion
+
+        #region 0x27 - DAA
         [DataRow((byte)0x00, (Byte)0x00, (byte)0x00, (byte)0x80)]
         [DataRow((byte)0x0F, (Byte)0x15, (byte)0x00, (byte)0x00)]
         [DataRow((byte)0x10, (Byte)0x10, (byte)0x00, (byte)0x00)]
@@ -2228,10 +2256,10 @@ namespace trentGB.Tests
             cpu.setF(initialFlags);
             cpu.setA(a);
             cpu.setHL(0xC000);
-            cpu.mem.setByte(0xC000, hl); 
+            cpu.mem.setByte(cpu, 0xC000, hl); 
 
             fetchAndLoadInstruction(cpu, opCode);
-            Assert.That.AreEqual(hl, cpu.mem.getByte(0xC000), "X2", "Byte was modified when it shouldnt be");
+            Assert.That.AreEqual(hl, cpu.mem.getByte(cpu, 0xC000), "X2", "Byte was modified when it shouldnt be");
             Assert.That.AreEqual(a, cpu.getA(), "X2", "A was modified when it shouldnt be");
             tick(cpu);
             assertInstructionFinished(cpu, opCode);
@@ -2490,10 +2518,10 @@ namespace trentGB.Tests
             cpu.setF(initialFlags);
             cpu.setA(a);
             cpu.setHL(0xC000);
-            cpu.mem.setByte(0xC000, hl);
+            cpu.mem.setByte(cpu, 0xC000, hl);
 
             fetchAndLoadInstruction(cpu, opCode);
-            Assert.That.AreEqual(hl, cpu.mem.getByte(0xC000), "X2", "Byte was modified when it shouldnt be");
+            Assert.That.AreEqual(hl, cpu.mem.getByte(cpu, 0xC000), "X2", "Byte was modified when it shouldnt be");
             Assert.That.AreEqual(a, cpu.getA(), "X2", "A was modified when it shouldnt be");
             tick(cpu);
             assertInstructionFinished(cpu, opCode);
@@ -2780,10 +2808,10 @@ namespace trentGB.Tests
             cpu.setF(initialFlags);
             cpu.setA(a);
             cpu.setHL(0xC000);
-            cpu.mem.setByte(0xC000, hl);
+            cpu.mem.setByte(cpu, 0xC000, hl);
 
             fetchAndLoadInstruction(cpu, opCode);
-            Assert.That.AreEqual(hl, cpu.mem.getByte(0xC000), "X2", "Byte was modified when it shouldnt be");
+            Assert.That.AreEqual(hl, cpu.mem.getByte(cpu, 0xC000), "X2", "Byte was modified when it shouldnt be");
             Assert.That.AreEqual(a, cpu.getA(), "X2", "A was modified when it shouldnt be");
             tick(cpu);
             assertInstructionFinished(cpu, opCode);
@@ -2834,6 +2862,79 @@ namespace trentGB.Tests
         }
         #endregion
 
+        #region 0xC9 - Ret
+        [DataRow((byte)0x00, (byte)0xC0, (ushort)0xC000)]
+        [DataRow((byte)0xFF, (byte)0xAF, (ushort)0xAFFF)]
+        [DataRow((byte)0x13, (byte)0xA0, (ushort)0xA013)]
+
+        [DataTestMethod]
+        [Timeout(5000)]
+        [TestCategory("OP Codes")]
+        [TestCategory("OP Code 0xC9 - Ret")]
+        public void decodeAndExecute_ret(byte lsb, byte msb, ushort result)
+        {
+            byte opCode = 0xCD;
+
+            CPU cpu = setupOpCode(opCode, MethodBase.GetCurrentMethod().Name, lsb, msb);
+            cpu.setSP(0xDFFF);
+            cpu.setF(0xF0);
+
+            byte retOpCode = 0xC9;
+
+            cpu.mem.setByte(cpu, result, retOpCode);
+
+            executeCurrentInstruction(cpu); // Execute a Call to result
+            Assert.That.AreEqual(result, cpu.getPC(), "X4", "Call failed to set PC correctly");
+
+            fetchAndLoadInstruction(cpu, retOpCode);
+            tick(cpu);
+            Assert.That.AreEqual(0x03, cpu.getCurrentInstruction().storage);
+            tick(cpu);
+            Assert.That.AreEqual(0x0103, cpu.getCurrentInstruction().storage);
+            tick(cpu);
+            Assert.That.AreEqual(0x0103, cpu.getPC());
+            Assert.That.FlagsEqual(cpu, 0xF0);
+
+        }
+        #endregion
+
+        #region 0xCD - Call NN
+        [DataRow((byte)0x00, (byte)0xC0, (ushort)0xC000)]
+        [DataRow((byte)0xFF, (byte)0xAF, (ushort)0xAFFF)]
+        [DataRow((byte)0x13, (byte)0x02, (ushort)0x0213)]
+
+        [DataTestMethod]
+        [TestCategory("OP Codes")]
+        [TestCategory("OP Code 0xCD - Call NN")]
+        public void decodeAndExecute_callNN(byte lsb, byte msb, ushort result)
+        {
+            byte opCode = 0xCD;
+
+            CPU cpu = setupOpCode(opCode, MethodBase.GetCurrentMethod().Name, lsb, msb);
+            cpu.setSP(0xDFFF);
+            cpu.setF(0xF0);
+
+            fetchAndLoadInstruction(cpu, opCode);
+            tick(cpu);
+            Assert.That.AreEqual(lsb, cpu.getCurrentInstruction().storage, "X4", "Didnt load LSB correctly");
+            tick(cpu);
+            Assert.That.AreEqual(result, cpu.getCurrentInstruction().storage, "X4", "Didnt load MSB correctly");
+            tick(cpu);
+            Assert.That.AreEqual(result, cpu.getCurrentInstruction().storage, "X4", "Storage modified when it shouldnt be");
+            tick(cpu);
+            Assert.That.AreEqual(0xDFFE, cpu.getSP(), "X4", "Error Decrementing Stack");
+            Assert.That.AreEqual(0x01, cpu.mem.getByte(cpu, 0xDFFE), "X4", "Error Loading MSB into Stack");
+            tick(cpu);
+            Assert.That.AreEqual(0xDFFD, cpu.getSP(), "X4", "Error Loading LSB into Stack");
+            Assert.That.AreEqual(0x03, cpu.mem.getByte(cpu, 0xDFFD), "X4", "Error Decrementing Stack");
+            Assert.That.AreEqual(result, cpu.getPC(), "X4", "PC not set correctly after call");
+            assertInstructionFinished(cpu, opCode);
+
+            Assert.That.FlagsEqual(cpu, 0xF0);
+
+        }
+        #endregion
+
         #region 0xE9 - Jump to HL
         [DataRow((ushort)0xFFFF)]
         [DataRow((ushort)0xC100)]
@@ -2851,18 +2952,18 @@ namespace trentGB.Tests
 
             CPU cpu = setupOpCode(opCode, MethodBase.GetCurrentMethod().Name);
             cpu.setF(0xF0);
-            cpu.mem.setByte(op1, 0x12);
+            cpu.mem.setByte(cpu, op1, 0x12);
             Byte flagsByte = cpu.getF();
             cpu.setHL(op1);
 
             Assert.That.AreEqual(0x100, cpu.getPC());
-            Assert.That.AreEqual(0x12, cpu.mem.getByte(op1));
+            Assert.That.AreEqual(0x12, cpu.mem.getByte(cpu, op1));
             fetchAndLoadInstruction(cpu, opCode);
             assertInstructionFinished(cpu, opCode);
 
             Assert.That.AreEqual(op1, cpu.getHL());
             Assert.That.AreEqual(op1, cpu.getPC());
-            Assert.That.AreEqual(0x12, cpu.mem.getByte(op1));
+            Assert.That.AreEqual(0x12, cpu.mem.getByte(cpu, op1));
             
             Assert.That.FlagsEqual(cpu, flagsByte);
         }
@@ -3259,7 +3360,7 @@ namespace trentGB.Tests
 
             CPU cpu = setupOpCode(0xCB, MethodBase.GetCurrentMethod().Name, opCode);
             cpu.setF((Byte)(((carryState) ? (byte)CPU.CPUFlagsMask.Carry : (byte)0) | (Byte)CPU.CPUFlagsMask.Subtract | (Byte)CPU.CPUFlagsMask.HalfCarry));
-            cpu.mem.setByte(address, op1);
+            cpu.mem.setByte(cpu, address, op1);
             cpu.setHL(address);
 
             byte expectedFlags = (Byte)((((carryAfterState) ? (byte)CPU.CPUFlagsMask.Carry : (byte)0)) + (((result == 0) ? (byte)CPU.CPUFlagsMask.Zero : (byte)0)));
@@ -3270,7 +3371,7 @@ namespace trentGB.Tests
             Assert.That.AreEqual(0x0000, cpu.getCurrentInstruction().storage);
             tick(cpu);
             Assert.That.AreEqual(op1, cpu.getCurrentInstruction().storage);
-            Assert.That.AreEqual(op1, cpu.mem.getByte(address));
+            Assert.That.AreEqual(op1, cpu.mem.getByte(cpu, address));
             if (carryState)
             {
                 Assert.IsTrue(cpu.getCarryFlag());
@@ -3282,7 +3383,7 @@ namespace trentGB.Tests
             tick(cpu);
             assertInstructionFinished(cpu, 0xCB, opCode);
             Assert.That.AreEqual(address, cpu.getHL());
-            Assert.That.AreEqual(result, cpu.mem.getByte(address));
+            Assert.That.AreEqual(result, cpu.mem.getByte(cpu, address));
 
             if (carryAfterState)
             {
@@ -3673,7 +3774,7 @@ namespace trentGB.Tests
 
             CPU cpu = setupOpCode(0xCB, MethodBase.GetCurrentMethod().Name, opCode);
             cpu.setF((Byte)(((carryState) ? (byte)CPU.CPUFlagsMask.Carry : (byte)0) | (Byte)CPU.CPUFlagsMask.Subtract | (Byte)CPU.CPUFlagsMask.HalfCarry));
-            cpu.mem.setByte(address, op1);
+            cpu.mem.setByte(cpu, address, op1);
             cpu.setHL(address);
 
             byte expectedFlags = (Byte)((((carryAfterState) ? (byte)CPU.CPUFlagsMask.Carry : (byte)0)) + (((result == 0) ? (byte)CPU.CPUFlagsMask.Zero : (byte)0)));
@@ -3684,7 +3785,7 @@ namespace trentGB.Tests
             Assert.That.AreEqual(0x0000, cpu.getCurrentInstruction().storage);
             tick(cpu);
             Assert.That.AreEqual(op1, cpu.getCurrentInstruction().storage);
-            Assert.That.AreEqual(op1, cpu.mem.getByte(address));
+            Assert.That.AreEqual(op1, cpu.mem.getByte(cpu, address));
             if (carryState)
             {
                 Assert.IsTrue(cpu.getCarryFlag());
@@ -3696,7 +3797,7 @@ namespace trentGB.Tests
             tick(cpu);
             assertInstructionFinished(cpu, 0xCB, opCode);
             Assert.That.AreEqual(address, cpu.getHL());
-            Assert.That.AreEqual(result, cpu.mem.getByte(address));
+            Assert.That.AreEqual(result, cpu.mem.getByte(cpu, address));
 
             if (carryAfterState)
             {
@@ -4142,7 +4243,7 @@ namespace trentGB.Tests
 
             CPU cpu = setupOpCode(0xCB, MethodBase.GetCurrentMethod().Name, opCode);
             cpu.setF((Byte)(((carryState) ? (byte)CPU.CPUFlagsMask.Carry : (byte)0) | (Byte)CPU.CPUFlagsMask.Subtract | (Byte)CPU.CPUFlagsMask.HalfCarry));
-            cpu.mem.setByte(address, op1);
+            cpu.mem.setByte(cpu, address, op1);
             cpu.setHL(address);
 
             byte expectedFlags = (Byte)((((carryAfterState) ? (byte)CPU.CPUFlagsMask.Carry : (byte)0)) + (((result == 0) ? (byte)CPU.CPUFlagsMask.Zero : (byte)0)));
@@ -4153,7 +4254,7 @@ namespace trentGB.Tests
             Assert.That.AreEqual(0x0000, cpu.getCurrentInstruction().storage);
             tick(cpu);
             Assert.That.AreEqual(op1, cpu.getCurrentInstruction().storage);
-            Assert.That.AreEqual(op1, cpu.mem.getByte(address));
+            Assert.That.AreEqual(op1, cpu.mem.getByte(cpu, address));
             if (carryState)
             {
                 Assert.IsTrue(cpu.getCarryFlag());
@@ -4165,7 +4266,7 @@ namespace trentGB.Tests
             tick(cpu);
             assertInstructionFinished(cpu, 0xCB, opCode);
             Assert.That.AreEqual(address, cpu.getHL());
-            Assert.That.AreEqual(result, cpu.mem.getByte(address));
+            Assert.That.AreEqual(result, cpu.mem.getByte(cpu, address));
 
             if (carryAfterState)
             {

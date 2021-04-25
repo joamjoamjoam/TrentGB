@@ -424,6 +424,16 @@ namespace trentGB
             return commandHistoryList.Peek();
         }
 
+        public Byte getByte(ushort address)
+        {
+            return mem.getByte(this, address);
+        }
+
+        public void setByte(ushort address, Byte value)
+        {
+            mem.setByte(this, address, value);
+        }
+
         public Dictionary<String, String> getStateDict()
         {
             Dictionary<String, String> rv = new Dictionary<string, string>();
@@ -466,7 +476,7 @@ namespace trentGB
         {
             // Hardcoded GB
             SpeedMode rv = SpeedMode.CGBSingleSpeed;
-            if ((mem.getByte(0xFF4D) & 0x80) > 0)
+            if ((getByte(0xFF4D) & 0x80) > 0)
             {
                 rv = SpeedMode.CGBDoubleSpeed;
             }
@@ -705,42 +715,42 @@ namespace trentGB
 
             // Set These Faux Registers from HardCodes for now. In the future load these from Inter Boot ROM at 0x0000
              
-            mem.setByte(0xFF05, 0x00); // TIMA
-            mem.setByte(0xFF06, 0x00); // TMA
-            mem.setByte(0xFF07, 0x00); // TAC
-            mem.setByte(0xFF10, 0x80); // NR10
-            mem.setByte(0xFF11, 0xBF); // NR11
-            mem.setByte(0xFF12, 0xF3); // NR12
-            mem.setByte(0xFF14, 0xBF); // NR14
-            mem.setByte(0xFF16, 0x3F); // NR21
-            mem.setByte(0xFF17, 0x00); // NR22
-            mem.setByte(0xFF19, 0xBF); // NR24
-            mem.setByte(0xFF1A, 0x7F); // NR30
-            mem.setByte(0xFF1B, 0xFF); // NR31
-            mem.setByte(0xFF1C, 0x9F); // NR32
-            mem.setByte(0xFF1E, 0xBF); // NR33
-            mem.setByte(0xFF20, 0xFF); // NR41
-            mem.setByte(0xFF21, 0x00); // NR42
-            mem.setByte(0xFF22, 0x00); // NR43
-            mem.setByte(0xFF23, 0xBF); // NR30
-            mem.setByte(0xFF24, 0x77); // NR50
-            mem.setByte(0xFF25, 0xF3); // NR51
-            mem.setByte(0xFF26, 0xF1); // 0xF1-GB, 0xF0-SGB  NR52
-            mem.setByte(0xFF40, 0x91); // LCDC
-            mem.setByte(0xFF42, 0x00); // SCY
-            mem.setByte(0xFF43, 0x00); // SCX
-            mem.setByte(0xFF45, 0x00); // LYC
-            mem.setByte(0xFF47, 0xFC); // BGP
-            mem.setByte(0xFF48, 0xFF); // OBP0
-            mem.setByte(0xFF49, 0xFF); // OBP1
-            mem.setByte(0xFF4A, 0x00); // WY
-            mem.setByte(0xFF4B, 0x00); // WX
-            mem.setByte(0xFFFF, 0x00); // IE
+            setByte(0xFF05, 0x00); // TIMA
+            setByte(0xFF06, 0x00); // TMA
+            setByte(0xFF07, 0x00); // TAC
+            setByte(0xFF10, 0x80); // NR10
+            setByte(0xFF11, 0xBF); // NR11
+            setByte(0xFF12, 0xF3); // NR12
+            setByte(0xFF14, 0xBF); // NR14
+            setByte(0xFF16, 0x3F); // NR21
+            setByte(0xFF17, 0x00); // NR22
+            setByte(0xFF19, 0xBF); // NR24
+            setByte(0xFF1A, 0x7F); // NR30
+            setByte(0xFF1B, 0xFF); // NR31
+            setByte(0xFF1C, 0x9F); // NR32
+            setByte(0xFF1E, 0xBF); // NR33
+            setByte(0xFF20, 0xFF); // NR41
+            setByte(0xFF21, 0x00); // NR42
+            setByte(0xFF22, 0x00); // NR43
+            setByte(0xFF23, 0xBF); // NR30
+            setByte(0xFF24, 0x77); // NR50
+            setByte(0xFF25, 0xF3); // NR51
+            setByte(0xFF26, 0xF1); // 0xF1-GB, 0xF0-SGB  NR52
+            setByte(0xFF40, 0x91); // LCDC
+            setByte(0xFF42, 0x00); // SCY
+            setByte(0xFF43, 0x00); // SCX
+            setByte(0xFF45, 0x00); // LYC
+            setByte(0xFF47, 0xFC); // BGP
+            setByte(0xFF48, 0xFF); // OBP0
+            setByte(0xFF49, 0xFF); // OBP1
+            setByte(0xFF4A, 0x00); // WY
+            setByte(0xFF4B, 0x00); // WX
+            setByte(0xFFFF, 0x00); // IE
         }
 
         public Byte fetch()
         {
-            Byte rv = mem.getByte(PC++);
+            Byte rv = getByte(PC++);
             if (currentInstruction != null)
             {
                 currentInstruction.incrementFetches();
@@ -765,7 +775,7 @@ namespace trentGB
         public Byte peek(ushort n = 0)
         {
             ushort address = add16IgnoreFlags(getPC(), n);
-            return mem.getByte(address);
+            return getByte(address);
         }
 
         private bool debugStopRequested()
@@ -1294,11 +1304,11 @@ namespace trentGB
                     case 0x06:
                         if (getCurrentInstruction().getCycleCount() == 12)
                         {
-                            getCurrentInstruction().storage = mem.getByte(getHL());
+                            getCurrentInstruction().storage = getByte(getHL());
                         }
                         else if (getCurrentInstruction().getCycleCount() == 16)
                         {
-                            mem.setByte(getHL(), rotateLeftCarry((Byte) (getCurrentInstruction().storage & 0x00FF)));
+                            setByte(getHL(), rotateLeftCarry((Byte) (getCurrentInstruction().storage & 0x00FF)));
                             done = true;
                         }
                         break;
@@ -1333,11 +1343,11 @@ namespace trentGB
                     case 0x0E:
                         if (getCurrentInstruction().getCycleCount() == 12)
                         {
-                            getCurrentInstruction().storage = mem.getByte(getHL());
+                            getCurrentInstruction().storage = getByte(getHL());
                         }
                         else if (getCurrentInstruction().getCycleCount() == 16)
                         {
-                            mem.setByte(getHL(), rotateRightCarry((Byte)(getCurrentInstruction().storage & 0x00FF)));
+                            setByte(getHL(), rotateRightCarry((Byte)(getCurrentInstruction().storage & 0x00FF)));
                             done = true;
                         }
                         break;
@@ -1372,11 +1382,11 @@ namespace trentGB
                     case 0x16:
                         if (getCurrentInstruction().getCycleCount() == 12)
                         {
-                            getCurrentInstruction().storage = mem.getByte(getHL());
+                            getCurrentInstruction().storage = getByte(getHL());
                         }
                         else if (getCurrentInstruction().getCycleCount() == 16)
                         {
-                            mem.setByte(getHL(), rotateLeft((Byte)(getCurrentInstruction().storage & 0x00FF)));
+                            setByte(getHL(), rotateLeft((Byte)(getCurrentInstruction().storage & 0x00FF)));
                             done = true;
                         }
                         
@@ -1411,7 +1421,7 @@ namespace trentGB
                         break;
                     case 0x1E:
                         ushort hl = getHL();
-                        mem.setByte(hl, rotateRight(mem.getByte(hl)));
+                        setByte(hl, rotateRight(getByte(hl)));
                         done = true;
                         break;
                     case 0x1F:
@@ -1444,7 +1454,7 @@ namespace trentGB
                         break;
                     case 0x26:
                         hl = getHL();
-                        mem.setByte(hl, sla(mem.getByte(hl)));
+                        setByte(hl, sla(getByte(hl)));
                         done = true;
                         break;
                     case 0x27:
@@ -1477,7 +1487,7 @@ namespace trentGB
                         break;
                     case 0x2E:
                         hl = getHL();
-                        mem.setByte(hl, sra(mem.getByte(hl)));
+                        setByte(hl, sra(getByte(hl)));
                         done = true;
                         break;
                     case 0x2F:
@@ -1510,7 +1520,7 @@ namespace trentGB
                         break;
                     case 0x36:
                         hl = getHL();
-                        mem.setByte(hl, swapNibbles(mem.getByte(hl)));
+                        setByte(hl, swapNibbles(getByte(hl)));
                         done = true;
                         break;
                     case 0x37:
@@ -1543,7 +1553,7 @@ namespace trentGB
                         break;
                     case 0x3E:
                         hl = getHL();
-                        mem.setByte(hl, srl(mem.getByte(hl)));
+                        setByte(hl, srl(getByte(hl)));
                         done = true;
                         break;
                     case 0x3F:
@@ -2358,7 +2368,7 @@ namespace trentGB
                         set = ((getL() & mask) > 0);
                         break;
                     case 'M':
-                        set = ((mem.getByte(getHL()) & mask) > 0);
+                        set = ((getByte(getHL()) & mask) > 0);
                         break;
                 }
 
@@ -2394,7 +2404,7 @@ namespace trentGB
                         break;
                     case 'M':
                         ushort val = getHL();
-                        mem.setByte(val, (byte)((mem.getByte(val) | mask)));
+                        setByte(val, (byte)((getByte(val) | mask)));
                         break;
                 }
             }
@@ -2425,7 +2435,7 @@ namespace trentGB
                         break;
                     case 'M':
                         ushort val = getHL();
-                        mem.setByte(val, (byte)((mem.getByte(val) & (~mask))));
+                        setByte(val, (byte)((getByte(val) & (~mask))));
                         break;
                 }
             }
@@ -2434,18 +2444,18 @@ namespace trentGB
         #region Interrupt Operations
         private bool isAnInterruptRequested()
         {
-            return ((mem.getByte(0xFF0F) & 0x01F) > 0);
+            return ((getByte(0xFF0F) & 0x01F) > 0);
         }
 
         private bool isInterruptRequested(InterruptType type)
         {
-            return ((mem.getByte(0xFF0F) & (int)type) > 0);
+            return ((getByte(0xFF0F) & (int)type) > 0);
         }
 
         private bool isInterruptEnabled(InterruptType type)
         {
             bool rv = false;
-            if (IME && ((mem.getByte(0xFFFF) & (int)type) > 0))
+            if (IME && ((getByte(0xFFFF) & (int)type) > 0))
             {
                 // Interrupt is Enabled and Requested
                 rv = true;
@@ -2466,23 +2476,23 @@ namespace trentGB
             {
                 case InterruptType.VBlank:
                     handlerAddress = 0x40;
-                    mem.setByte(0xFF0F, (Byte)((mem.getByte(0xFF0F) & ~(int)type)));
+                    setByte(0xFF0F, (Byte)((getByte(0xFF0F) & ~(int)type)));
                     break;
                 case InterruptType.LCDStat:
                     handlerAddress = 0x48;
-                    mem.setByte(0xFF0F, (Byte)((mem.getByte(0xFF0F) & ~(int)type)));
+                    setByte(0xFF0F, (Byte)((getByte(0xFF0F) & ~(int)type)));
                     break;
                 case InterruptType.Timer:
                     handlerAddress = 0x50;
-                    mem.setByte(0xFF0F, (Byte)((mem.getByte(0xFF0F) & ~(int)type)));
+                    setByte(0xFF0F, (Byte)((getByte(0xFF0F) & ~(int)type)));
                     break;
                 case InterruptType.Serial:
                     handlerAddress = 0x58;
-                    mem.setByte(0xFF0F, (Byte)((mem.getByte(0xFF0F) & ~(int)type)));
+                    setByte(0xFF0F, (Byte)((getByte(0xFF0F) & ~(int)type)));
                     break;
                 case InterruptType.Joypad:
                     handlerAddress = 0x60;
-                    mem.setByte(0xFF0F, (Byte)((mem.getByte(0xFF0F) & ~(int)type)));
+                    setByte(0xFF0F, (Byte)((getByte(0xFF0F) & ~(int)type)));
                     break;
             }
 
@@ -2767,7 +2777,7 @@ namespace trentGB
             if (currentInstruction.getCycleCount() == 8)
             {
                 Byte value = getA();
-                mem.setByte(getBC(), value);
+                setByte(getBC(), value);
                 done = true;
             }
 
@@ -2884,7 +2894,7 @@ namespace trentGB
 			bool done = false;
             if (currentInstruction.getCycleCount() == 8)
             {
-                Byte value = mem.getByte(getBC());
+                Byte value = getByte(getBC());
                 setA(value);
                 done = true;
             }
@@ -2998,7 +3008,7 @@ namespace trentGB
         private bool ldAIntoMemDE16() // 0x12
         {
 			bool done = false;
-            mem.setByte(getDE(), getA());
+            setByte(getDE(), getA());
 
             // This needs to be updated when updating for cycle accurracy
             done = true;
@@ -3059,13 +3069,17 @@ namespace trentGB
         private bool jumpPCPlusN() // 0x18
         {
 			bool done = false;
-            SByte offset = (SByte)fetch();
-            ushort address = add16IgnoreFlags(getPC(), offset);
-
-            setPC(address);
-
-            // This needs to be updated when updating for cycle accurracy
-            done = true;
+            if (currentInstruction.getCycleCount() == 8)
+            {
+                SByte offset = (SByte)fetch();
+                currentInstruction.storage = add16IgnoreFlags(getPC(), offset);
+            }
+            else if (currentInstruction.getCycleCount() == 12)
+            {
+                setPC(currentInstruction.storage);
+                done = true;
+            }
+            
             return done;
         }
         private bool addDEtoHL() //0x19
@@ -3079,7 +3093,7 @@ namespace trentGB
         private bool ldAMemDE() // 0x1A
         {
 			bool done = false;
-            Byte value = mem.getByte(getDE());
+            Byte value = getByte(getDE());
             setA(value);
 
             // This needs to be updated when updating for cycle accurracy
@@ -3169,7 +3183,7 @@ namespace trentGB
         {
 			bool done = false;
             Byte value = getA();
-            mem.setByte(getHL(), value);
+            setByte(getHL(), value);
 
             incrementHL();
 
@@ -3259,7 +3273,7 @@ namespace trentGB
         private bool ldiAMemHL() // 0x2A
         {
 			bool done = false;
-            Byte value = mem.getByte(getHL());
+            Byte value = getByte(getHL());
             setA(value);
 
             incrementHL();
@@ -3358,7 +3372,7 @@ namespace trentGB
         {
 			bool done = false;
             Byte value = getA();
-            mem.setByte(getHL(), value);
+            setByte(getHL(), value);
 
             decrementHL();
 
@@ -3380,11 +3394,11 @@ namespace trentGB
         private bool incHLMem() // 0x34
         {
 			bool done = false;
-            Byte value = mem.getByte(getHL());
+            Byte value = getByte(getHL());
 
             value = increment(value);
 
-            mem.setByte(getHL(), value);
+            setByte(getHL(), value);
 
             // This needs to be updated when updating for cycle accurracy
             done = true;
@@ -3393,11 +3407,11 @@ namespace trentGB
         private bool decHLMem() // 0x35
         {
 			bool done = false;
-            Byte value = mem.getByte(getHL());
+            Byte value = getByte(getHL());
 
             value = decrement(value);
 
-            mem.setByte(getHL(), value);
+            setByte(getHL(), value);
 
             // This needs to be updated when updating for cycle accurracy
             done = true;
@@ -3407,7 +3421,7 @@ namespace trentGB
         {
 			bool done = false;
             Byte value = fetch();
-            mem.setByte(getHL(), value);
+            setByte(getHL(), value);
 
             // This needs to be updated when updating for cycle accurracy
             done = true;
@@ -3449,7 +3463,7 @@ namespace trentGB
         private bool lddAMemHL() // 0x3A
         {
 			bool done = false;
-            Byte value = mem.getByte(getHL());
+            Byte value = getByte(getHL());
             setA(value);
 
             decrementHL();
@@ -3569,7 +3583,7 @@ namespace trentGB
         private bool ldrBFromMemHL() // 0x46
         {
 			bool done = false;
-            Byte value = mem.getByte(getHL());
+            Byte value = getByte(getHL());
             setB(value);
 
             // This needs to be updated when updating for cycle accurracy
@@ -3642,7 +3656,7 @@ namespace trentGB
         private bool ldrCFromMemHL() // 0x4E
         {
 			bool done = false;
-            Byte value = mem.getByte(getHL());
+            Byte value = getByte(getHL());
             setC(value);
 
             // This needs to be updated when updating for cycle accurracy
@@ -3715,7 +3729,7 @@ namespace trentGB
         private bool ldrDFromMemHL() // 0x56
         {
 			bool done = false;
-            Byte value = mem.getByte(getHL());
+            Byte value = getByte(getHL());
             setD(value);
 
             // This needs to be updated when updating for cycle accurracy
@@ -3788,7 +3802,7 @@ namespace trentGB
         private bool ldrEFromMemHL() // 0x5E
         {
 			bool done = false;
-            Byte value = mem.getByte(getHL());
+            Byte value = getByte(getHL());
             setE(value);
 
             // This needs to be updated when updating for cycle accurracy
@@ -3861,7 +3875,7 @@ namespace trentGB
         private bool ldrHFromMemHL() // 0x66
         {
 			bool done = false;
-            Byte value = mem.getByte(getHL());
+            Byte value = getByte(getHL());
             setH(value);
 
             // This needs to be updated when updating for cycle accurracy
@@ -3934,7 +3948,7 @@ namespace trentGB
         private bool ldrLFromMemHL() // 0x6E
         {
 			bool done = false;
-            Byte value = mem.getByte(getHL());
+            Byte value = getByte(getHL());
             setL(value);
 
             // This needs to be updated when updating for cycle accurracy
@@ -3954,7 +3968,7 @@ namespace trentGB
         {
 			bool done = false;
             Byte value = getB();
-            mem.setByte(getHL(), value);
+            setByte(getHL(), value);
 
             // This needs to be updated when updating for cycle accurracy
             done = true;
@@ -3964,7 +3978,7 @@ namespace trentGB
         {
 			bool done = false;
             Byte value = getC();
-            mem.setByte(getHL(), value);
+            setByte(getHL(), value);
 
             // This needs to be updated when updating for cycle accurracy
             done = true;
@@ -3974,7 +3988,7 @@ namespace trentGB
         {
 			bool done = false;
             Byte value = getD();
-            mem.setByte(getHL(), value);
+            setByte(getHL(), value);
 
             // This needs to be updated when updating for cycle accurracy
             done = true;
@@ -3984,7 +3998,7 @@ namespace trentGB
         {
 			bool done = false;
             Byte value = getE();
-            mem.setByte(getHL(), value);
+            setByte(getHL(), value);
 
             // This needs to be updated when updating for cycle accurracy
             done = true;
@@ -3994,7 +4008,7 @@ namespace trentGB
         {
 			bool done = false;
             Byte value = getH();
-            mem.setByte(getHL(), value);
+            setByte(getHL(), value);
 
             // This needs to be updated when updating for cycle accurracy
             done = true;
@@ -4004,7 +4018,7 @@ namespace trentGB
         {
 			bool done = false;
             Byte value = getL();
-            mem.setByte(getHL(), value);
+            setByte(getHL(), value);
 
             // This needs to be updated when updating for cycle accurracy
             done = true;
@@ -4021,7 +4035,7 @@ namespace trentGB
         private bool ldAIntoMemHL16() // 0x77
         {
 			bool done = false;
-            mem.setByte(getHL(), getA());
+            setByte(getHL(), getA());
 
             // This needs to be updated when updating for cycle accurracy
             done = true;
@@ -4084,7 +4098,7 @@ namespace trentGB
         private bool ldrAFromMemHL() // 0x7E
         {
 			bool done = false;
-            Byte value = mem.getByte(getHL());
+            Byte value = getByte(getHL());
             setA(value);
 
             // This needs to be updated when updating for cycle accurracy
@@ -4169,7 +4183,7 @@ namespace trentGB
         private bool addMemAtHLtoA() // 0x86
         {
 			bool done = false;
-            Byte value = mem.getByte(getHL());
+            Byte value = getByte(getHL());
             value = add(getA(), value);
 
             setA(value);
@@ -4258,7 +4272,7 @@ namespace trentGB
         private bool addCarryMemAtHLtoA() // 0x8E
         {
 			bool done = false;
-            Byte value = mem.getByte(getHL());
+            Byte value = getByte(getHL());
             value = addCarry(getA(), value);
 
             setA(value);
@@ -4364,7 +4378,7 @@ namespace trentGB
             {
                 done = true;
                 // subtract(n, A)
-                setA(subtract(mem.getByte(getHL()), getA()));
+                setA(subtract(getByte(getHL()), getA()));
             }
             
             return done;
@@ -4463,7 +4477,7 @@ namespace trentGB
 
             if (currentInstruction.getCycleCount() == 8)
             {
-                setA(subtractCarry(mem.getByte(getHL()), getA()));
+                setA(subtractCarry(getByte(getHL()), getA()));
                 done = true;
             }
 
@@ -4557,7 +4571,7 @@ namespace trentGB
         private bool andAMemHLinA() // 0xA6
         {
 			bool done = false;
-            Byte value = mem.getByte(getHL());
+            Byte value = getByte(getHL());
             // and(n,A)
             value = and(value, getA());
 
@@ -4654,7 +4668,7 @@ namespace trentGB
         private bool xorAMemHLinA() // 0xAE
         {
 			bool done = false;
-            Byte value = mem.getByte(getHL());
+            Byte value = getByte(getHL());
             // xor(n,A)
             value = xor(value, getA());
 
@@ -4751,7 +4765,7 @@ namespace trentGB
         private bool orAMemHLinA() // 0xB6
         {
 			bool done = false;
-            Byte value = mem.getByte(getHL());
+            Byte value = getByte(getHL());
             // or(n,A)
             value = or(value, getA());
 
@@ -4833,7 +4847,7 @@ namespace trentGB
 
             if (currentInstruction.getCycleCount() == 8)
             {
-                Byte value = mem.getByte(getHL());
+                Byte value = getByte(getHL());
                 // cmp(n,A)
                 cmp(value, getA());
 
@@ -4964,9 +4978,20 @@ namespace trentGB
         private bool ret() // 0xC9
         {
 			bool done = false;
-            setPC(pop16OffStack());
-            // This needs to be updated when updating for cycle accurracy
-            done = true;
+            if (currentInstruction.getCycleCount() == 8)
+            {
+                currentInstruction.storage = setByteInUInt16(popOffStack(), BytePlacement.LSB, currentInstruction.storage);
+            }
+            if (currentInstruction.getCycleCount() == 12)
+            {
+                currentInstruction.storage = setByteInUInt16(popOffStack(), BytePlacement.MSB, currentInstruction.storage);
+            }
+            if (currentInstruction.getCycleCount() == 16)
+            {
+                setPC(currentInstruction.storage);
+                done = true;
+            }
+            
             return done;
         }
         private bool jumpIfZeroFlagSet() // 0xCA
@@ -5007,13 +5032,29 @@ namespace trentGB
         private bool callNN() //0xCD
         {
 			bool done = false;
-            Byte lsb = fetch();
-            Byte msb = fetch();
-            pushOnStack(getPC());
-            setPC(getUInt16ForBytes(lsb,msb));
-
-            // This needs to be updated when updating for cycle accurracy
-            done = true;
+            if (currentInstruction.getCycleCount() == 8)
+            {
+                currentInstruction.storage = setByteInUInt16(fetch(), BytePlacement.LSB, currentInstruction.storage); ;
+            }
+            else if (currentInstruction.getCycleCount() == 12)
+            {
+                currentInstruction.storage = setByteInUInt16(fetch(), BytePlacement.MSB, currentInstruction.storage);
+            }
+            else if (currentInstruction.getCycleCount() == 16)
+            {
+                // Internal Branch Decision ??
+            }
+            else if (currentInstruction.getCycleCount() == 20)
+            {
+                pushOnStack(getByteInUInt16(BytePlacement.MSB, getPC()));
+            }
+            else if (currentInstruction.getCycleCount() == 24)
+            {
+                pushOnStack(getByteInUInt16(BytePlacement.LSB, getPC()));
+                setPC(currentInstruction.storage);
+                done = true;
+            }
+            
             return done;
         }
         private bool addCarryNtoA() // 0xCE
@@ -5217,7 +5258,7 @@ namespace trentGB
 			bool done = false;
             Byte value = getA();
             Byte offset = fetch();
-            mem.setByte((ushort)(0xFF00 + offset), value);
+            setByte((ushort)(0xFF00 + offset), value);
 
             // This needs to be updated when updating for cycle accurracy
             done = true;
@@ -5238,7 +5279,7 @@ namespace trentGB
         {
 			bool done = false;
             Byte value = getA();
-            mem.setByte((ushort)(0xFF00 + getC()), value);
+            setByte((ushort)(0xFF00 + getC()), value);
 
             // This needs to be updated when updating for cycle accurracy
             done = true;
@@ -5313,7 +5354,7 @@ namespace trentGB
 			bool done = false;
             Byte lsb = fetch();
             Byte msb = fetch();
-            mem.setByte(getUInt16ForBytes(lsb, msb), getA());
+            setByte(getUInt16ForBytes(lsb, msb), getA());
 
             // This needs to be updated when updating for cycle accurracy
             done = true;
@@ -5360,7 +5401,7 @@ namespace trentGB
         {
 			bool done = false;
             Byte offset = fetch();
-            Byte value = mem.getByte((ushort)(0xFF00 + offset));
+            Byte value = getByte((ushort)(0xFF00 + offset));
             
             setA(value);
 
@@ -5382,7 +5423,7 @@ namespace trentGB
         private bool ldIOPlusCToA() // 0xF2
         {
 			bool done = false;
-            Byte value = mem.getByte((ushort)(0xFF00 + getC()));
+            Byte value = getByte((ushort)(0xFF00 + getC()));
             setA(value);
 
             // This needs to be updated when updating for cycle accurracy
@@ -5467,7 +5508,7 @@ namespace trentGB
             }
             else if (getCurrentInstruction().getCycleCount() == 16)
             {
-                setA(mem.getByte(getCurrentInstruction().storage));
+                setA(getByte(getCurrentInstruction().storage));
                 done = true;
             }
 
@@ -6070,7 +6111,7 @@ namespace trentGB
         public void pushOnStack(Byte value)
         {
             decrementSP();
-            mem.setByte(getSP(), value);
+            setByte(getSP(), value);
         }
 
         public void pushOnStack(ushort value)
@@ -6088,7 +6129,7 @@ namespace trentGB
 
         public Byte popOffStack()
         {
-            Byte value = mem.getByte(getSP());
+            Byte value = getByte(getSP());
             incrementSP();
 
             return value;
