@@ -3240,7 +3240,8 @@ namespace trentGB
         {
 			bool done = false;
             Byte value = 0;
-
+            Byte a = getA();
+            byte flags = getF();
             value = daa(getA());
 
             setA(value);
@@ -5831,7 +5832,7 @@ namespace trentGB
                 {
                     result += 0x06;
                 }
-                if (carryFlag || (result > 0x99))
+                if (carryFlag || (result > 0x9F))
                 {
                     result += 0x60;
                     setCarryFlag(true);

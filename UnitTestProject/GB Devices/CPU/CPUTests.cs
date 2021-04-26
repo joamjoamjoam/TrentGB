@@ -3233,6 +3233,8 @@ namespace trentGB.Tests
         }
         #endregion
 
+        // Trent Test Add and Add Carry for B
+
         #endregion
 
         #region CB OPCode Tests
