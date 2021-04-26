@@ -3379,16 +3379,20 @@ namespace trentGB
             done = true;
             return done;
         }
-        private bool incSP() //0x03
+        private bool incSP() //0x33
         {
 			bool done = false;
-            ushort value = getSP();
+            if (currentInstruction.getCycleCount() == 4)
+            {
+                currentInstruction.storage =increment16(getSP());
+                setSP(setByteInUInt16(getByteInUInt16(BytePlacement.LSB, currentInstruction.storage), BytePlacement.LSB, getSP()));
+            }
+            else if (currentInstruction.getCycleCount() == 8)
+            {
+                setSP(setByteInUInt16(getByteInUInt16(BytePlacement.MSB, currentInstruction.storage), BytePlacement.MSB, getSP()));
+                done = true;
+            }
 
-            value = increment16(value);
-
-            setSP(value);
-
-            done = true;
             return done;
         }
         private bool incHLMem() // 0x34
@@ -3454,10 +3458,17 @@ namespace trentGB
         private bool addSPtoHL() //0x39
         {
 			bool done = false;
-            setHL(add16(getHL(), getSP(), Add16Type.HL));
+            if (currentInstruction.getCycleCount() == 4)
+            {
+                currentInstruction.storage = add16(getHL(), getSP(), Add16Type.HL);
+                setL(getByteInUInt16(BytePlacement.LSB, currentInstruction.storage));
+            }
+            else if (currentInstruction.getCycleCount() == 8)
+            {
+                setH(getByteInUInt16(BytePlacement.MSB, currentInstruction.storage));
+                done = true;
+            }
 
-            // This needs to be updated when updating for cycle accurracy
-            done = true;
             return done;
         }
         private bool lddAMemHL() // 0x3A
@@ -3474,15 +3485,18 @@ namespace trentGB
         }
         private bool decSP() //0x3B
         {
-			bool done = false;
-            ushort value = getSP();
+            bool done = false;
+            if (currentInstruction.getCycleCount() == 4)
+            {
+                currentInstruction.storage = decrement16(getSP());
+                setSP(setByteInUInt16(getByteInUInt16(BytePlacement.LSB, currentInstruction.storage), BytePlacement.LSB, getSP()));
+            }
+            else if (currentInstruction.getCycleCount() == 8)
+            {
+                setSP(setByteInUInt16(getByteInUInt16(BytePlacement.MSB, currentInstruction.storage), BytePlacement.MSB, getSP()));
+                done = true;
+            }
 
-            value = decrement16(value);
-
-            setSP(value);
-
-            // This needs to be updated when updating for cycle accurracy
-            done = true;
             return done;
         }
         private bool incA() // 0x04
@@ -5328,13 +5342,23 @@ namespace trentGB
         private bool addNtoSP() // 0xE8
         {
 			bool done = false;
-            SByte offset = (SByte)fetch();
-            ushort compValue = addSP(getSP(), offset);
+            
 
-            setSP(compValue);
+            if (currentInstruction.getCycleCount() == 8)
+            {
+                SByte offset = (SByte)fetch();
+                currentInstruction.storage = addSP(getSP(), offset);
+            }
+            if (currentInstruction.getCycleCount() == 12)
+            {
+                setSP(setByteInUInt16(getByteInUInt16(BytePlacement.LSB, currentInstruction.storage), BytePlacement.LSB, getSP()));
+            }
+            else if (currentInstruction.getCycleCount() == 16)
+            {
+                setSP(setByteInUInt16(getByteInUInt16(BytePlacement.MSB, currentInstruction.storage), BytePlacement.MSB, getSP()));
+                done = true;
+            }
 
-            // This needs to be updated when updating for cycle accurracy
-            done = true;
             return done;
         }
         private bool jumpHL() // 0xE9
@@ -5477,22 +5501,34 @@ namespace trentGB
         private bool ldHLFromSPPlusN() // 0xF8
         {
 			bool done = false;
-            SByte offset = (SByte)fetch();
-            ushort compValue = addSP(getSP(), offset);
 
-            setHL(compValue);
+            if (currentInstruction.getCycleCount() == 8)
+            {
+                SByte offset = (SByte)fetch();
+                currentInstruction.storage = addSP(getSP(), offset);
+                setL(getByteInUInt16(BytePlacement.LSB, currentInstruction.storage));
+            }
+            else if (currentInstruction.getCycleCount() == 12)
+            {
+                setH(getByteInUInt16(BytePlacement.MSB, currentInstruction.storage));
+                done = true;
+            }
 
-            // This needs to be updated when updating for cycle accurracy
-            done = true;
             return done;
         }
         private bool ldSPFromHL() // 0xF9
         {
 			bool done = false;
-            setSP(getHL());
-
-            // This needs to be updated when updating for cycle accurracy
-            done = true;
+            if (currentInstruction.getCycleCount() == 4)
+            {
+                currentInstruction.storage = getHL();
+                setSP(setByteInUInt16(getByteInUInt16(BytePlacement.LSB, currentInstruction.storage), BytePlacement.LSB, getSP()));
+            }
+            else if (currentInstruction.getCycleCount() == 8)
+            {
+                setSP(setByteInUInt16(getByteInUInt16(BytePlacement.MSB, currentInstruction.storage), BytePlacement.MSB, getSP()));
+                done = true;
+            }
             return done;
         }
         private bool ld16A() // 0xFA
@@ -5617,12 +5653,12 @@ namespace trentGB
             {
                 setZeroFlag(true);
             }
-            if ((op1 & 0x0F) + (op2 & 0x0F) > 0x0F)
+            if (((op1 & 0x0F) + (op2 & 0x0F)) > 0x0F)
             {
                 // Adding LSB Nibble > 0x0F (15)
                 setHalfCarryFlag(true);
             }
-            if ((op1 & 0xFF) + (op2 & 0xFF) > 0xFF)
+            if (((op1 & 0xFF) + (op2 & 0xFF)) > 0xFF)
             {
                 // Overflow Detected result > 0xFF (255)
                 setCarryFlag(true);
@@ -5782,11 +5818,11 @@ namespace trentGB
             {
                 if (halfCarryFlag)
                 {
-                    result = (result - 6) & 0xff;
+                    result = ((result - 6) & 0xff);
                 }
                 if (carryFlag)
                 {
-                    result = (result - 0x60) & 0xff;
+                    result = ((result - 0x60) & 0xff);
                 }
             }
             else
@@ -5795,7 +5831,7 @@ namespace trentGB
                 {
                     result += 0x06;
                 }
-                if (carryFlag || result > 0x99)
+                if (carryFlag || (result > 0x99))
                 {
                     result += 0x60;
                     setCarryFlag(true);
@@ -5991,11 +6027,11 @@ namespace trentGB
                 setSubtractFlag(false);
                 setCarryFlag(false);
 
-                if ((op1 & 0x0fff) + (op2 & 0x0FFF) > 0x0FFF)
+                if (((op1 & 0x0FFF) + (op2 & 0x0FFF)) > 0x0FFF)
                 {
                     setHalfCarryFlag(true);
                 }
-                if ((op1 & 0xFFFF) + (op2 & 0xFFFF) > 0xFFFF)
+                if (((op1 & 0xFFFF) + (op2 & 0xFFFF)) > 0xFFFF)
                 {
                     // Overflow Detected result > 0xFFFF (65535)
                     setCarryFlag(true);
@@ -6010,28 +6046,6 @@ namespace trentGB
             return value;
         }
 
-        public ushort addSP(ushort sp, Byte n)
-        {
-            ushort value = (ushort)(((int)sp + (int)n) & 0xFFFF);
-            setZeroFlag(false);
-            setSubtractFlag(false);
-
-            setHalfCarryFlag(false);
-            setCarryFlag(false);
-
-            if ((((sp & 0xff) + (n & 0xff)) & 0x100) != 0)
-            {
-                // overflow
-                setCarryFlag(true);
-            }
-            if ((((sp & 0x0f) + (n & 0x0f)) & 0x10) != 0)
-            {
-                setHalfCarryFlag(true);
-
-            }
-
-            return value;
-        }
 
         public ushort addSP(ushort sp, SByte n)
         {
@@ -6042,15 +6056,14 @@ namespace trentGB
             setHalfCarryFlag(false);
             setCarryFlag(false);
 
-            if ((((sp & 0xff) + (n & 0xff)) & 0x100) != 0)
+            if ((((sp & 0xff) + (n & 0xff)) & 0x100) > 0)
             {
                 // overflow
                 setCarryFlag(true);
             }
-            if ((((sp & 0x0f) + (n & 0x0f)) & 0x10) != 0)
+            if ((((sp & 0x0f) + (n & 0x0f)) & 0x10) > 0)
             {
                 setHalfCarryFlag(true);
-
             }
 
             return value;

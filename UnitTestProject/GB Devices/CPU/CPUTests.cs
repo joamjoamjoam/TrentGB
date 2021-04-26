@@ -2862,6 +2862,95 @@ namespace trentGB.Tests
         }
         #endregion
 
+        #region 0x33 - Increment SP
+        [DataRow((ushort)0xDFFF, (ushort)0xE000)]
+        [DataRow((ushort)0xC000, (ushort)0xC001)]
+        [DataRow((ushort)0x0000, (ushort)0x0001)]
+        [DataRow((ushort)0xFFFF, (ushort)0x0000)]
+
+        [DataTestMethod]
+        [TestCategory("OP Codes")]
+        [TestCategory("OP Code 0x33 - Increment SP")]
+        public void decodeAndExecute_incSP(ushort initSP, ushort result)
+        {
+            byte opCode = 0x33;
+
+            CPU cpu = setupOpCode(opCode, MethodBase.GetCurrentMethod().Name);
+            cpu.setSP(initSP);
+            cpu.setF(0xF0);
+
+            fetchAndLoadInstruction(cpu, opCode);
+            Assert.That.AreEqual(result, cpu.getCurrentInstruction().storage, "X4", "Incremented Value was not calculated correctly");
+            Assert.That.AreEqual(((initSP & 0xFF00) + CPU.getByteInUInt16(CPU.BytePlacement.LSB, cpu.getCurrentInstruction().storage)), cpu.getSP(), "X4", "SP LSB was not set correctly");
+            tick(cpu);
+            Assert.That.AreEqual(result, cpu.getSP(), "X4", "SP MSB was not set correctly");
+            assertInstructionFinished(cpu, opCode);
+
+            Assert.That.FlagsEqual(cpu, 0xF0);
+
+        }
+        #endregion
+
+        #region 0x3B - Decrement SP
+        [DataRow((ushort)0xE000, (ushort)0xDFFF)]
+        [DataRow((ushort)0xC001, (ushort)0xC000)]
+        [DataRow((ushort)0x0001, (ushort)0x0000)]
+        [DataRow((ushort)0x0000, (ushort)0xFFFF)]
+
+        [DataTestMethod]
+        [TestCategory("OP Codes")]
+        [TestCategory("OP Code 0x3B - Decrement SP")]
+        public void decodeAndExecute_decSP(ushort initSP, ushort result)
+        {
+            byte opCode = 0x3B;
+
+            CPU cpu = setupOpCode(opCode, MethodBase.GetCurrentMethod().Name);
+            cpu.setSP(initSP);
+            cpu.setF(0xF0);
+
+            fetchAndLoadInstruction(cpu, opCode);
+            Assert.That.AreEqual(result, cpu.getCurrentInstruction().storage, "X4", "Incremented Value was not calculated correctly");
+            Assert.That.AreEqual(((initSP & 0xFF00) + CPU.getByteInUInt16(CPU.BytePlacement.LSB, cpu.getCurrentInstruction().storage)), cpu.getSP(), "X4", "SP LSB was not set correctly");
+            tick(cpu);
+            Assert.That.AreEqual(result, cpu.getSP(), "X4", "SP MSB was not set correctly");
+            assertInstructionFinished(cpu, opCode);
+
+            Assert.That.FlagsEqual(cpu, 0xF0);
+
+        }
+        #endregion
+
+        #region 0x39 - Add SP to HL
+        [DataRow((ushort)0x0FFF, (ushort)0x0001, (ushort)0x1000, (Byte)0xF0, (Byte)0xA0)]
+        [DataRow((ushort)0xFFFF, (ushort)0x0001, (ushort)0x0000, (Byte)0xF0, (Byte)0xB0)]
+        [DataRow((ushort)0x0100, (ushort)0x0100, (ushort)0x0200, (Byte)0xF0, (Byte)0x80)]
+        [DataRow((ushort)0x6FFF, (ushort)0x0001, (ushort)0x7000, (Byte)0xF0, (Byte)0xA0)]
+
+        [DataTestMethod]
+        [TestCategory("OP Codes")]
+        [TestCategory("OP Code 0x39 - Add SP to HL")]
+        public void decodeAndExecute_addSPToHL(ushort sp, ushort hl, ushort result, byte initFlags, byte expectedFlags)
+        {
+            byte opCode = 0x39;
+
+            CPU cpu = setupOpCode(opCode, MethodBase.GetCurrentMethod().Name);
+            cpu.setSP(sp);
+            cpu.setHL(hl);
+            cpu.setF(initFlags);
+
+            fetchAndLoadInstruction(cpu, opCode);
+            Assert.That.AreEqual(result, cpu.getCurrentInstruction().storage, "X4", "Value was not calculated correctly");
+            Assert.That.AreEqual(CPU.getByteInUInt16(CPU.BytePlacement.LSB, result), cpu.getL(), "X4", "L was not calculated correctly");
+            tick(cpu);
+            Assert.That.AreEqual(CPU.getByteInUInt16(CPU.BytePlacement.MSB,result), cpu.getH(), "X4", "H was not calculated correctly");
+            Assert.That.AreEqual(result, cpu.getHL(), "X4", "Result was not calculated correctly");
+            assertInstructionFinished(cpu, opCode);
+
+            Assert.That.FlagsEqual(cpu, expectedFlags);
+
+        }
+        #endregion
+
         #region 0xC9 - Ret
         [DataRow((byte)0x00, (byte)0xC0, (ushort)0xC000)]
         [DataRow((byte)0xFF, (byte)0xAF, (ushort)0xAFFF)]
@@ -2990,6 +3079,112 @@ namespace trentGB.Tests
             tick(cpu);
             assertInstructionFinished(cpu, opCode);
             Assert.That.AreEqual(result, cpu.getA());
+
+            Assert.That.FlagsEqual(cpu, expectedFlags);
+
+        }
+        #endregion
+
+        #region 0xF9 - Load SP With HL
+        [DataRow((ushort)0xE000, (ushort)0xDFFF, (ushort)0xDFFF)]
+        [DataRow((ushort)0xE000, (ushort)0x0000, (ushort)0x0000)]
+        [DataRow((ushort)0xE000, (ushort)0xFFFF, (ushort)0xFFFF)]
+
+        [DataTestMethod]
+        [TestCategory("OP Codes")]
+        [TestCategory("OP Code 0xF9 - Load SP With HL")]
+        public void decodeAndExecute_ldSPFromHL(ushort initSP, ushort hl, ushort result)
+        {
+            byte opCode = 0xF9;
+
+            CPU cpu = setupOpCode(opCode, MethodBase.GetCurrentMethod().Name);
+            cpu.setSP(initSP);
+            cpu.setHL(hl);
+            cpu.setF(0xF0);
+
+            fetchAndLoadInstruction(cpu, opCode);
+            Assert.That.AreEqual(hl, cpu.getCurrentInstruction().storage, "X4", "HL was not loaded correctly");
+            Assert.That.AreEqual(((initSP & 0xFF00) + CPU.getByteInUInt16(CPU.BytePlacement.LSB, cpu.getCurrentInstruction().storage)), cpu.getSP(), "X4", "SP LSB was not set correctly");
+            tick(cpu);
+            Assert.That.AreEqual(result, cpu.getSP(), "X4", "SP MSB was not set correctly");
+            assertInstructionFinished(cpu, opCode);
+
+            Assert.That.FlagsEqual(cpu, 0xF0);
+
+        }
+        #endregion
+
+        #region 0xE8 - Add N to SP
+        [DataRow((ushort)0x0FFF, (SByte)0x01, (ushort)0x1000, (Byte)0xF0, (Byte)0x30)]
+        [DataRow((ushort)0xFFFF, (SByte)0x01, (ushort)0x0000, (Byte)0xF0, (Byte)0x30)]
+        [DataRow((ushort)0x0100, (SByte)0x10, (ushort)0x0110, (Byte)0xF0, (Byte)0x00)]
+        [DataRow((ushort)0xFF0F, (SByte)0x01, (ushort)0xFF10, (Byte)0xF0, (Byte)0x20)]
+        [DataRow((ushort)0x6FFF, (SByte)0x01, (ushort)0x7000, (Byte)0xF0, (Byte)0x30)]
+
+        [DataRow((ushort)0x1000, (SByte)(-1), (ushort)0x0FFF, (Byte)0xF0, (Byte)0x00)]
+        [DataRow((ushort)0x0000, (SByte)(-1), (ushort)0xFFFF, (Byte)0xF0, (Byte)0x00)]
+        [DataRow((ushort)0x0110, (SByte)(-0x10), (ushort)0x0100, (Byte)0xF0, (Byte)0x10)]
+        [DataRow((ushort)0xFF10, (SByte)(-1), (ushort)0xFF0F, (Byte)0xF0, (Byte)0x10)]
+        [DataRow((ushort)0x7000, (SByte)(-1), (ushort)0x6FFF, (Byte)0xF0, (Byte)0x00)]
+
+        [DataTestMethod]
+        [TestCategory("OP Codes")]
+        [TestCategory("OP Code 0xE8 - Add N to SP")]
+        public void decodeAndExecute_addNtoSP(ushort sp, SByte n, ushort result, byte initFlags, byte expectedFlags)
+        {
+            byte opCode = 0xE8;
+
+            CPU cpu = setupOpCode(opCode, MethodBase.GetCurrentMethod().Name, (Byte)n);
+            cpu.setSP(sp);
+            cpu.setF(initFlags);
+
+            fetchAndLoadInstruction(cpu, opCode);
+            tick(cpu);
+            Assert.That.AreEqual(result, cpu.getCurrentInstruction().storage, "X4", "Result was not Calculated correctly");
+            tick(cpu);
+            Assert.That.AreEqual(((sp & 0xFF00) + CPU.getByteInUInt16(CPU.BytePlacement.LSB, cpu.getCurrentInstruction().storage)), cpu.getSP(), "X4", "SP LSB was not set correctly");
+            tick(cpu);
+            Assert.That.AreEqual(result, cpu.getSP(), "X4", "SP MSB was not set correctly");
+            assertInstructionFinished(cpu, opCode);
+
+            Assert.That.FlagsEqual(cpu, expectedFlags);
+
+        }
+        #endregion
+
+        #region 0xF8 - Load HL from SP Plus N
+        [DataRow((ushort)0x0FFF, (SByte)0x01, (ushort)0x1000, (Byte)0xF0, (Byte)0x30)]
+        [DataRow((ushort)0xFFFF, (SByte)0x01, (ushort)0x0000, (Byte)0xF0, (Byte)0x30)]
+        [DataRow((ushort)0x0100, (SByte)0x10, (ushort)0x0110, (Byte)0xF0, (Byte)0x00)]
+        [DataRow((ushort)0xFF0F, (SByte)0x01, (ushort)0xFF10, (Byte)0xF0, (Byte)0x20)]
+        [DataRow((ushort)0x6FFF, (SByte)0x01, (ushort)0x7000, (Byte)0xF0, (Byte)0x30)]
+
+        [DataRow((ushort)0x1000, (SByte)(-1), (ushort)0x0FFF, (Byte)0xF0, (Byte)0x00)]
+        [DataRow((ushort)0x0000, (SByte)(-1), (ushort)0xFFFF, (Byte)0xF0, (Byte)0x00)]
+        [DataRow((ushort)0x0110, (SByte)(-0x10), (ushort)0x0100, (Byte)0xF0, (Byte)0x10)]
+        [DataRow((ushort)0xFF10, (SByte)(-1), (ushort)0xFF0F, (Byte)0xF0, (Byte)0x10)]
+        [DataRow((ushort)0x7000, (SByte)(-1), (ushort)0x6FFF, (Byte)0xF0, (Byte)0x00)]
+
+        [DataTestMethod]
+        [TestCategory("OP Codes")]
+        [TestCategory("OP Code 0xF8 - Load HL from SP Plus N")]
+        public void decodeAndExecute_laodHLSPPlusN(ushort sp, SByte n, ushort result, byte initFlags, byte expectedFlags)
+        {
+            byte opCode = 0xF8;
+
+            CPU cpu = setupOpCode(opCode, MethodBase.GetCurrentMethod().Name, (Byte) n);
+            cpu.setSP(sp);
+            cpu.setHL(0x0000);
+            cpu.setF(initFlags);
+
+            fetchAndLoadInstruction(cpu, opCode);
+            tick(cpu);
+            Assert.That.AreEqual(result, cpu.getCurrentInstruction().storage, "X4", "Value was not calculated correctly");
+            Assert.That.AreEqual(CPU.getByteInUInt16(CPU.BytePlacement.LSB, result), cpu.getL(), "X4", "L was not calculated correctly");
+            tick(cpu);
+            assertInstructionFinished(cpu, opCode);
+            Assert.That.AreEqual(CPU.getByteInUInt16(CPU.BytePlacement.MSB, result), cpu.getH(), "X4", "H was not calculated correctly");
+            Assert.That.AreEqual(result, cpu.getHL(), "X4", "Result was not set in HL correctly");
 
             Assert.That.FlagsEqual(cpu, expectedFlags);
 
@@ -4356,14 +4551,26 @@ public static class AssertExtensions
         {
             message = $"Mismatch Found: ({expected}, {actual})";
         }
-
-        Assert.AreEqual(expected, actual, message);
         format = format.Trim();
-        // Successful Exception
         String expectedStr = $"{((format.StartsWith("X")) ? "0x" : "")}{expected.ToString(format)}";
         String actualStr = $"{((format.StartsWith("X")) ? "0x" : "")}{actual.ToString(format)}";
+        try
+        {
+            Assert.AreEqual(expected, actual, message);
+            
+            // Successful
 
-        Console.WriteLine($"Match Found: ({expectedStr}, {actualStr})");
+            Console.WriteLine($"Match Found: ({expectedStr}, {actualStr})");
+        }
+        catch(AssertFailedException e)
+        {
+            Console.WriteLine($"Match NOT Found: ({expectedStr}, {actualStr})");
+            throw;
+        }
+
+
+
+        
     }
 
     public static void FlagsEqual(this Assert assert, CPU cpu, bool halfCarrySet, bool carrySet, bool subSet, bool zeroSet, String message = "")
