@@ -3499,7 +3499,7 @@ namespace trentGB
 
             return done;
         }
-        private bool incA() // 0x04
+        private bool incA() // 0x3C
         {
 			bool done = false;
             Byte value = getA();
@@ -5987,7 +5987,7 @@ namespace trentGB
 
         public Byte sra(byte value)
         {
-            Byte rv = (Byte)(((((int)value) >> 1) | (((int)value) & 0x80)) & 0xFF);
+            Byte rv = (Byte)(((((int)value) >> 1) | ((((int)value) & 0x80)) & 0xFF));
 
             setSubtractFlag(false);
             setHalfCarryFlag(false);

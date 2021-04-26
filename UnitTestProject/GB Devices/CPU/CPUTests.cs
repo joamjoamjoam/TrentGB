@@ -3950,7 +3950,7 @@ namespace trentGB.Tests
         }
         #endregion
 
-        #region 0xCB 0x0E - Rotate Right Mem HL
+        #region 0xCB 0x0E - Rotate Right Carry Mem HL
         [DataRow((ushort)0xC000, (byte)0x01, (Byte)0x80, false, true)]
         [DataRow((ushort)0xC000, (byte)0x01, (Byte)0x80, true, true)]
         [DataRow((ushort)0xC000, (byte)0x80, (Byte)0x40, false, false)]
@@ -4537,6 +4537,178 @@ namespace trentGB.Tests
         }
         #endregion
 
+        #region 0xCB 0x18 - Rotate Right B
+        [DataRow((byte)0x00, (Byte)0x80, true, false)]
+        [DataRow((byte)0x01, (Byte)0x80, true, true)]
+        [DataRow((byte)0x80, (Byte)0x40, false, false)]
+        [DataRow((byte)0x81, (Byte)0x40, false, true)]
+        [DataRow((byte)0x00, (Byte)0x00, false, false)]
+        [DataRow((byte)0x00, (Byte)0x80, true, false)]
+        [DataRow((byte)0x01, (Byte)0x00, false, true)]
+        [DataRow((byte)0xFE, (Byte)0xFF, true, false)]
+        [DataRow((byte)0xFF, (Byte)0xFF, true, true)]
+        [DataRow((byte)0xFF, (Byte)0x7F, false, true)]
+        [DataRow((byte)0x1E, (Byte)0x0F, false, false)]
+        [DataRow((byte)0x1E, (Byte)0x8F, true, false)]
+        [DataTestMethod]
+        [TestCategory("OP Codes")]
+        [TestCategory("OP Code 0xCB 0x18 - Rotate Right B")]
+        public void decodeAndExecute_CB_rrB(byte op1, byte result, bool carryState, bool carryAfterState)
+        {
+            byte opCode = 0x18;
+
+            CPU cpu = setupOpCode(0xCB, MethodBase.GetCurrentMethod().Name, opCode);
+            cpu.setF((Byte)(((carryState) ? (byte)CPU.CPUFlagsMask.Carry : (byte)0) | (Byte)CPU.CPUFlagsMask.Subtract | (Byte)CPU.CPUFlagsMask.HalfCarry));
+            cpu.setB(op1);
+
+            byte expectedFlags = (Byte)((((carryAfterState) ? (byte)CPU.CPUFlagsMask.Carry : (byte)0)) + (((result == 0) ? (byte)CPU.CPUFlagsMask.Zero : (byte)0)));
+
+            fetchAndLoadInstruction(cpu, 0xCB);
+            Assert.That.AreEqual(op1, cpu.getB());
+            if (carryState)
+            {
+                Assert.IsTrue(cpu.getCarryFlag());
+            }
+            else
+            {
+                Assert.IsFalse(cpu.getCarryFlag());
+            }
+            tick(cpu);
+            assertInstructionFinished(cpu, 0xCB, opCode);
+            Assert.That.AreEqual(result, cpu.getB());
+
+            if (carryAfterState)
+            {
+                Assert.IsTrue(cpu.getCarryFlag());
+            }
+            else
+            {
+                Assert.IsFalse(cpu.getCarryFlag());
+            }
+
+            if (result == 0)
+            {
+                Assert.IsTrue(cpu.getZeroFlag());
+            }
+            else
+            {
+                Assert.IsFalse(cpu.getZeroFlag());
+            }
+
+            Assert.That.FlagsEqual(cpu, expectedFlags);
+
+        }
+        #endregion
+
+        #region 0xCB 0x20 - Shift Left B
+        [DataRow((byte)0xFF, (Byte)0xFE, (byte)0xF0, (Byte)0x10)]
+        [DataRow((byte)0x80, (Byte)0x00, (byte)0xF0, (Byte)0x90)]
+        [DataTestMethod]
+        [TestCategory("OP Codes")]
+        [TestCategory("OP Code 0xCB 0x20 - Shift Left B")]
+        public void decodeAndExecute_CB_slB(byte op1, byte result, byte initFlags, byte expectedFlags)
+        {
+            byte opCode = 0x20;
+
+            CPU cpu = setupOpCode(0xCB, MethodBase.GetCurrentMethod().Name, opCode);
+            cpu.setF(initFlags);
+            cpu.setB(op1);
+
+            fetchAndLoadInstruction(cpu, 0xCB);
+            Assert.That.AreEqual(op1, cpu.getB());
+            tick(cpu);
+            assertInstructionFinished(cpu, 0xCB, opCode);
+            Assert.That.AreEqual(result, cpu.getB());
+
+            Assert.That.FlagsEqual(cpu, expectedFlags);
+
+        }
+        #endregion
+
+        #region 0xCB 0x28 - SRA B
+        [DataRow((byte)0xFF, (Byte)0xFF, (byte)0xF0, (Byte)0x10)]
+        [DataRow((byte)0xFF, (Byte)0xFF, (byte)0x00, (Byte)0x10)]
+        [DataRow((byte)0x80, (Byte)0xC0, (byte)0x00, (Byte)0x00)]
+        [DataRow((byte)0x80, (Byte)0xC0, (byte)0xF0, (Byte)0x00)]
+        [DataRow((byte)0x81, (Byte)0xC0, (byte)0xF0, (Byte)0x10)]
+        [DataTestMethod]
+        [TestCategory("OP Codes")]
+        [TestCategory("OP Code 0xCB 0x28 - SRA B")]
+        public void decodeAndExecute_CB_sraB(byte op1, byte result, byte initFlags, byte expectedFlags)
+        {
+            byte opCode = 0x28;
+
+            CPU cpu = setupOpCode(0xCB, MethodBase.GetCurrentMethod().Name, opCode);
+            cpu.setF(initFlags);
+            cpu.setB(op1);
+
+            fetchAndLoadInstruction(cpu, 0xCB);
+            Assert.That.AreEqual(op1, cpu.getB());
+            tick(cpu);
+            assertInstructionFinished(cpu, 0xCB, opCode);
+            Assert.That.AreEqual(result, cpu.getB());
+
+            Assert.That.FlagsEqual(cpu, expectedFlags);
+
+        }
+        #endregion
+
+        #region 0xCB 0x30 - Swap B
+        [DataRow((byte)0xF0, (Byte)0x0F, (byte)0xF0, (Byte)0x00)]
+        [DataRow((byte)0x32, (Byte)0x23, (byte)0x00, (Byte)0x00)]
+        [DataRow((byte)0x1F, (Byte)0xF1, (byte)0x00, (Byte)0x00)]
+        [DataRow((byte)0x86, (Byte)0x68, (byte)0xF0, (Byte)0x00)]
+        [DataRow((byte)0x00, (Byte)0x00, (byte)0xF0, (Byte)0x80)]
+        [DataTestMethod]
+        [TestCategory("OP Codes")]
+        [TestCategory("OP Code 0xCB 0x30 - Swap B")]
+        public void decodeAndExecute_CB_swapB(byte op1, byte result, byte initFlags, byte expectedFlags)
+        {
+            byte opCode = 0x30;
+
+            CPU cpu = setupOpCode(0xCB, MethodBase.GetCurrentMethod().Name, opCode);
+            cpu.setF(initFlags);
+            cpu.setB(op1);
+
+            fetchAndLoadInstruction(cpu, 0xCB);
+            Assert.That.AreEqual(op1, cpu.getB());
+            tick(cpu);
+            assertInstructionFinished(cpu, 0xCB, opCode);
+            Assert.That.AreEqual(result, cpu.getB());
+
+            Assert.That.FlagsEqual(cpu, expectedFlags);
+
+        }
+        #endregion
+
+        #region 0xCB 0x38 - SRL B
+        [DataRow((byte)0xFF, (Byte)0x7F, (byte)0xF0, (Byte)0x10)]
+        [DataRow((byte)0xFF, (Byte)0x7F, (byte)0x00, (Byte)0x10)]
+        [DataRow((byte)0x80, (Byte)0x40, (byte)0x00, (Byte)0x00)]
+        [DataRow((byte)0x81, (Byte)0x40, (byte)0x00, (Byte)0x10)]
+        [DataRow((byte)0x80, (Byte)0x40, (byte)0xF0, (Byte)0x00)]
+        [DataRow((byte)0x81, (Byte)0x40, (byte)0xF0, (Byte)0x10)]
+        [DataTestMethod]
+        [TestCategory("OP Codes")]
+        [TestCategory("OP Code 0xCB 0x38 - SRL B")]
+        public void decodeAndExecute_CB_srlB(byte op1, byte result, byte initFlags, byte expectedFlags)
+        {
+            byte opCode = 0x38;
+
+            CPU cpu = setupOpCode(0xCB, MethodBase.GetCurrentMethod().Name, opCode);
+            cpu.setF(initFlags);
+            cpu.setB(op1);
+
+            fetchAndLoadInstruction(cpu, 0xCB);
+            Assert.That.AreEqual(op1, cpu.getB());
+            tick(cpu);
+            assertInstructionFinished(cpu, 0xCB, opCode);
+            Assert.That.AreEqual(result, cpu.getB());
+
+            Assert.That.FlagsEqual(cpu, expectedFlags);
+
+        }
+        #endregion
 
 
         #endregion

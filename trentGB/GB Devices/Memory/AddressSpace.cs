@@ -227,7 +227,16 @@ namespace trentGB
         public byte peekByte(ushort address)
         {
             // Used for Cycle Inaccurate Memory Access for Debugging
-            return bytes[address];
+            byte rv = 0;
+            if (address > 0x0000 && address <= 0x7FFF)
+            {
+                rv = rom.peekByte(address);
+            }
+            else
+            {
+                rv = bytes[address];
+            }
+            return rv;
         }
 
         //public byte[] getBytes(ushort address, ushort count)
@@ -362,7 +371,12 @@ namespace trentGB
         {
             Dictionary<string, String> rv = new Dictionary<string, string>();
 
-            for (int addr = 0; addr <= 0xFFFF; addr++)
+            for (int addr = 0; addr <= 0x7FFF; addr++)
+            {
+                rv.Add(addr.ToString("X4"), rom.peekByte(addr).ToString("X2"));
+            }
+
+            for (int addr = 0x8000; addr <= 0xFFFF; addr++)
             {
                 rv.Add(addr.ToString("X4"), bytes[addr].ToString("X2"));
             }

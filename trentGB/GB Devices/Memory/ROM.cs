@@ -215,6 +215,11 @@ namespace trentGB
         {
             return bytes;
         }
+
+        public byte peekByte(int address)
+        {
+            return bytes[address];
+        }
         public byte getByteDirect(int address)
         {
             return bytes[address];
