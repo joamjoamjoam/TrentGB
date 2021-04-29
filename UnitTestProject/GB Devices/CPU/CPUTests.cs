@@ -2077,6 +2077,70 @@ namespace trentGB.Tests
         }
         #endregion
 
+        #region 0x80 - Add B to A
+        //[DataRow((byte)0xFF, (Byte)0xFF, (Byte)0xFE, (Byte)0xF0, (Byte)0x30)]
+        [DataRow((byte)0xF0, (Byte)0xFF, (Byte)0xEF, (Byte)0xF0, (Byte)0x10)]
+        [DataRow((byte)0xFF, (Byte)0x01, (Byte)0x00, (Byte)0xF0, (Byte)0xB0)]
+        [DataRow((byte)0xF0, (Byte)0x0F, (Byte)0xFF, (Byte)0xF0, (Byte)0x00)]
+        [DataRow((byte)0x0F, (Byte)0x01, (Byte)0x10, (Byte)0xF0, (Byte)0x20)]
+        [DataRow((byte)0x01, (Byte)0x0F, (Byte)0x10, (Byte)0xF0, (Byte)0x20)]
+
+        [DataTestMethod]
+        [TestCategory("OP Codes")]
+        [TestCategory("OP Code 0x80 - Add B to A")]
+        public void decodeAndExecute_addBToA(byte a, byte b, Byte result, byte initialFlags, byte expectedFlags)
+        {
+            byte opCode = 0x80;
+
+            CPU cpu = setupOpCode(opCode, MethodBase.GetCurrentMethod().Name);
+            cpu.setF(initialFlags);
+            cpu.setA(a);
+            cpu.setB(b);
+
+            fetchAndLoadInstruction(cpu, opCode);
+            assertInstructionFinished(cpu, opCode);
+            Assert.That.AreEqual(result, cpu.getA());
+
+            Assert.That.FlagsEqual(cpu, expectedFlags);
+
+        }
+        #endregion
+
+        #region 0x88 - Add Carry B to A
+        //[DataRow((byte)0xFF, (Byte)0xFF, (Byte)0xFE, (Byte)0xF0, (Byte)0x30)]
+        [DataRow((byte)0xF0, (Byte)0xFE, (Byte)0xEF, (Byte)0xF0, (Byte)0x10)]
+        [DataRow((byte)0xFF, (Byte)0x00, (Byte)0x00, (Byte)0xF0, (Byte)0xB0)]
+        [DataRow((byte)0xF0, (Byte)0x0E, (Byte)0xFF, (Byte)0xF0, (Byte)0x00)]
+        [DataRow((byte)0x0F, (Byte)0x00, (Byte)0x10, (Byte)0xF0, (Byte)0x20)]
+        [DataRow((byte)0x01, (Byte)0x0E, (Byte)0x10, (Byte)0xF0, (Byte)0x20)]
+
+        [DataRow((byte)0xF0, (Byte)0xFF, (Byte)0xEF, (Byte)0x00, (Byte)0x10)]
+        [DataRow((byte)0xFF, (Byte)0x01, (Byte)0x00, (Byte)0x00, (Byte)0xB0)]
+        [DataRow((byte)0xF0, (Byte)0x0F, (Byte)0xFF, (Byte)0x00, (Byte)0x00)]
+        [DataRow((byte)0x0F, (Byte)0x01, (Byte)0x10, (Byte)0x00, (Byte)0x20)]
+        [DataRow((byte)0x01, (Byte)0x0F, (Byte)0x10, (Byte)0x00, (Byte)0x20)]
+
+        [DataTestMethod]
+        [TestCategory("OP Codes")]
+        [TestCategory("OP Code 0x88 - Add Carry B to A")]
+        public void decodeAndExecute_addCarryBToA(byte a, byte b, Byte result, byte initialFlags, byte expectedFlags)
+        {
+            byte opCode = 0x88;
+
+            CPU cpu = setupOpCode(opCode, MethodBase.GetCurrentMethod().Name);
+            cpu.setF(initialFlags);
+            cpu.setA(a);
+            cpu.setB(b);
+
+            fetchAndLoadInstruction(cpu, opCode);
+            assertInstructionFinished(cpu, opCode);
+            Assert.That.AreEqual(result, cpu.getA());
+
+            Assert.That.FlagsEqual(cpu, expectedFlags);
+
+        }
+        #endregion
+
         #region 0x90 - Subtract B from A
         [DataRow((byte)0xFF, (Byte)0xFF, (Byte)0x00, (Byte)0xF0, (Byte)0xC0)]
         [DataRow((byte)0x01, (Byte)0xFF, (Byte)0xFE, (Byte)0xF0, (Byte)0x40)]
@@ -3233,7 +3297,7 @@ namespace trentGB.Tests
         }
         #endregion
 
-        // Trent Test Add and Add Carry for B
+        // trent Check IME is Enabled Porperly
 
         #endregion
 

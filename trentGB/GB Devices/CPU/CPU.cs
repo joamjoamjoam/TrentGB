@@ -388,6 +388,8 @@ namespace trentGB
         public bool shouldDisableInterrupts = false;
         public bool shouldEnableInterrupts = false;
         private long ticksSinceLastCycle = 0;
+        private long timerTickSinceLastCycle = 0;
+        private long tmaTickSinceLastCycle = 0;
 
         public delegate void DebugFormHandler();
         public event EventHandler ShowDebugForm;
@@ -444,6 +446,7 @@ namespace trentGB
             rv.Add("HL", $"{getHL().ToString("X4")}");
             rv.Add("SP", $"{getSP().ToString("X4")}");
             rv.Add("PC", $"{getPC().ToString("X4")}");
+            rv.Add("IME", IME.ToString().ToUpper());
             rv.Add("A", $"{getA().ToString("X2")}");
             rv.Add("B", $"{getB().ToString("X2")}");
             rv.Add("C", $"{getC().ToString("X2")}");
@@ -569,11 +572,41 @@ namespace trentGB
             return $"Current Inst. = {((getCurrentInstruction() == null) ? "NULL" : getCurrentInstruction().ToString())} AF = 0x{getAF().ToString("X4")}, BC = 0x{getBC().ToString("X4")}, DE = 0x{getDE().ToString("X4")}, HL = 0x{getHL().ToString("X4")}, SP = 0x{getSP().ToString("X4")}, PC = 0x{getPC().ToString("X4")}, A = 0x{getA().ToString("X2")}, B = 0x{getB().ToString("X2")}, C = 0x{getC().ToString("X2")}, D = 0x{getD().ToString("X2")}, E = 0x{getE().ToString("X2")}, H = 0x{getH().ToString("X2")}, L = 0x{getL().ToString("X2")}, F = 0x{getF().ToString("X2")} ({generateFlagsStr()}), (BC) = 0x{mem.peekByte(getBC()).ToString("X2")}, (DE) = 0x{mem.peekByte(getDE()).ToString("X2")}, (HL) = 0x{mem.peekByte(getHL()).ToString("X2")}";
         }
 
+        private int getTMATickInterval()
+        {
+            // in Hz
+            int rv = 0;
+            SpeedMode mode = getSpeedMode();
+
+            switch (getByte(0xFF07) & 0x03)
+            {
+                case 0:
+                    rv = (mode == SpeedMode.CGBDoubleSpeed) ? 4096 : 8192;
+                    break;
+                case 1:
+                    rv = (mode == SpeedMode.CGBDoubleSpeed) ? 262144 : 524288;
+                    break;
+                case 2:
+                    rv = (mode == SpeedMode.CGBDoubleSpeed) ? 65536 : 131072;
+                    break;
+                case 3:
+                    rv = (mode == SpeedMode.CGBDoubleSpeed) ? 16384 : 32768;
+                    break;
+            }
+
+            return rv;
+
+        }
+        bool timaOverflowLastCycle = false;
+        bool timatransitionedThisCycle = false;
+        int interruptCycle = 0;
         public void tick()
         {
+            // Called at 4.194Mhz
             bool shouldPerformCycle = false;
             ticksSinceLastCycle++;
-            if (getSpeedMode() == SpeedMode.CGBDoubleSpeed)
+            SpeedMode mode = getSpeedMode();
+            if (mode == SpeedMode.CGBDoubleSpeed)
             {
                 // Should Cycle evry 2 ticks 2.10 MHz or ~ clocks 4.194/2
                 if (ticksSinceLastCycle == 2)
@@ -592,6 +625,74 @@ namespace trentGB
                 }
             }
 
+            if (state != CPUState.Stopped)
+            {
+                timerTickSinceLastCycle++;
+                // Check if we need to tick the Timer Divider Reg (FF04)
+                if (((mode == SpeedMode.CGBDoubleSpeed) && (timerTickSinceLastCycle == 128)) || ((mode != SpeedMode.CGBDoubleSpeed) && (timerTickSinceLastCycle == 256)))
+                {
+                    // Double Speed tick at 32768 Hz
+                    // Single Speed tick at 16384 Hz
+
+                    timerTickSinceLastCycle = 0;
+                    Byte tdiv = getByte(0xFF04);
+                    if (tdiv == 254)
+                    {
+                        // Overfow
+                        tdiv = 0;
+                        mem.setByte(null, 0xFF04, tdiv);
+                    }
+                    else
+                    {
+                        tdiv++;
+                        mem.setByte(null, 0xFF04, tdiv);
+                    }
+                }
+
+
+
+                if ((getByte(0xFF07) & 0x04) > 0) // Get Timer Enabled Bit
+                {
+                    tmaTickSinceLastCycle++;
+                    double tmaIntinCPUTicks = 4.194f / getTMATickInterval();
+
+                    // Check if we need to tick the Timer Reg (FF05)
+                    if (tmaTickSinceLastCycle >= tmaIntinCPUTicks)
+                    {
+
+                        tmaTickSinceLastCycle = 0;
+                        Byte tdiv = getByte(0xFF05);
+                        if (tdiv == 254)
+                        {
+                            // Overfow
+                            tdiv = 0;
+                            setByte(0xFF05, tdiv); // Set tma to 00 as the rest to TMA and interrupt are delayed one CPU cycle
+                            timaOverflowLastCycle = true;
+                            timatransitionedThisCycle = false;
+                        }
+                        else
+                        {
+                            tdiv++;
+                            setByte(0xFF05, tdiv);
+                        }
+                    }
+                }
+                else
+                {
+                    tmaTickSinceLastCycle = 0;
+                }
+
+
+            }
+            else
+            {
+                timerTickSinceLastCycle = 0;
+            }
+
+
+
+
+
             if (shouldPerformCycle)
             {
                 //if (nextInstruction == 0x10)
@@ -600,6 +701,15 @@ namespace trentGB
 
                 //    // lcd.stop();
                 //}
+
+                // Handle TIMA Delay
+                if (!timatransitionedThisCycle && timaOverflowLastCycle)
+                {
+                    setByte(0xFF05, getByte(0xFF06)); // Set tma to modulo in FF06
+                    requestInterrupt(InterruptType.Timer);
+                    timaOverflowLastCycle = false;
+                    timatransitionedThisCycle = false;
+                }
 
                 // Check For Interrupts
 
@@ -673,6 +783,7 @@ namespace trentGB
                         //throw new ArgumentException($"Operation Reported Complete But not all Cycles were Used. {currentInstruction.ToString()}");
                     }
                 }
+                timatransitionedThisCycle = false;
             }
         }
 
@@ -921,12 +1032,12 @@ namespace trentGB
             {
                 // Store it and reset for a new instruction
                 commandHistoryList.Push(currentInstruction);
-                if (enableInterrupts)
+                if (enableInterrupts && shouldEnableInterrupts)
                 {
                     IME = true;
                     shouldEnableInterrupts = false;
                 }
-                if (disableInterrupts)
+                if (disableInterrupts && shouldDisableInterrupts)
                 {
                     IME = false;
                     shouldDisableInterrupts = false;
@@ -2452,6 +2563,12 @@ namespace trentGB
             return ((getByte(0xFF0F) & (int)type) > 0);
         }
 
+        private void requestInterrupt(InterruptType type)
+        {
+            Byte flags = (Byte)(getByte(0xFF0F) | (Byte)type);
+            setByte(0xFF0F, flags);
+        }
+
         private bool isInterruptEnabled(InterruptType type)
         {
             bool rv = false;
@@ -2469,36 +2586,60 @@ namespace trentGB
         {
             // SHould Break this out to make it cycle accurate later
             bool rv = false;
-            IME = false;
+            
             Byte handlerAddress = 0;
-
-            switch (type)
+            interruptCycle++;
+            if (interruptCycle == 1)
             {
-                case InterruptType.VBlank:
-                    handlerAddress = 0x40;
-                    setByte(0xFF0F, (Byte)((getByte(0xFF0F) & ~(int)type)));
-                    break;
-                case InterruptType.LCDStat:
-                    handlerAddress = 0x48;
-                    setByte(0xFF0F, (Byte)((getByte(0xFF0F) & ~(int)type)));
-                    break;
-                case InterruptType.Timer:
-                    handlerAddress = 0x50;
-                    setByte(0xFF0F, (Byte)((getByte(0xFF0F) & ~(int)type)));
-                    break;
-                case InterruptType.Serial:
-                    handlerAddress = 0x58;
-                    setByte(0xFF0F, (Byte)((getByte(0xFF0F) & ~(int)type)));
-                    break;
-                case InterruptType.Joypad:
-                    handlerAddress = 0x60;
-                    setByte(0xFF0F, (Byte)((getByte(0xFF0F) & ~(int)type)));
-                    break;
+                // NOP
             }
-
-            pushOnStack(getPC());
-            setPC(handlerAddress);
-            state = CPUState.Running;
+            else if (interruptCycle == 2)
+            {
+                // NOP
+            }
+            else if (interruptCycle == 3)
+            {
+                // Push PC LSB
+                pushOnStack(getByteInUInt16(BytePlacement.LSB, getPC()));
+            }
+            else if (interruptCycle == 4)
+            {
+                // Push PC MSB
+                pushOnStack(getByteInUInt16(BytePlacement.MSB, getPC()));
+            }
+            else if (interruptCycle == 5)
+            {
+                // Set Interrupt Handler and clear bit
+                switch (type)
+                {
+                    case InterruptType.VBlank:
+                        handlerAddress = 0x0040;
+                        setByte(0xFF0F, (Byte)((getByte(0xFF0F) & ~(int)type)));
+                        break;
+                    case InterruptType.LCDStat:
+                        handlerAddress = 0x0048;
+                        setByte(0xFF0F, (Byte)((getByte(0xFF0F) & ~(int)type)));
+                        break;
+                    case InterruptType.Timer:
+                        handlerAddress = 0x0050;
+                        setByte(0xFF0F, (Byte)((getByte(0xFF0F) & ~(int)type)));
+                        break;
+                    case InterruptType.Serial:
+                        handlerAddress = 0x0058;
+                        setByte(0xFF0F, (Byte)((getByte(0xFF0F) & ~(int)type)));
+                        break;
+                    case InterruptType.Joypad:
+                        handlerAddress = 0x0060;
+                        setByte(0xFF0F, (Byte)((getByte(0xFF0F) & ~(int)type)));
+                        break;
+                }
+                IME = false;
+                setPC(handlerAddress);
+                state = CPUState.Running;
+                interruptCycle = 0;
+            }
+            
+            
 
             return rv;
         }
@@ -2983,6 +3124,7 @@ namespace trentGB
             if (command == 0x00)
             {
                 state = CPUState.Stopped;
+                setByte(0xFF04, 0); // Clear Timer Div Register
             }
             else
             {
@@ -5602,7 +5744,7 @@ namespace trentGB
         #region 8-Bit Math Functions
         public Byte increment(Byte value)
         {
-            byte result = (byte)((((int)value) + 1) & 0xFF);
+            byte result = (byte)((((UInt32)value) + 1) & 0xFF);
 
             setZeroFlag(false);
             setHalfCarryFlag(false);
@@ -5622,7 +5764,7 @@ namespace trentGB
 
         public Byte decrement(Byte value)
         {
-            byte result = (byte)((((int)value) - 1) & 0xFF);
+            byte result = (byte)((((UInt32)value) - 1) & 0xFF);
 
             setZeroFlag(false);
             setHalfCarryFlag(false);
@@ -5644,7 +5786,7 @@ namespace trentGB
 
         public Byte add(Byte op1, Byte op2)
         {
-            Byte value = (Byte)(((int)op1 + (int)op2) & 0xFF);
+            Byte value = (Byte)(((UInt32)op1 + (UInt32)op2) & 0xFF);
             setZeroFlag(false);
             setHalfCarryFlag(false);
             setSubtractFlag(false);
@@ -5670,8 +5812,8 @@ namespace trentGB
 
         public Byte addCarry(Byte op1, Byte op2)
         {
-            int carryFlag = (getCarryFlag()) ? 1 : 0;
-            Byte value = (Byte)(((int)op1 + (int)op2 + carryFlag) & 0xFF);
+            UInt32 carryFlag = (UInt32)((getCarryFlag()) ? 1 : 0);
+            Byte value = (Byte)(((UInt32)op1 + (UInt32)op2 + carryFlag) & 0xFF);
             setZeroFlag(false);
             setHalfCarryFlag(false);
             setSubtractFlag(false);
@@ -5697,7 +5839,7 @@ namespace trentGB
 
         public Byte subtract(Byte op1, Byte op2)
         {
-            int result = (int)op2 - (int)op1;
+            UInt32 result = (UInt32)op2 - (UInt32)op1;
             Byte value = (byte)((result & 0xFF));
             setZeroFlag(false);
             setHalfCarryFlag(false);
@@ -5722,8 +5864,8 @@ namespace trentGB
         
         public Byte subtractCarry(Byte op1, Byte op2)
         {
-            int carryFlag = (getCarryFlag()) ? 1 : 0;
-            int result = (int)op2 - (int)op1 - carryFlag;
+            UInt32 carryFlag = (UInt32)((getCarryFlag()) ? 1 : 0);
+            UInt32 result = (UInt32)op2 - (UInt32)op1 - carryFlag;
             Byte value = (byte)((result & 0xFF));
             setZeroFlag(false);
             setHalfCarryFlag(false);
@@ -5738,7 +5880,7 @@ namespace trentGB
             {
                 setHalfCarryFlag(true);
             }
-            if (result < 0)
+            if ((((UInt32) op1) + carryFlag) > ((UInt32)op2))
             {
                 setCarryFlag(true);
             }
@@ -5974,7 +6116,7 @@ namespace trentGB
 
         public Byte sla(byte value)
         {
-            Byte rv = (byte)((((int)value) << 1) & 0xFF);
+            Byte rv = (byte)((((UInt32)value) << 1) & 0xFF);
 
             setSubtractFlag(false);
             setHalfCarryFlag(false);
@@ -5988,7 +6130,7 @@ namespace trentGB
 
         public Byte sra(byte value)
         {
-            Byte rv = (Byte)(((((int)value) >> 1) | ((((int)value) & 0x80)) & 0xFF));
+            Byte rv = (Byte)(((((UInt32)value) >> 1) | ((((UInt32)value) & 0x80)) & 0xFF));
 
             setSubtractFlag(false);
             setHalfCarryFlag(false);
@@ -6001,7 +6143,7 @@ namespace trentGB
 
         public Byte srl(byte value)
         {
-            Byte rv = (Byte)((((int)value) >> 1) & 0xFF);
+            Byte rv = (Byte)((((UInt32)value) >> 1) & 0xFF);
 
             setSubtractFlag(false);
             setHalfCarryFlag(false);
@@ -6019,7 +6161,7 @@ namespace trentGB
 
         public ushort add16(ushort op1, ushort op2, Add16Type type)
         {
-            ushort value = (ushort)(((int)op1 + (int)op2) & 0xFFFF);
+            ushort value = (ushort)(((UInt32)op1 + (UInt32)op2) & 0xFFFF);
 
 
             if (type == Add16Type.HL)
@@ -6050,7 +6192,7 @@ namespace trentGB
 
         public ushort addSP(ushort sp, SByte n)
         {
-            ushort value = (ushort)(((int)sp + (int)n) & 0xFFFF);
+            ushort value = (ushort)(((ushort)sp + (SByte)n) & 0xFFFF);
             setZeroFlag(false);
             setSubtractFlag(false);
 
@@ -6214,12 +6356,12 @@ namespace trentGB
 
             if (pos == BytePlacement.MSB)
             {
-                int setVal = (int)set;
+                UInt32 setVal = (UInt32)set;
                 rv = (ushort)((setVal << 8) + LSB);
             }
             else if(pos == BytePlacement.LSB)
             {
-                int setVal = (int)MSB;
+                UInt32 setVal = (UInt32)MSB;
                 rv = (ushort)((setVal << 8) + set);
             }
             else
@@ -6271,7 +6413,7 @@ namespace trentGB
 
         public ushort add16IgnoreFlags(ushort value1, SByte value2)
         {
-            return (ushort)((value1 + value2) & 0xFFFF);
+            return (ushort)(((UInt32)value1 + (SByte)value2) & 0xFFFF);
         }
 
         public ushort add16IgnoreFlags(ushort value1, ushort value2)

@@ -231,9 +231,9 @@ namespace trentGB
             memoryListBox.Items.Clear();
             oldStatusDict = currentStatusDict;
             currentStatusDict = dict;
-            if (dict != null && dict.Count >= 17)
+            if (dict != null && dict.Count >= 18)
             {
-                int cpuStateDictLength = 16;
+                int cpuStateDictLength = 17;
                 for (int i = 0; i <= cpuStateDictLength; i++)
                 {
                     KeyValuePair<String, String> kp = dict.GetEntry<String, String>(dict.Keys.ToList()[i]);

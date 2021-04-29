@@ -258,6 +258,7 @@ namespace trentGB
         {
             updateDebugRequests(address, DebugCheck.WriteOccurred);
 
+            bool isFromCPU = ((sender != null) && (sender.GetType() == typeof(CPU)));
 
             if (address > 0x0000 && address <= 0x7FFF)
             {
@@ -272,7 +273,7 @@ namespace trentGB
             {
                 throw new Exception("Nintendo Says this Address Space is off limits");
             }
-            else if (sender.GetType() == typeof(CPU) && ((address >= 0x8000 && address <= 0x9FFF)))
+            else if (isFromCPU && ((address >= 0x8000 && address <= 0x9FFF)))
             {
                 int mode = (bytes[0xFF41] & 0x03);
                 // CPU Cant access VRAM If PPU is drawing to screen
@@ -287,7 +288,7 @@ namespace trentGB
                     bytes[address] = value;
                 }
             }
-            else if (sender.GetType() == typeof(CPU) && (address >= 0xFE00 && address <= 0xFE9F))
+            else if (isFromCPU && (address >= 0xFE00 && address <= 0xFE9F))
             {
                 int mode = (bytes[0xFF41] & 0x03);
                 // CPU Cant access OAM If PPU is drawing to screen
@@ -301,6 +302,10 @@ namespace trentGB
                 {
                     bytes[address] = value;
                 }
+            }
+            else if (isFromCPU && (address == 0xFF04))
+            {
+                bytes[address] = 0;
             }
             else
             {
